@@ -123,17 +123,14 @@ El archivo `.env.local` no se sube (está en `.gitignore`). Las llaves van en Cl
 
 ---
 
-## 4. Cloudflare Pages
+## 4. Cloudflare Workers
 
-1. En Cloudflare: **Workers & Pages › Create › Pages › Connect to Git** y elige el repositorio.
-2. Configuración de compilación:
-   - **Framework preset:** Vite
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-3. En **Environment variables** (Production y Preview) agrega `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_WHATSAPP` y `NODE_VERSION` = `20`.
+1. En Cloudflare: **Workers & Pages › Create › Import a repository** y elige el repositorio.
+2. **Build command:** `npm run build` · **Deploy command:** `npx wrangler deploy`.
+3. En **Settings › Build › Variables and secrets** agrega `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` y `VITE_WHATSAPP`. Van en las variables de *Build*, no en las del Worker, porque Vite las mete en la web al compilar.
 4. Guarda y despliega. Cada `git push` a `main` publica la web sola.
 
-`public/_redirects` hace que `/admin/...` funcione al recargar la página. `public/_headers` agrega caché para fotos y videos, y le dice a Google que no indexe el panel.
+`wrangler.jsonc` publica `dist/` y hace que `/admin/...` funcione al recargar la página. `public/_headers` agrega caché para fotos y videos, y le dice a Google que no indexe el panel. La versión de Node está en `.nvmrc` (22).
 
 ---
 
@@ -144,7 +141,7 @@ El archivo `.env.local` no se sube (está en `.gitignore`). Las llaves van en Cl
 3. Cloudflare te da dos **nameservers** (algo como `ana.ns.cloudflare.com`).
 4. En Squarespace: **Domains › casa-maracuya.com › DNS › Nameservers › Use custom nameservers** y pega los dos de Cloudflare. Si el dominio está bloqueado, primero desactiva *Domain lock*.
 5. Espera a que Cloudflare diga **Active** (de minutos a 24 horas).
-6. En tu proyecto de Pages: **Custom domains › Set up a custom domain** › `casa-maracuya.com` y luego también `www.casa-maracuya.com`.
+6. En el Worker `casamaracuyaweb`: **Settings › Domains & Routes › Add › Custom domain** › `casa-maracuya.com` y luego también `www.casa-maracuya.com`.
 7. Cuando cargue con candado, vuelve a Supabase (paso 2.6) y confirma la Site URL.
 
 Cambiar los nameservers basta para que Cloudflare maneje el dominio. Si además quieres **transferir el registro** del dominio a Cloudflare (para renovarlo ahí), hazlo después de que esté *Active*: Squarespace te da el código de autorización y Cloudflare lo pide en *Domain Registration › Transfer*.

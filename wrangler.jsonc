@@ -1,0 +1,10 @@
+// Cloudflare Workers: publica la carpeta dist/ como sitio estático.
+// Las rutas que no son archivos (/admin, /admin/reservas…) devuelven index.html para que React las maneje.
+{
+  "name": "casamaracuyaweb",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
