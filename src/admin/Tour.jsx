@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "./ui.jsx";
 import { ROLES, VIEWS, STATE } from "./util.js";
 
-const KEY = "mc-tour-1:";
+const KEY = "mc-tour-2:";
 export const tourSeen = uid => { try { return !!localStorage.getItem(KEY + uid); } catch { return true; } };
 const markSeen = uid => { try { localStorage.setItem(KEY + uid, "1"); } catch { /* sin almacenamiento */ } };
 

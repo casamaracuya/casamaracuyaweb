@@ -10,7 +10,9 @@ const parseISO = s => { if (!s) return null; const [y, m, d] = s.split("-").map(
 const nightsBetween = (a, b) => { const A = parseISO(a), B = parseISO(b); return A && B ? Math.round((B - A) / 864e5) : null; };
 
 export default function Site() {
-  const [lang, setLang] = useState(() => store.get("maracuya-lang") || ((navigator.language || "").toLowerCase().startsWith("en") ? "en" : "es"));
+  // Idioma: el que la persona eligió con el botón; si no eligió, el de su dispositivo.
+  const [lang, setLangState] = useState(() => store.get("maracuya-idioma") || ((navigator.language || "").toLowerCase().startsWith("en") ? "en" : "es"));
+  const setLang = l => { setLangState(l); store.set("maracuya-idioma", l); };
   const [mode, setMode] = useState(() => store.get("maracuya-mode") === "dark" ? "dark" : "light");
   const [menu, setMenu] = useState(false);
   const [group, setGroup] = useState({ esencial: "1-6", plena: "1-6" });
@@ -19,7 +21,7 @@ export default function Site() {
   const d = T[lang]; const t = k => d[k] ?? k; const html = k => ({ dangerouslySetInnerHTML: { __html: d[k] } });
   const root = useRef();
 
-  useEffect(() => { document.documentElement.lang = lang; document.title = d["doc.title"]; store.set("maracuya-lang", lang); }, [lang]);
+  useEffect(() => { document.documentElement.lang = lang; document.title = d["doc.title"]; }, [lang]);
   useEffect(() => { if (mode === "dark") document.documentElement.dataset.mode = "dark"; else delete document.documentElement.dataset.mode; store.set("maracuya-mode", mode); }, [mode]);
 
   // Videos y apariciones al bajar
