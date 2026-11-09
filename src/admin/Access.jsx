@@ -7,9 +7,9 @@ import { Icon } from "./ui.jsx";
 
 function moment() {
   const h = new Date().getHours();
-  if (h >= 5 && h < 12) return { hi: "Buenos días", img: "/fotos/faro-piscina.jpg", pos: "62% 40%", alt: "El faro de Adícora visto desde el jardín de la casa" };
-  if (h >= 12 && h < 19) return { hi: "Buenas tardes", img: "/fotos/muelle-atardecer.jpg", pos: "40% 50%", alt: "El muelle de la casa al atardecer" };
-  return { hi: "Buenas noches", img: "/fotos/noche-pergola.jpg", pos: "50% 30%", alt: "Las palmeras sobre la pérgola iluminada de noche" };
+  if (h >= 5 && h < 12) return { hi: "Buenos días", img: "/fotos/faro-piscina.webp", pos: "62% 40%", alt: "El faro de Adícora visto desde el jardín de la casa" };
+  if (h >= 12 && h < 19) return { hi: "Buenas tardes", img: "/fotos/muelle-atardecer.webp", pos: "40% 50%", alt: "El muelle de la casa al atardecer" };
+  return { hi: "Buenas noches", img: "/fotos/noche-pergola.webp", pos: "50% 30%", alt: "Las palmeras sobre la pérgola iluminada de noche" };
 }
 
 // En el celular, al abrir el teclado: sube la página lo justo para que el botón del formulario

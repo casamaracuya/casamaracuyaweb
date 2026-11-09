@@ -34,7 +34,7 @@ export function Hoy() {
     const r = (role === "cocina" && enCasa) ? enCasa : nextIn;
     if (r) { const g = G(r.g);
       feature = <section className="sec"><button className="card feature press" onClick={() => openSheet("res", { id: r.id })}>
-        <span className="ph"><img src={r.state === "casa" ? "/fotos/sala-frente-al-mar.jpg" : "/fotos/hab-maracuya.jpg"} alt="" /><span className="over"><span className="pill light"><Icon n="door" c="xs" w="f" /> {r.state === "casa" ? "En casa ahora" : `Llegan ${rel(r.in)}`}</span></span></span>
+        <span className="ph"><img src={r.state === "casa" ? "/fotos/sala-frente-al-mar.webp" : "/fotos/hab-maracuya.webp"} alt="" /><span className="over"><span className="pill light"><Icon n="door" c="xs" w="f" /> {r.state === "casa" ? "En casa ahora" : `Llegan ${rel(r.in)}`}</span></span></span>
         <span className="fb"><span className="lbl">{r.state === "casa" ? "Ahora en la casa" : "Próxima llegada"}</span><h3>{g.name}</h3>
           <span className="meta"><span><Icon n="calendario" c="s" />{frange(r.in, r.out)}</span><span><Icon n="huespedes" c="s" />{r.people} personas</span><span><Icon n="cocina" c="s" />{PLAN[r.plan].short}</span>{r.pet && <span><Icon n="paw" c="s" />Mascota</span>}</span>
           <span className="tags">{(g.allergies || []).map(a => <span key={a} className="tag warn"><Icon n="alert" c="xs" w="f" />{a}</span>)}{g.celebra && <span className="tag gold"><Icon n="gift" c="xs" w="f" />{g.celebra}</span>}{g.kite && <span className="tag"><Icon n="wind" c="xs" />Kite</span>}{(g.likes || []).slice(0, 2).map(x => <span key={x} className="tag">{x}</span>)}</span>

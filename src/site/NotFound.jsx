@@ -38,7 +38,7 @@ export default function NotFound({ lang = "es" }) {
             <div className="ctas"><a className="btn btn-primary" href={PATHS.home[p.lang]}>{d.home}</a><a className="btn btn-ghost" href={PATHS.home[p.lang] + "#planes"}>{d.book}</a></div>
             <p className="fine"><a href={WA_URL} target="_blank" rel="noopener noreferrer">{d.wa}</a></p>
           </div>
-          <div className="nf-media"><img src="/fotos/faro-piscina.jpg" alt={d.alt} width="1200" height="900" /></div>
+          <div className="nf-media"><img src="/fotos/faro-piscina.webp" alt={d.alt} width="1200" height="900" /></div>
         </section>
       </main>
       <PageFooter t={p.t} lang={p.lang} />
