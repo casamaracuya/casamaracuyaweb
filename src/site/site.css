@@ -103,12 +103,20 @@ section{padding-block:clamp(64px,9vw,128px)}
 @media (max-width:480px){.site-header .wrap{gap:8px}.brand{margin-left:0}.brand img{height:38px}.mode button{width:32px;height:32px}.lang button{padding:.5em .6em}}
 .menu-btn{display:none;margin-left:auto;background:transparent;border:1px solid var(--line);border-radius:999px;width:44px;height:44px;color:var(--ink);cursor:pointer}
 .menu-btn span{display:block;width:18px;height:1.5px;background:currentColor;margin:4px auto}
+.menu-btn span{transition:transform .25s ease}
+.menu-btn[aria-expanded="true"] span:nth-child(1){transform:translateY(2.75px) rotate(45deg)}
+.menu-btn[aria-expanded="true"] span:nth-child(2){transform:translateY(-2.75px) rotate(-45deg)}
+/* Capa detrás del menú abierto: tocar fuera de la lista lo cierra */
+.nav-backdrop{position:fixed;inset:0;z-index:49;background:rgba(46,53,42,.28);animation:fadeIn .2s ease both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@media (min-width:1001px){.nav-backdrop{display:none}}
+@media (prefers-reduced-motion:reduce){.menu-btn span{transition:none}.nav-backdrop{animation:none}}
 @media (max-width:1000px){
   .nav{display:none}
   .menu-btn{display:block}
   .lang{margin-left:0}
   .header-cta{display:none}
-  .nav.open{display:flex;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:0;background:var(--bg);border-bottom:1px solid var(--line);padding:8px var(--gutter-r) 16px var(--gutter-l)}
+  .nav.open{display:flex;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:0;background:var(--s-hero);border-bottom:1px solid var(--line);padding:8px var(--gutter-r) 16px var(--gutter-l)}
   .nav.open a{padding:14px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.85rem}
 }
 
@@ -392,3 +400,11 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
 @media (prefers-reduced-motion:reduce){.hero .copy>*{animation:none}}
 
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Política de privacidad */
+.privacy{background:var(--s-hero);min-height:100vh;padding-block:40px 64px}
+.privacy .wrap{max-width:720px;display:grid;gap:22px}
+.privacy .brand{margin-left:0}
+.privacy h1{font-size:var(--step-3)}
+.privacy h2{font-size:var(--step-1);margin-bottom:6px}
+.privacy p{color:var(--ink-soft);max-width:62ch}

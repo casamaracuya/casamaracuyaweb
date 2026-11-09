@@ -11,6 +11,7 @@ if (!location.pathname.startsWith("/admin") && /(^#|&)(access_token|error_code)=
 // Cada parte carga su propio código y estilos: la web pública no descarga el panel.
 const Site = lazy(() => import("./site/Site.jsx"));
 const AdminApp = lazy(() => import("./admin/AdminApp.jsx"));
+const Privacy = lazy(() => import("./site/Privacy.jsx"));
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -19,6 +20,7 @@ createRoot(document.getElementById("root")).render(
         <Routes>
           <Route path="/admin" element={<AdminApp />} />
           <Route path="/admin/:view" element={<AdminApp />} />
+          <Route path="/privacidad" element={<Privacy />} />
           <Route path="*" element={<Site />} />
         </Routes>
       </Suspense>
