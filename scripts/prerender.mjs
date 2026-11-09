@@ -16,11 +16,11 @@ const PRIVACY = { es: "/privacidad", en: "/en/privacy" };
 
 const PAGES = [
   { url: "/", out: "index.html", src: "src/site/Site.jsx", lang: "es", alt: HOME,
-    title: "Casa Maracuyá · Posada en Adícora frente al faro | Falcón, Venezuela",
-    desc: "Posada en Adícora, Falcón: la casa completa para tu grupo de 1 a 12 personas, frente al Faro y al Mar Caribe. Chef en casa, pet friendly y el kitesurf a la vista desde la terraza." },
+    title: "Casa Maracuyá · Casa de descanso en Adícora, frente al faro | Falcón",
+    desc: "Casa de descanso en Adícora, Falcón: la casa completa para tu grupo de 1 a 12 personas, frente al Faro y al Mar Caribe. Chef en casa, pet friendly y el kitesurf a la vista desde la terraza." },
   { url: "/en/", out: "en/index.html", src: "src/site/Site.jsx", lang: "en", alt: HOME,
-    title: "Casa Maracuyá · Guesthouse in Adícora by the lighthouse | Venezuela",
-    desc: "Private guesthouse in Adícora, Falcón, Venezuela: the whole house for groups of 1 to 12, by the lighthouse and the Caribbean Sea. Private chef, pet friendly and kitesurfing in view from the terrace." },
+    title: "Casa Maracuyá · Holiday home in Adícora, by the lighthouse | Venezuela",
+    desc: "Private holiday home in Adícora, Falcón, Venezuela: the whole house for groups of 1 to 12, by the lighthouse and the Caribbean Sea. Private chef, pet friendly and kitesurfing in view from the terrace." },
   { url: "/privacidad", out: "privacidad.html", src: "src/site/Privacy.jsx", lang: "es", alt: PRIVACY,
     title: "Política de privacidad · Casa Maracuyá",
     desc: "Qué datos guarda Casa Maracuyá cuando pides una estadía, para qué los usa y cómo pedir que los corrijamos o borremos." },

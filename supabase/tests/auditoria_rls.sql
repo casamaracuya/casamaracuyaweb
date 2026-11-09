@@ -7,7 +7,8 @@
 --
 --  Es seguro correrlo en producción: todo pasa dentro de una transacción que
 --  SIEMPRE se deshace al final. No queda ningún usuario, reserva ni fecha
---  bloqueada. Las reservas de prueba usan fechas del año 2099.
+--  bloqueada. Las reservas de prueba usan fechas del año 2099 (las solicitudes
+--  de la web, fechas dentro de los próximos 2 años: el anti-spam no acepta más lejos).
 --
 --  Cómo correrlo: Supabase > SQL Editor > New query > pega todo > Run.
 --  El resultado aparece como un mensaje que empieza por «AUDITORÍA RLS».
@@ -89,10 +90,17 @@ select pg_temp.probar('No ve promociones inactivas', 'anon', 'select count(*) fr
 select pg_temp.probar('No crea reservas directo',    'anon', $q$with x as (insert into reservas (huesped_id, plan, personas, llegada, salida) select id, 'plena', 2, '2099-02-01', '2099-02-03' from huespedes limit 1 returning 1) select count(*) from x$q$, 'cero');
 select pg_temp.probar('No crea huéspedes directo',   'anon', $q$with x as (insert into huespedes (nombre, telefono) values ('X', '1') returning 1) select count(*) from x$q$, 'error');
 select pg_temp.probar('No cambia huéspedes',         'anon', $q$with x as (update huespedes set notas = 'x' returning 1) select count(*) from x$q$, 'cero');
-select pg_temp.probar('Envía una solicitud desde la web', 'anon', $q$select length(crear_solicitud('Visitante', '+58 400 111 1111', 'esencial', 2, false, '2099-03-01', '2099-03-04', '', 'Web', 'es'))$q$, 'hay');
+select pg_temp.probar('Envía una solicitud desde la web', 'anon', $q$select length(crear_solicitud('Visitante', '+58 400 111 1111', 'esencial', 2, false, current_date + 300, current_date + 303, '', 'Web', 'es'))$q$, 'hay');
 select pg_temp.probar('No mueve reservas',           'anon', format($q$select 1 from cambiar_estado(%L, 'confirmada')$q$, (select res1 from datos)), 'error');
 select pg_temp.probar('No registra pagos',           'anon', format($q$select 1 from registrar_pago(%L, 5, 'x')$q$, (select res1 from datos)), 'error');
 select pg_temp.probar('No libera pre-reservas',      'anon', 'select liberar_vencidas()', 'error');
+select pg_temp.probar('Anti-spam: sin WhatsApp no se guarda', 'anon', $q$select length(crear_solicitud('Visitante', '', 'esencial', 2, false, current_date + 300, current_date + 303, '', 'Web', 'es'))$q$, 'error');
+select pg_temp.probar('Anti-spam: 2.ª solicitud del mismo número', 'anon', $q$select length(crear_solicitud('Visitante', '+58 400 111 1111', 'esencial', 2, false, current_date + 310, current_date + 313, '', 'Web', 'es'))$q$, 'hay');
+select pg_temp.probar('Anti-spam: 3.ª solicitud del mismo número', 'anon', $q$select length(crear_solicitud('Visitante', '+58 400 111 1111', 'esencial', 2, false, current_date + 320, current_date + 323, '', 'Web', 'es'))$q$, 'hay');
+select pg_temp.probar('Anti-spam: la 4.ª en una hora se frena', 'anon', $q$select length(crear_solicitud('Visitante', '+58 400 111 1111', 'esencial', 2, false, current_date + 330, current_date + 333, '', 'Web', 'es'))$q$, 'error');
+select pg_temp.probar('No ve el registro anti-spam', 'anon', 'select count(*) from limite_solicitudes', 'error');
+select pg_temp.probar('Puede anotar un error de la web', 'anon', $q$select 1 from registrar_error('web', 'Error de prueba de auditoría', '', '/', 'auditoria')$q$, 'funciona');
+select pg_temp.probar('No lee la tabla de errores', 'anon', 'select count(*) from errores', 'error');
 
 -- ---------- 2. Alguien que se registró solo, sin rol ----------
 select pg_temp.probar('Sin rol: no ve huéspedes',  'sinrol', 'select count(*) from huespedes', 'cero');
@@ -142,6 +150,8 @@ select pg_temp.probar('Administración no da roles',     'admin', $q$with x as (
 select pg_temp.probar('Dirección ve pagos',          'direccion', 'select count(*) from pagos', 'hay');
 select pg_temp.probar('Dirección cambia tarifas',    'direccion', $q$with x as (update tarifas set monto = 2 where clave = 'auditoria-prueba' returning 1) select count(*) from x$q$, 'hay');
 select pg_temp.probar('Dirección asigna roles',      'direccion', $q$with x as (update perfiles set roles = '{cocina}' where id = (select id from perfiles where roles = '{}' limit 1) returning 1) select count(*) from x$q$, 'hay');
+select pg_temp.probar('Dirección ve los errores', 'direccion', $q$select count(*) from errores where mensaje = 'Error de prueba de auditoría'$q$, 'hay');
+select pg_temp.probar('Cocina no ve los errores', 'cocina', 'select count(*) from errores', 'cero');
 
 -- ---------- Resultado (y todo se deshace) ----------
 do $$
