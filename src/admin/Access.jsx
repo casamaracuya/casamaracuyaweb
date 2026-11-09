@@ -12,9 +12,26 @@ function moment() {
   return { hi: "Buenas noches", img: "/fotos/noche-pergola.jpg", pos: "50% 30%", alt: "Las palmeras sobre la pérgola iluminada de noche" };
 }
 
+// En el celular, al abrir el teclado: sube la página lo justo para que el botón del formulario
+// quede visible encima del teclado, sin esconder el campo donde se está escribiendo.
+function keepButtonVisible(e) {
+  const input = e.target;
+  if (input.tagName !== "INPUT" || !input.form) return;
+  setTimeout(() => {
+    const btn = input.form.querySelector(".door-btn"); if (!btn) return;
+    const vv = window.visualViewport;
+    const top = vv ? vv.offsetTop : 0, bottom = top + (vv ? vv.height : innerHeight);
+    const b = btn.getBoundingClientRect(), i = input.getBoundingClientRect();
+    const need = b.bottom + 16 - bottom;            // cuánto falta para ver el botón
+    const room = i.top - 12 - top;                  // cuánto se puede subir sin tapar el campo
+    const by = Math.min(need, room);
+    if (by > 0) window.scrollBy({ top: by, behavior: "smooth" });
+  }, 350);
+}
+
 function Door({ title, lead, children, foot = true }) {
   const [m] = useState(moment);
-  return <div className="door">
+  return <div className="door" onFocusCapture={keepButtonVisible}>
     <figure className="door-photo">
       <img src={m.img} alt={m.alt} style={{ objectPosition: m.pos }} fetchpriority="high" decoding="async" />
       <img className="door-logo" src="/logo/logo-claro.svg" alt="Maracuyá Relaxing Getaway" width="132" height="53" />
