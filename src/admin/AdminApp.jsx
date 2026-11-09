@@ -55,14 +55,28 @@ function Panel() {
 
   const setRole = r => { setSaved(r); setRoleState(r); };
 
-  if (session === undefined) return <Splash />;
-  if (!session) return <Login />;
-  if (mustSetPw) return <SetPassword invite={LINK_TYPE === "invite"} email={session.user?.email} onDone={() => { history.replaceState(null, "", location.pathname); setMustSetPw(false); }} />;
-  if (!me) return err ? <Splash msg={err} /> : <Splash />;
-  if (!me.roles.length) return <NoRole me={me} />;
-  if (!role) return <Splash />;
-  if (!S) return err ? <Splash msg={err} /> : <Splash label="Preparando tu día" />;
-  return <Shell S={S} role={role} setRole={setRole} me={me} reload={reload} />;
+  // La pantalla de carga se queda encima del panel y se desvanece, en vez de cortar de golpe.
+  const ready = !!(session && !mustSetPw && me?.roles.length && role && S);
+  const [veil, setVeil] = useState("on");
+  useEffect(() => {
+    if (!ready) { setVeil("on"); return; }
+    setVeil("leaving");
+    const t = setTimeout(() => setVeil("off"), 700);
+    return () => clearTimeout(t);
+  }, [ready]);
+
+  // Pantallas que reemplazan todo (entrar, crear contraseña, sin rol).
+  if (session === null) return <Login />;
+  if (session && mustSetPw) return <SetPassword invite={LINK_TYPE === "invite"} email={session.user?.email} onDone={() => { history.replaceState(null, "", location.pathname); setMustSetPw(false); }} />;
+  if (me && !me.roles.length) return <NoRole me={me} />;
+
+  // Mientras carga, la misma pantalla de carga (sin reiniciar su animación) hasta que el panel aparece debajo.
+  const label = me ? "Preparando tu día" : "Abriendo la casa";
+  return <>
+    {ready && <Shell S={S} role={role} setRole={setRole} me={me} reload={reload} />}
+    {!ready && err ? <Splash key="splash" msg={err} />
+      : veil !== "off" && <Splash key="splash" label={label} leaving={veil === "leaving"} />}
+  </>;
 }
 
 function Shell({ S, role, setRole, me, reload }) {

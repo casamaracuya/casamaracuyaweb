@@ -388,6 +388,10 @@ button.row:active,a.row:active{background:var(--fill)}
 
 /* Carga: el símbolo de la casa y una ráfaga de viento que se dibuja */
 .splash{display:grid;place-items:center;padding:24px}
+/* Al terminar de cargar, se desvanece sobre el panel en vez de cortar de golpe */
+.splash.leaving{animation:splash-out .6s cubic-bezier(.4,0,.2,1) forwards;pointer-events:none}
+.splash.leaving .splash-in{transition:transform .6s cubic-bezier(.4,0,.2,1);transform:translateY(-8px) scale(.98)}
+@keyframes splash-out{to{opacity:0;visibility:hidden}}
 .splash-in{display:grid;justify-items:center;gap:22px;text-align:center;max-width:380px}
 .splash-mark{position:relative;display:grid;justify-items:center;gap:6px;color:var(--alga);animation:door-rise .7s var(--out) both}
 .splash-mark img{width:58px;height:auto;animation:breathe 2.8s ease-in-out infinite}

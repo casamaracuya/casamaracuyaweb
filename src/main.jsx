@@ -12,6 +12,7 @@ if (!location.pathname.startsWith("/admin") && /(^#|&)(access_token|error_code)=
 const Site = lazy(() => import("./site/Site.jsx"));
 const AdminApp = lazy(() => import("./admin/AdminApp.jsx"));
 const Privacy = lazy(() => import("./site/Privacy.jsx"));
+const NotFound = lazy(() => import("./site/NotFound.jsx"));
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -21,7 +22,9 @@ createRoot(document.getElementById("root")).render(
           <Route path="/admin" element={<AdminApp />} />
           <Route path="/admin/:view" element={<AdminApp />} />
           <Route path="/privacidad" element={<Privacy />} />
-          <Route path="*" element={<Site />} />
+          <Route path="/" element={<Site />} />
+          <Route path="/index.html" element={<Site />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

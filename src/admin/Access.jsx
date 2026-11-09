@@ -127,8 +127,8 @@ export function NotConfigured() {
 }
 
 /* ---------- Carga ---------- */
-export function Splash({ msg, label = "Abriendo la casa" }) {
-  return <div className="splash" aria-busy={!msg}>
+export function Splash({ msg, label = "Abriendo la casa", leaving }) {
+  return <div className={`splash ${leaving ? "leaving" : ""}`} aria-busy={!msg && !leaving} aria-hidden={leaving || undefined}>
     <div className="splash-in">
       <div className={`splash-mark ${msg ? "still" : ""}`}>
         <img src="/logo/simbolo.svg" alt="" width="58" height="80" />

@@ -13,5 +13,4 @@ export const LINK_ERROR = linkParams.get("error_code");
 
 // Sin VITE_SUPABASE_URL y la llave el panel muestra un aviso de configuración.
 export const supabase = url && key ? createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
-// Número de reservas. Si falta VITE_WHATSAPP, usa el de la casa.
-export const WHATSAPP = (import.meta.env.VITE_WHATSAPP || "584242215166").replace(/\D/g, "");
+export { WHATSAPP } from "./contacto.js";

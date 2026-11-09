@@ -1,55 +1,139 @@
 import { useEffect } from "react";
 import "./site.css";
+import { usePrefs, PageHeader, PageFooter, EMAIL, WA_URL } from "./shared.jsx";
 
 // Política de privacidad. Es un texto base: la dueña debe revisarlo (idealmente con un abogado)
-// antes de darlo por definitivo. Fecha de la última revisión en UPDATED.
-const UPDATED = { es: "8 de noviembre de 2026", en: "November 8, 2026" };
-const EMAIL = "reservas@casa-maracuya.com";
+// antes de darlo por definitivo. Al cambiar algo, actualiza UPDATED.
+const UPDATED = { es: "9 de noviembre de 2026", en: "November 9, 2026" };
+const mail = <a href={`mailto:${EMAIL}`}>{EMAIL}</a>;
 
 const TXT = {
   es: {
-    title: "Política de privacidad",
-    back: "Volver a la página",
+    doc: "Política de privacidad · Casa Maracuyá",
+    eyebrow: "Casa Maracuyá · Privacidad",
+    title: <>Tus datos, <em>en buenas manos.</em></>,
+    lede: "Cuidamos tu información como cuidamos la casa: con poco y bien. Aquí te contamos qué guardamos cuando nos escribes, para qué lo usamos y cómo pedirnos que lo cambiemos o lo borremos.",
     updated: "Última actualización",
+    shortT: "En corto",
+    short: ["Pedimos solo lo necesario para organizar tu estadía.", "No vendemos tus datos ni los usamos para publicidad.", "Puedes pedirnos verlos, corregirlos o borrarlos cuando quieras."],
+    index: "En esta página",
     sections: [
-      ["Quiénes somos", `Casa Maracuyá es una casa de descanso en Adícora, estado Falcón, Venezuela. Para cualquier pregunta sobre tus datos escríbenos a ${EMAIL}.`],
-      ["Qué datos guardamos", "Cuando pides una estadía desde esta página guardamos tu nombre, tu número de WhatsApp, el plan, las fechas, cuántas personas vienen, si viajas con mascota y los comentarios que escribas. Si nos visitas, también podemos anotar lo que tú nos cuentes para atenderte mejor: alergias, gustos o fechas especiales."],
-      ["Para qué los usamos", "Solo para responder tu solicitud, organizar tu estadía y recibirte como te gusta la próxima vez. No vendemos ni compartimos tus datos con terceros para publicidad."],
-      ["Quién los ve", "Tus datos se guardan en un servicio en la nube con acceso protegido. Solo el equipo de la casa entra, cada persona con su propio usuario y viendo únicamente lo que necesita para su trabajo."],
-      ["Cuánto tiempo los guardamos", "Mientras tengamos una relación contigo como huésped. Puedes pedirnos que los borremos cuando quieras."],
-      ["Tus derechos", `Puedes pedirnos ver, corregir o borrar tus datos escribiendo a ${EMAIL}. Te respondemos lo antes posible.`],
-      ["Cookies y medición", "No usamos cookies de publicidad. Tu navegador recuerda el idioma y el modo día o noche que elijas. Medimos las visitas de forma anónima, sin cookies."]
-    ]
+      ["quienes", "Quiénes somos", [
+        <>Casa Maracuyá es una casa vacacional en Adícora, estado Falcón, Venezuela, al lado del faro. Somos responsables de los datos que nos das en esta página, por WhatsApp o durante tu estadía.</>,
+        <>Para cualquier tema de privacidad, escríbenos a {mail}.</>]],
+      ["datos", "Qué datos guardamos", [
+        { list: [
+          <><b>Cuando pides una estadía:</b> tu nombre, tu WhatsApp, el plan, las fechas, cuántas personas vienen, si traes mascota y los comentarios que escribas.</>,
+          <><b>Durante tu estadía, si nos lo cuentas:</b> alergias, gustos de comida, cumpleaños u otras fechas especiales y los nombres de quienes te acompañan.</>,
+          <><b>Sobre los pagos:</b> el monto, la fecha y el medio de pago. Nunca guardamos números de tarjeta ni claves bancarias.</>] }]],
+      ["uso", "Para qué los usamos", [
+        { list: ["Responder tu solicitud y confirmarte disponibilidad y tarifa.", "Preparar la casa y el menú a tu medida, sobre todo si hay alergias.", "Recibirte como te gusta la próxima vez que vengas."] },
+        "No te enviamos publicidad sin tu permiso, y no vendemos ni cedemos tus datos a nadie."]],
+      ["acceso", "Quién puede verlos", [
+        "Solo el equipo de la casa. Cada persona entra con su propio usuario y ve únicamente lo que necesita para su trabajo: por ejemplo, la cocina ve tus alergias y gustos, pero no tus pagos.",
+        "Para funcionar usamos unos pocos servicios que guardan o transportan la información por nosotros: Supabase (la base de datos, con acceso protegido), Cloudflare (aloja esta página), Google (nuestro correo) y WhatsApp (nuestras conversaciones, que también se rigen por la política de privacidad de WhatsApp)."]],
+      ["tiempo", "Cuánto tiempo los guardamos", [
+        "Mientras nos sirvan para atenderte como huésped. Si nos pides borrarlos, lo hacemos, salvo lo que debamos conservar por obligaciones legales o contables, como el registro de un pago."]],
+      ["derechos", "Tus derechos", [
+        "Puedes pedirnos en cualquier momento que te mostremos los datos que tenemos sobre ti, que los corrijamos, que los borremos o que dejemos de usarlos para algo en particular.",
+        <>Escríbenos a {mail} o por WhatsApp y te respondemos lo antes posible.</>]],
+      ["cookies", "Cookies y navegación", [
+        "Esta página no usa cookies de publicidad ni herramientas de seguimiento como Google Analytics o píxeles de redes sociales.",
+        "Tu navegador solo recuerda dos preferencias: el idioma y el modo día o noche. Cloudflare, que aloja la página, procesa datos técnicos como tu dirección IP para entregarla de forma rápida y segura."]],
+      ["cambios", "Cambios en esta política", [
+        "Si cambiamos algo importante, lo publicaremos aquí y actualizaremos la fecha de arriba."]]
+    ],
+    askT: "¿Dudas sobre tus datos?",
+    ask: "Escríbenos y te respondemos. Sin formularios ni vueltas.",
+    write: "Escribir un correo"
   },
   en: {
-    title: "Privacy policy",
-    back: "Back to the website",
+    doc: "Privacy policy · Casa Maracuyá",
+    eyebrow: "Casa Maracuyá · Privacy",
+    title: <>Your data, <em>in good hands.</em></>,
+    lede: "We look after your information the way we look after the house: keep it simple, and keep it well. Here's what we keep when you write to us, what we use it for and how to ask us to change or delete it.",
     updated: "Last updated",
+    shortT: "In short",
+    short: ["We only ask for what we need to organize your stay.", "We don't sell your data or use it for advertising.", "You can ask us to see, correct or delete it at any time."],
+    index: "On this page",
     sections: [
-      ["Who we are", `Casa Maracuyá is a holiday home in Adícora, Falcón, Venezuela. For any question about your data, write to ${EMAIL}.`],
-      ["What we keep", "When you request a stay on this website we keep your name, your WhatsApp number, the stay, your dates, how many guests are coming, whether you bring a pet and any comments you write. If you stay with us, we may also note what you tell us so we can take better care of you: allergies, preferences or special dates."],
-      ["What we use it for", "Only to answer your request, organize your stay and welcome you the way you like next time. We don't sell or share your data with third parties for advertising."],
-      ["Who can see it", "Your data is stored in a cloud service with protected access. Only the house team can sign in, each person with their own account and seeing only what they need for their work."],
-      ["How long we keep it", "For as long as we have a relationship with you as a guest. You can ask us to delete it at any time."],
-      ["Your rights", `You can ask us to see, correct or delete your data by writing to ${EMAIL}. We'll reply as soon as possible.`],
-      ["Cookies and analytics", "We don't use advertising cookies. Your browser remembers the language and the day or night mode you choose. We count visits anonymously, without cookies."]
-    ]
+      ["quienes", "Who we are", [
+        <>Casa Maracuyá is a holiday home in Adícora, Falcón, Venezuela, right next to the lighthouse. We are responsible for the data you give us on this website, on WhatsApp or during your stay.</>,
+        <>For anything about privacy, write to {mail}.</>]],
+      ["datos", "What we keep", [
+        { list: [
+          <><b>When you request a stay:</b> your name, your WhatsApp number, the stay, your dates, how many guests are coming, whether you bring a pet and any comments you write.</>,
+          <><b>During your stay, if you tell us:</b> allergies, food preferences, birthdays or other special dates and the names of those travelling with you.</>,
+          <><b>About payments:</b> the amount, the date and the payment method. We never keep card numbers or bank passwords.</>] }]],
+      ["uso", "What we use it for", [
+        { list: ["Answering your request and confirming availability and rates.", "Preparing the house and the menu for you, especially if there are allergies.", "Welcoming you the way you like the next time you come."] },
+        "We don't send you advertising without your permission, and we never sell or hand over your data to anyone."]],
+      ["acceso", "Who can see it", [
+        "Only the house team. Each person signs in with their own account and sees only what they need for their work: for example, the kitchen sees your allergies and preferences, but not your payments.",
+        "To run, we use a few services that store or carry the information for us: Supabase (the database, with protected access), Cloudflare (hosts this website), Google (our email) and WhatsApp (our conversations, which are also covered by WhatsApp's privacy policy)."]],
+      ["tiempo", "How long we keep it", [
+        "For as long as it helps us look after you as a guest. If you ask us to delete it, we will, except for what we must keep for legal or accounting reasons, such as the record of a payment."]],
+      ["derechos", "Your rights", [
+        "At any time you can ask us to show you the data we have about you, correct it, delete it or stop using it for something in particular.",
+        <>Write to {mail} or on WhatsApp and we'll reply as soon as we can.</>]],
+      ["cookies", "Cookies and browsing", [
+        "This website doesn't use advertising cookies or tracking tools such as Google Analytics or social media pixels.",
+        "Your browser only remembers two preferences: the language and the day or night mode. Cloudflare, which hosts the website, processes technical data such as your IP address to deliver it quickly and securely."]],
+      ["cambios", "Changes to this policy", [
+        "If we change anything important, we'll publish it here and update the date above."]]
+    ],
+    askT: "Questions about your data?",
+    ask: "Write to us and we'll answer. No forms, no runaround.",
+    write: "Send an email"
   }
 };
 
 export default function Privacy() {
-  const lang = (() => { try { return localStorage.getItem("maracuya-idioma") || ((navigator.language || "").toLowerCase().startsWith("en") ? "en" : "es"); } catch { return "es"; } })();
-  const d = TXT[lang] || TXT.es;
-  useEffect(() => { document.documentElement.lang = lang; document.title = `${d.title} · Casa Maracuyá`; window.scrollTo(0, 0); }, []);
+  const p = usePrefs();
+  const d = TXT[p.lang] || TXT.es;
+  useEffect(() => { document.title = d.doc; }, [d]);
   return (
-    <main className="privacy">
-      <div className="wrap">
-        <a className="brand" href="/" aria-label="Casa Maracuyá"><img src="/logo/logo-dorado.svg" alt="Maracuyá Relaxing Getaway" width="131" height="52" /></a>
-        <h1>{d.title}</h1>
-        <p className="fine">{d.updated}: {UPDATED[lang] || UPDATED.es}</p>
-        {d.sections.map(([h, p]) => <section key={h}><h2>{h}</h2><p>{p}</p></section>)}
-        <p><a className="btn btn-primary" href="/">{d.back}</a></p>
-      </div>
-    </main>
+    <>
+      <PageHeader {...p} />
+      <main className="legal-page">
+        <section className="legal-hero linen">
+          <div className="wrap">
+            <p className="eyebrow">{d.eyebrow}</p>
+            <h1>{d.title}</h1>
+            <p className="lede">{d.lede}</p>
+            <p className="fine">{d.updated}: {UPDATED[p.lang] || UPDATED.es}</p>
+          </div>
+          <img className="legal-seal" src="/logo/sello-circular.svg" alt="" aria-hidden="true" width="240" height="240" />
+        </section>
+
+        <div className="wrap legal-body">
+          <aside className="legal-index" aria-label={d.index}>
+            <p className="eyebrow">{d.index}</p>
+            <ol>{d.sections.map(([id, h]) => <li key={id}><a href={`#${id}`}>{h}</a></li>)}</ol>
+          </aside>
+
+          <div className="legal-text">
+            <div className="legal-short">
+              <h2>{d.shortT}</h2>
+              <ul>{d.short.map(s => <li key={s}>{s}</li>)}</ul>
+            </div>
+            {d.sections.map(([id, h, blocks], i) => (
+              <section key={id} id={id} className="legal-sec">
+                <span className="legal-n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <div>
+                  <h2>{h}</h2>
+                  {blocks.map((b, k) => b && b.list ? <ul key={k}>{b.list.map((x, j) => <li key={j}>{x}</li>)}</ul> : <p key={k}>{b}</p>)}
+                </div>
+              </section>
+            ))}
+            <div className="legal-ask">
+              <div><h2>{d.askT}</h2><p>{d.ask}</p></div>
+              <div className="ctas"><a className="btn btn-primary" href={`mailto:${EMAIL}`}>{d.write}</a><a className="btn btn-ghost" href={WA_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <PageFooter t={p.t} />
+    </>
   );
 }
