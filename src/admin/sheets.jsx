@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMC, Icon, Pill, ResRow, Seg, Chips, Switch } from "./ui.jsx";
 import { TODAY, ROLES, AREAS, AREA_C, FLOW, STATE, STATE_SHORT, PLAN, METODOS, CANALES, MESL, addDays, day, fdate, frange, money, ago, left, nights, initials, parse, nextBirthday, birthdaysIn } from "./util.js";
 import { findGuest } from "../lib/api.js";
+import { REVIEW_URL } from "../lib/contacto.js";
 
 const Err = ({ msg }) => msg ? <div className="err" role="alert">{msg}</div> : null;
 const KV = ({ k, v }) => <div className="row"><span className="k">{k}</span><span className="val">{v}</span></div>;
@@ -49,7 +50,7 @@ export function ResSheet({ id }) {
     if (r.state === "pre") actions = <>{canMoney ? <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el anticipo</button> : <p className="sec-f" style={{ padding: "0 4px" }}>Administración registra el anticipo y la reserva se confirma sola.</p>}<button className="btn danger press" onClick={() => step("vencida", "Fechas liberadas")}>Liberar las fechas</button></>;
     if (r.state === "confirmada") actions = <><button className="btn press" onClick={() => step("casa", `¡Bienvenidos! ${first} ya está en casa`)}><Icon n="door" w="f" />Ya llegaron</button><button className="btn danger press" onClick={() => sure ? step("cancelada", "Reserva cancelada. Fechas libres") : (setSure(true), setTimeout(() => setSure(false), 3500))}>{sure ? "Toca otra vez para cancelar" : "Cancelar la reserva"}</button></>;
     if (r.state === "casa") actions = <button className="btn press" onClick={() => step("finalizada", "Cuenta cerrada. Se crearon las tareas de salida")}><Icon n="out" />Cerrar la cuenta y despedir</button>;
-    if (r.state === "finalizada") actions = <a className="btn plain press" href={`${wa}?text=${encodeURIComponent(`¡Gracias por quedarte en Casa Maracuyá, ${first}! Si te gustó, nos ayudas mucho dejando tu reseña en Google.`)}`} target="_blank" rel="noreferrer"><Icon n="heart" w="f" />Enviar las gracias por WhatsApp</a>;
+    if (r.state === "finalizada") actions = <a className="btn plain press" href={`${wa}?text=${encodeURIComponent(`¡Gracias por quedarte en Casa Maracuyá, ${first}! Si te gustó, nos ayudas mucho dejando tu reseña en Google: ${REVIEW_URL}`)}`} target="_blank" rel="noreferrer"><Icon n="heart" w="f" />Enviar las gracias por WhatsApp</a>;
   }
   return <>
     <div className="res-hero"><span className="avatar l" style={{ background: `var(--s-${fi >= 0 ? r.state : "salida"}-bg)`, color: `var(--s-${fi >= 0 ? r.state : "salida"}-ink)` }}>{initials(g.name)}</span>

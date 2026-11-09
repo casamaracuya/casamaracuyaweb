@@ -3,6 +3,7 @@ import "./site.css";
 import { T } from "./i18n.js";
 import { crearSolicitud, nochesOcupadas } from "../lib/api.js";
 import { WHATSAPP, supabase } from "../lib/supabase.js";
+import { MAPS_URL } from "../lib/contacto.js";
 
 const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* */ } } };
 const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 10); };
@@ -266,7 +267,7 @@ export default function Site() {
               <p className="eyebrow">{t("where.eyebrow")}</p><h2 id="t-where">{t("where.title")}</h2>
               <div className="prose"><p>{t("where.p")}</p></div>
               <dl><dt>{t("where.d1")}</dt><dd>{t("where.v1")}</dd><dt>{t("where.d2")}</dt><dd>{t("where.v2")}</dd><dt>{t("where.d3")}</dt><dd>{t("where.v3")}</dd></dl>
-              <div className="ctas"><a className="btn btn-primary" href="https://www.google.com/maps/search/?api=1&query=Faro+de+Adicora+Falcon+Venezuela" target="_blank" rel="noopener noreferrer">{t("where.maps")}</a><a className="btn btn-ghost" href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">@lacasamaracuya</a></div>
+              <div className="ctas"><a className="btn btn-primary" href={MAPS_URL} target="_blank" rel="noopener noreferrer">{t("where.maps")}</a><a className="btn btn-ghost" href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">@lacasamaracuya</a></div>
             </div>
           </div>
         </section>
