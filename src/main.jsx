@@ -3,6 +3,9 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { AppRoutes } from "./routes.jsx";
 import { savedLang } from "./site/paths.js";
+import { watchErrors, reportError } from "./lib/errores.js";
+
+watchErrors();
 
 // Si un enlace de Supabase (invitación, contraseña nueva o enlace vencido) cae en otra página,
 // se manda al panel conservando los datos del enlace, para que ahí se cree la contraseña.
@@ -38,5 +41,5 @@ const app = (
 
 // Las páginas públicas llegan ya escritas en el HTML: React se engancha a ellas sin volver a dibujarlas.
 const root = document.getElementById("root");
-if (root.hasChildNodes()) hydrateRoot(root, app);
+if (root.hasChildNodes()) hydrateRoot(root, app, { onRecoverableError: e => reportError(e, "hidratación") });
 else createRoot(root).render(app);
