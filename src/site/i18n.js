@@ -3,7 +3,7 @@ export const T = {
   es: {
     "nav.casa":"La Casa","nav.planes":"Planes","nav.mesa":"La mesa","nav.adicora":"Adícora","nav.ubicacion":"Ubicación","nav.menu":"Menú",
     "cta.reservar":"Reservar","cta.planes":"Ver planes","cta.vive":"Vive Maracuyá","cta.casa":"Descubre la casa","cta.estadia":"Reservar mi estadía",
-    "hero.eyebrow":"Posada en Adícora · Falcón · Frente al faro",
+    "hero.eyebrow":"Casa de descanso en Adícora · Frente al faro",
     "hero.title":"Viento, mar <em>y cero prisa.</em>",
     "hero.sub":"Un espacio privado entre el Mar Caribe y el icónico Faro, donde la adrenalina de las olas se encuentra con el confort de la calma.",
     "hero.f1":"<b>La casa completa</b> para tu grupo","hero.f2":"<b>1 a 12</b> personas","hero.f3":"<b>Chef</b> en casa","hero.f4":"<b>Pet friendly</b>",
@@ -45,17 +45,17 @@ export const T = {
     "foot.motto":"Viento, mar y cero prisa.","foot.explore":"Explora","foot.contact":"Contacto","foot.made":"Adícora, frente al faro","foot.privacy":"Política de privacidad","f.privacy":"Al enviar, aceptas que usemos estos datos solo para responder tu solicitud y organizar tu estadía.",
     "person":"persona","people":"personas","night":"noche","nights":"noches",
     "sum.empty":"Elige tus fechas para ver cuántas noches son.","sum.plan":"Plan","sum.group":"Grupo","sum.nights":"Noches",
-    "err.dates":"Elige la fecha de llegada y la de salida.","err.order":"La salida tiene que ser después de la llegada.","err.past":"La llegada no puede ser una fecha pasada.","err.name":"Escribe tu nombre para el mensaje.",
+    "err.dates":"Elige la fecha de llegada y la de salida.","err.order":"La salida tiene que ser después de la llegada.","err.past":"La llegada no puede ser una fecha pasada.","err.name":"Escribe tu nombre para el mensaje.","err.phone":"Escribe tu WhatsApp para poder responderte.",
     "msg.hello":"Hola, equipo de Casa Maracuyá. Me gustaría consultar y reservar una estadía.","msg.data":"Datos de mi solicitud:",
     "msg.name":"Nombre","msg.plan":"Plan","msg.guests":"Personas","msg.pet":"Mascota","msg.in":"Llegada","msg.out":"Salida","msg.nights":"Noches","msg.notes":"Comentarios",
     "msg.bye":"Quedo atento/a para confirmar disponibilidad y tarifa.",
-    "doc.title":"Casa Maracuyá · Posada en Adícora frente al faro | Falcón, Venezuela",
+    "doc.title":"Casa Maracuyá · Casa de descanso en Adícora, frente al faro | Falcón",
     "f.phone":"Tu WhatsApp","f.phoneph":"+58 412 000 0000","f.sending":"Enviando…","f.taken":"Ojo: algunas de esas noches ya están apartadas. Escríbenos igual y te proponemos otras fechas.","f.saved":"Recibimos tu solicitud. Sigue la conversación por WhatsApp para confirmar.","err.send":"No pudimos guardar la solicitud, pero puedes escribirnos igual por WhatsApp."
   },
   en: {
     "nav.casa":"The House","nav.planes":"Stays","nav.mesa":"The table","nav.adicora":"Adícora","nav.ubicacion":"Location","nav.menu":"Menu",
     "cta.reservar":"Book","cta.planes":"See stays","cta.vive":"Live Maracuyá","cta.casa":"Discover the house","cta.estadia":"Book my stay",
-    "hero.eyebrow":"Guesthouse in Adícora · Falcón · By the lighthouse",
+    "hero.eyebrow":"Holiday home in Adícora · By the lighthouse",
     "hero.title":"Wind, sea <em>and no rush.</em>",
     "hero.sub":"A private home between the Caribbean Sea and the iconic lighthouse, where the rush of the waves meets the comfort of calm.",
     "hero.f1":"<b>The whole house</b> for your group","hero.f2":"<b>1 to 12</b> guests","hero.f3":"<b>Private chef</b>","hero.f4":"<b>Pet friendly</b>",
@@ -97,11 +97,11 @@ export const T = {
     "foot.motto":"Wind, sea and no rush.","foot.explore":"Explore","foot.contact":"Contact","foot.made":"Adícora, by the lighthouse","foot.privacy":"Privacy policy","f.privacy":"By sending, you agree that we use this data only to answer your request and organize your stay.",
     "person":"guest","people":"guests","night":"night","nights":"nights",
     "sum.empty":"Pick your dates to see how many nights.","sum.plan":"Stay","sum.group":"Group","sum.nights":"Nights",
-    "err.dates":"Choose a check-in and a check-out date.","err.order":"Check-out has to be after check-in.","err.past":"Check-in can't be in the past.","err.name":"Add your name for the message.",
+    "err.dates":"Choose a check-in and a check-out date.","err.order":"Check-out has to be after check-in.","err.past":"Check-in can't be in the past.","err.name":"Add your name for the message.","err.phone":"Add your WhatsApp number so we can reply.",
     "msg.hello":"Hi, Casa Maracuyá team. I'd like to ask about booking a stay.","msg.data":"My request:",
     "msg.name":"Name","msg.plan":"Stay","msg.guests":"Guests","msg.pet":"Pet","msg.in":"Check-in","msg.out":"Check-out","msg.nights":"Nights","msg.notes":"Comments",
     "msg.bye":"Looking forward to confirming availability and the rate.",
-    "doc.title":"Casa Maracuyá · Guesthouse in Adícora by the lighthouse | Venezuela",
+    "doc.title":"Casa Maracuyá · Holiday home in Adícora, by the lighthouse | Venezuela",
     "f.phone":"Your WhatsApp","f.phoneph":"+1 555 000 0000","f.sending":"Sending…","f.taken":"Heads up: some of those nights are already taken. Message us anyway and we'll suggest other dates.","f.saved":"We got your request. Continue on WhatsApp to confirm.","err.send":"We couldn't save your request, but you can still message us on WhatsApp."
   }
 };

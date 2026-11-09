@@ -176,6 +176,11 @@ section{padding-block:clamp(64px,9vw,128px)}
 .fullbleed h2{font-size:var(--step-3);max-width:16ch}
 .fullbleed .eyebrow{color:var(--sol)}
 .fullbleed p.body{max-width:52ch;margin-top:18px;color:#f3ede4;font-size:1.05rem}
+/* Contraste: una sombra suave detrás del texto, para que se lea aunque caiga sobre una zona clara de la foto */
+.on-photo :is(h2,p.body,.eyebrow){text-shadow:0 1px 2px rgba(20,24,18,.5),0 2px 22px rgba(20,24,18,.45)}
+.on-photo p.body{font-weight:500}
+/* De noche, el texto de «Imagínate esto» cae sobre la pared iluminada: capa oscura a la izquierda */
+:root[data-mode="dark"] .imagine::after{background:linear-gradient(180deg,rgba(24,28,21,0) 30%,rgba(24,28,21,.75) 100%),linear-gradient(90deg,rgba(24,28,21,.62) 0%,rgba(24,28,21,.25) 40%,rgba(24,28,21,0) 60%)}
 /* «Imagínate esto»: de día, la piscina con la casa de teja; de noche, la casa iluminada */
 .night-only{display:none}
 :root[data-mode="dark"] .night-only{display:block}
@@ -369,7 +374,7 @@ fieldset.field{border:0;padding:0;margin:0}
 .closing>img.cl-day-img{object-position:50% 60%}
 .closing::after{background:
   linear-gradient(180deg,rgba(24,28,21,.82) 0%,rgba(24,28,21,.55) 32%,rgba(24,28,21,.12) 58%,rgba(24,28,21,0) 75%),
-  linear-gradient(90deg,rgba(24,28,21,.55) 0%,rgba(24,28,21,0) 60%)}
+  linear-gradient(90deg,rgba(24,28,21,.7) 0%,rgba(24,28,21,.35) 38%,rgba(24,28,21,0) 62%)}
 .closing .wrap{text-align:left;padding-block:clamp(48px,6vw,88px) 40px}
 .closing h2{max-width:18ch}
 .closing .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
@@ -480,3 +485,6 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
   .nf-media img{object-position:60% 55%}
 }
 @media (prefers-reduced-motion:reduce){.nf-wind path{animation:none;stroke-dashoffset:0}.nf-media img{animation:none}}
+
+/* Campo trampa anti-spam: invisible para personas, los robots lo llenan */
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}

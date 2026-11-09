@@ -18,7 +18,9 @@ export default function Site({ lang = "es" }) {
   const setLang = l => { saveLang(l); if (l !== lang) navigate(PATHS.home[l] + location.hash); };
   const [mode, setMode] = useMode();
   const [today, setToday] = useState("");
-  useEffect(() => { setToday(todayISO()); }, []);
+  // Anti-spam: hora en que se mostró el formulario y un campo trampa que solo llenan los robots.
+  const shownAt = useRef(0); const trap = useRef(null);
+  useEffect(() => { setToday(todayISO()); shownAt.current = Date.now(); }, []);
   const [menu, setMenu] = useState(false);
   const [group, setGroup] = useState({ esencial: "1-6", plena: "1-6" });
   const [f, setF] = useState({ plan: "esencial", guests: "4", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" });
@@ -88,12 +90,16 @@ export default function Site({ lang = "es" }) {
     if (f.checkin < todayISO()) return setError(t("err.past"));
     if (nights <= 0) return setError(t("err.order"));
     if (!f.name.trim()) return setError(t("err.name"));
+    if (f.phone.replace(/\D/g, "").length < 7) return setError(t("err.phone"));
     setSending(true);
     let code = null, saved = false;
-    try { code = await crearSolicitud({ name: f.name.trim(), phone: f.phone, plan: f.plan, people: n, pet: f.pet === "si", in: f.checkin, out: f.checkout, notes: f.notes, channel: new URLSearchParams(location.search).get("utm_source") || "Web", lang }); saved = !!code; } catch { /* sigue por WhatsApp */ }
+    // Un robot llena el campo trampa o envía en menos de 3 segundos: no se guarda nada,
+    // pero se le muestra lo mismo que a una persona para no darle pistas.
+    const bot = !!trap.current?.value || Date.now() - shownAt.current < 3000;
+    if (!bot) try { code = await crearSolicitud({ name: f.name.trim(), phone: f.phone, plan: f.plan, people: n, pet: f.pet === "si", in: f.checkin, out: f.checkout, notes: f.notes, channel: new URLSearchParams(location.search).get("utm_source") || "Web", lang }); saved = !!code; } catch { /* sigue por WhatsApp */ }
     setSending(false);
     const text = buildMessage(code);
-    setResult({ text, saved, failed: !!supabase && !saved });
+    setResult({ text, saved: saved || bot, failed: !!supabase && !saved && !bot });
   };
   const waHref = result ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(result.text)}` : "#";
   const copyMsg = async () => { try { await navigator.clipboard.writeText(result.text); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* */ } };
@@ -143,27 +149,27 @@ export default function Site({ lang = "es" }) {
             <div className="ctas"><a className="btn btn-primary" href="#planes">{t("cta.vive")}</a><a className="btn btn-ghost" href="#casa">{t("cta.casa")}</a></div>
             <div className="facts"><span {...html("hero.f1")} /><span {...html("hero.f2")} /><span {...html("hero.f3")} /><span {...html("hero.f4")} /></div>
           </div>
-          <div className="hero-media"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/video-recorrido-portada.jpg" aria-label="Recorrido por Casa Maracuyá"><source src="/videos/video-recorrido.mp4" type="video/mp4" /></video></div>
+          <div className="hero-media"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/video-recorrido-portada.webp" aria-label="Recorrido por Casa Maracuyá"><source src="/videos/video-recorrido.mp4" type="video/mp4" /></video></div>
         </section>
 
         <section className="barefoot" aria-labelledby="t-barefoot">
           <div className="wrap">
-            <div className="big"><img src="/fotos/pergola-cana.jpg" alt="Pasillo bajo la pérgola de caña de Casa Maracuyá" loading="lazy" width="1200" height="1600" /></div>
+            <div className="big"><img src="/fotos/pergola-cana.webp" alt="Pasillo bajo la pérgola de caña de Casa Maracuyá" loading="lazy" width="1200" height="1600" /></div>
             <div className="text">
               <p className="eyebrow">{t("bf.eyebrow")}</p><h2 id="t-barefoot">{t("bf.title")}</h2>
               <div className="prose"><p>{t("bf.p1")}</p><p>{t("bf.p2")}</p></div>
             </div>
             <div className="details">
-              <figure><img src="/fotos/detalle-cana.jpg" alt="Techo de caña" loading="lazy" width="1280" height="1600" /><figcaption>{t("bf.c1")}</figcaption></figure>
-              <figure><img src="/fotos/detalle-tejido.jpg" alt="Alfombra tejida a mano" loading="lazy" width="1280" height="1600" /><figcaption>{t("bf.c2")}</figcaption></figure>
-              <figure><img src="/fotos/detalle-sofa.jpg" alt="Sofá exterior junto a la terraza de madera" loading="lazy" width="1280" height="1600" /><figcaption>{t("bf.c3")}</figcaption></figure>
+              <figure><img src="/fotos/detalle-cana.webp" alt="Techo de caña" loading="lazy" width="1280" height="1600" /><figcaption>{t("bf.c1")}</figcaption></figure>
+              <figure><img src="/fotos/detalle-tejido.webp" alt="Alfombra tejida a mano" loading="lazy" width="1280" height="1600" /><figcaption>{t("bf.c2")}</figcaption></figure>
+              <figure><img src="/fotos/detalle-sofa.webp" alt="Sofá exterior junto a la terraza de madera" loading="lazy" width="1280" height="1600" /><figcaption>{t("bf.c3")}</figcaption></figure>
             </div>
           </div>
         </section>
 
         <section className="fullbleed on-photo imagine">
-          <img className="day-only" src="/fotos/dia-sientes.jpg" alt="La piscina frente a la casa de techo de teja, con una palmera, a pleno sol" loading="lazy" />
-          <img className="night-only" src="/fotos/vista-al-salir-de-la-ducha.jpg" alt="La casa y la piscina iluminadas de noche" loading="lazy" />
+          <img className="day-only" src="/fotos/dia-sientes.webp" alt="La piscina frente a la casa de techo de teja, con una palmera, a pleno sol" loading="lazy" />
+          <img className="night-only" src="/fotos/vista-al-salir-de-la-ducha.webp" alt="La casa y la piscina iluminadas de noche" loading="lazy" />
           <div className="wrap day-only im-day"><p className="eyebrow">{t("im.eyebrow")}</p><h2>{t("imd.title")}</h2><p className="body">{t("imd.body")}</p></div>
           <div className="wrap night-only"><p className="eyebrow">{t("im.eyebrow")}</p><h2>{t("im.title")}</h2><p className="body">{t("im.body")}</p></div>
         </section>
@@ -173,39 +179,39 @@ export default function Site({ lang = "es" }) {
             <div className="head-row"><div><p className="eyebrow">{t("casa.eyebrow")}</p><h2 id="t-casa">{t("casa.title")}</h2></div><div className="prose"><p>{t("casa.p")}</p></div></div>
             <div className="strip" tabIndex={0} aria-label="Espacios de la casa">
               {[["faro-piscina", "Piscina con el faro de rayas al fondo", 1], ["sala-frente-al-mar", "Sala exterior frente al mar bajo una pérgola de madera", 2], ["comedor-exterior", "Comedor exterior de madera con cocina abierta", 3], ["piscina-casa", "Piscina frente a la casa de techo de teja", 4], ["noche-pergola", "Palmeras de noche sobre la pérgola iluminada", 5]].map(([img, alt, i]) =>
-                <figure key={img}><img src={`/fotos/${img}.jpg`} alt={alt} loading="lazy" /><figcaption><b>{t(`casa.s${i}`)}</b><span>{t(`casa.s${i}d`)}</span></figcaption></figure>)}
+                <figure key={img}><img src={`/fotos/${img}.webp`} alt={alt} loading="lazy" /><figcaption><b>{t(`casa.s${i}`)}</b><span>{t(`casa.s${i}d`)}</span></figcaption></figure>)}
             </div>
             <p className="strip-hint">{t("casa.hint")}</p>
             <div className="rooms">
               <article className="room">
-                <div className="main"><img src="/fotos/hab-maracuya.jpg" alt="Habitación Maracuyá con altillo de madera" loading="lazy" /></div>
+                <div className="main"><img src="/fotos/hab-maracuya.webp" alt="Habitación Maracuyá con altillo de madera" loading="lazy" /></div>
                 <div className="side"><div><h3>{t("room1.title")}</h3><span className="tag">{t("room1.tag")}</span><p>{t("room1.p")}</p></div>
-                  <div className="pair"><img src="/fotos/hab-maracuya-techo.jpg" alt="Techo de vigas de madera con lámparas de papel" loading="lazy" /><img src="/fotos/hab-maracuya-cafe.jpg" alt="Rincón de café con vasos amarillos" loading="lazy" /></div></div>
+                  <div className="pair"><img src="/fotos/hab-maracuya-techo.webp" alt="Techo de vigas de madera con lámparas de papel" loading="lazy" /><img src="/fotos/hab-maracuya-cafe.webp" alt="Rincón de café con vasos amarillos" loading="lazy" /></div></div>
               </article>
               <article className="room flip">
-                <div className="main"><img src="/fotos/hab-del-valle.jpg" alt="Habitación Del Valle con cama de madera" loading="lazy" /></div>
+                <div className="main"><img src="/fotos/hab-del-valle.webp" alt="Habitación Del Valle con cama de madera" loading="lazy" /></div>
                 <div className="side"><div><h3>{t("room2.title")}</h3><span className="tag">{t("room2.tag")}</span><p>{t("room2.p")}</p></div>
-                  <div className="pair"><img src="/fotos/hab-del-valle-detalle.jpg" alt="Detalle de la habitación Del Valle" loading="lazy" /><img src="/fotos/bano-del-valle.jpg" alt="Baño con espejo de madera" loading="lazy" /></div></div>
+                  <div className="pair"><img src="/fotos/hab-del-valle-detalle.webp" alt="Detalle de la habitación Del Valle" loading="lazy" /><img src="/fotos/bano-del-valle.webp" alt="Baño con espejo de madera" loading="lazy" /></div></div>
               </article>
             </div>
             <div className="welcome">
-              <img src="/fotos/toallas-bienvenida.jpg" alt="Toallas de playa a rayas con el logo de Maracuyá" loading="lazy" />
-              <img src="/fotos/cojin-logo.jpg" alt="Cojín con el logo de Maracuyá sobre la cama" loading="lazy" />
+              <img src="/fotos/toallas-bienvenida.webp" alt="Toallas de playa a rayas con el logo de Maracuyá" loading="lazy" />
+              <img src="/fotos/cojin-logo.webp" alt="Cojín con el logo de Maracuyá sobre la cama" loading="lazy" />
               <div className="note"><h3>{t("wel.title")}</h3><p>{t("wel.p")}</p></div>
             </div>
           </div>
         </section>
 
         <section className="fullbleed quiet" aria-label="Ojalá nunca perdamos la capacidad de ver belleza en lo simple">
-          <video autoPlay muted loop playsInline preload="metadata" poster="/videos/viento-belleza-horizontal-portada.jpg"><source src="/videos/viento-belleza-horizontal.mp4" type="video/mp4" /></video>
+          <video autoPlay muted loop playsInline preload="metadata" poster="/videos/viento-belleza-horizontal-portada.webp"><source src="/videos/viento-belleza-horizontal.mp4" type="video/mp4" /></video>
         </section>
 
         <section className="plans" id="planes" aria-labelledby="t-planes">
           <div className="wrap">
             <div className="head-row"><div><p className="eyebrow">{t("plans.eyebrow")}</p><h2 id="t-planes">{t("plans.title")}</h2></div><div className="prose"><p>{t("plans.p")}</p></div></div>
             <div className="plan-grid">
-              <Plan id="esencial" n="p1" img="/fotos/cafe-de-la-tia.jpg" alt="Café de la mañana en la terraza" />
-              <Plan id="plena" n="p2" img="/fotos/postre-maracuya.jpg" alt="Postre de maracuyá en vaso" />
+              <Plan id="esencial" n="p1" img="/fotos/cafe-de-la-tia.webp" alt="Café de la mañana en la terraza" />
+              <Plan id="plena" n="p2" img="/fotos/postre-maracuya.webp" alt="Postre de maracuyá en vaso" />
             </div>
           </div>
         </section>
@@ -213,7 +219,7 @@ export default function Site({ lang = "es" }) {
         <section className="petsec" id="mascotas" aria-labelledby="t-pets">
           <div className="wrap">
             <div className="pet-media">
-              <video id="petVideo" data-once muted playsInline preload="auto" poster="/videos/perro-descanso-portada.jpg" aria-label="El perro de la casa camina por el muelle hacia el faro; luego se ven la piscina y la terraza"><source src="/videos/perro-descanso.mp4" type="video/mp4" /></video>
+              <video id="petVideo" data-once muted playsInline preload="auto" poster="/videos/perro-descanso-portada.webp" aria-label="El perro de la casa camina por el muelle hacia el faro; luego se ven la piscina y la terraza"><source src="/videos/perro-descanso.mp4" type="video/mp4" /></video>
               <span className="pet-badge" aria-hidden="true">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="10" r="2.2" /><circle cx="9.2" cy="5.6" r="2.2" /><circle cx="14.8" cy="5.6" r="2.2" /><circle cx="19" cy="10" r="2.2" /><path d="M12 11c-3 0-6.5 4.6-6.5 7.2 0 1.7 1.3 2.8 3 2.8 1.4 0 2.2-.8 3.5-.8s2.1.8 3.5.8c1.7 0 3-1.1 3-2.8C18.5 15.6 15 11 12 11z" /></svg>
                 <span>Pet<br />friendly</span>
@@ -233,13 +239,13 @@ export default function Site({ lang = "es" }) {
           <div className="wrap">
             <div className="head-row"><div><p className="eyebrow">{t("mesa.eyebrow")}</p><h2 id="t-mesa">{t("mesa.title")}</h2></div><div className="prose"><p>{t("mesa.p")}</p></div></div>
             <div className="table-grid">
-              <div className="vid"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/la-mesa-portada.jpg" aria-label="Jugos, tequeños y la mesa frente al mar"><source src="/videos/la-mesa.mp4" type="video/mp4" /></video></div>
-              <div className="a"><img src="/fotos/tequenos.jpg" alt="Tequeños y croquetas de pescado sobre tabla con el logo" loading="lazy" /></div>
-              <div className="b"><img src="/fotos/jugos-brindis.jpg" alt="Brindis con jugos naturales junto a la piscina" loading="lazy" /></div>
-              <div className="c"><img src="/fotos/tequeno-queso.jpg" alt="Tequeño recién hecho con queso" loading="lazy" /></div>
-              <div className="d"><img src="/fotos/chef-sirviendo.jpg" alt="Nuestra cocinera sirviendo el desayuno" loading="lazy" /></div>
+              <div className="vid"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/la-mesa-portada.webp" aria-label="Jugos, tequeños y la mesa frente al mar"><source src="/videos/la-mesa.mp4" type="video/mp4" /></video></div>
+              <div className="a"><img src="/fotos/tequenos.webp" alt="Tequeños y croquetas de pescado sobre tabla con el logo" loading="lazy" /></div>
+              <div className="b"><img src="/fotos/jugos-brindis.webp" alt="Brindis con jugos naturales junto a la piscina" loading="lazy" /></div>
+              <div className="c"><img src="/fotos/tequeno-queso.webp" alt="Tequeño recién hecho con queso" loading="lazy" /></div>
+              <div className="d"><img src="/fotos/chef-sirviendo.webp" alt="Nuestra cocinera sirviendo el desayuno" loading="lazy" /></div>
             </div>
-            <div className="quote"><img src="/fotos/cafe-mesa.jpg" alt="Taza de café en la terraza" loading="lazy" /><blockquote>{t("mesa.quote")}</blockquote></div>
+            <div className="quote"><img src="/fotos/cafe-mesa.webp" alt="Taza de café en la terraza" loading="lazy" /><blockquote>{t("mesa.quote")}</blockquote></div>
           </div>
         </section>
 
@@ -248,15 +254,15 @@ export default function Site({ lang = "es" }) {
             <div className="head-row"><div><p className="eyebrow">{t("adi.eyebrow")}</p><h2 id="t-adicora">{t("adi.title")}</h2></div><div className="prose"><p>{t("adi.p")}</p></div></div>
             <div className="chapters">
               <article className="chapter">
-                <div className="media"><img src="/fotos/faro-piscina.jpg" alt="El faro de Adícora de rayas rojas y blancas junto a la casa" loading="lazy" style={{ aspectRatio: "4/3", objectPosition: "50% 30%" }} /></div>
+                <div className="media"><img src="/fotos/faro-piscina.webp" alt="El faro de Adícora de rayas rojas y blancas junto a la casa" loading="lazy" style={{ aspectRatio: "4/3", objectPosition: "50% 30%" }} /></div>
                 <div className="copy"><span className="kicker">{t("ch1.k")}</span><h3>{t("ch1.t")}</h3><p>{t("ch1.p")}</p></div>
               </article>
               <article className="chapter flip">
-                <div className="media tall"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/kite-desde-la-casa-portada.jpg" aria-label="Kitesurf visto desde la terraza"><source src="/videos/kite-desde-la-casa.mp4" type="video/mp4" /></video></div>
+                <div className="media tall"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/kite-desde-la-casa-portada.webp" aria-label="Kitesurf visto desde la terraza"><source src="/videos/kite-desde-la-casa.mp4" type="video/mp4" /></video></div>
                 <div className="copy"><span className="kicker">{t("ch2.k")}</span><h3>{t("ch2.t")}</h3><p>{t("ch2.p")}</p></div>
               </article>
               <article className="chapter">
-                <div className="media tall"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/atardecer-luces-portada.jpg" aria-label="Atardecer con luces en el jardín"><source src="/videos/atardecer-luces.mp4" type="video/mp4" /></video></div>
+                <div className="media tall"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/atardecer-luces-portada.webp" aria-label="Atardecer con luces en el jardín"><source src="/videos/atardecer-luces.mp4" type="video/mp4" /></video></div>
                 <div className="copy"><span className="kicker">{t("ch3.k")}</span><h3>{t("ch3.t")}</h3><p>{t("ch3.p")}</p></div>
               </article>
             </div>
@@ -265,7 +271,7 @@ export default function Site({ lang = "es" }) {
 
         <section className="where" id="ubicacion" aria-labelledby="t-where">
           <div className="wrap">
-            <div className="map"><img src="/fotos/mapa-falcon.jpg" alt="Mapa de la península de Paraguaná con Casa Maracuyá marcada junto a Adícora" loading="lazy" width="720" height="900" /></div>
+            <div className="map"><img src="/fotos/mapa-falcon.webp" alt="Mapa de la península de Paraguaná con Casa Maracuyá marcada junto a Adícora" loading="lazy" width="720" height="900" /></div>
             <div>
               <p className="eyebrow">{t("where.eyebrow")}</p><h2 id="t-where">{t("where.title")}</h2>
               <div className="prose"><p>{t("where.p")}</p></div>
@@ -295,7 +301,8 @@ export default function Site({ lang = "es" }) {
               <div className="field"><label htmlFor="checkin">{t("f.in")}</label><input type="date" id="checkin" min={today || undefined} value={f.checkin} onChange={e => set("checkin", e.target.value)} required /></div>
               <div className="field"><label htmlFor="checkout">{t("f.out")}</label><input type="date" id="checkout" min={f.checkin || today || undefined} value={f.checkout} onChange={e => set("checkout", e.target.value)} required /></div>
               <div className="field"><label htmlFor="name">{t("f.name")}</label><input type="text" id="name" autoComplete="name" value={f.name} onChange={e => set("name", e.target.value)} required /></div>
-              <div className="field"><label htmlFor="phone">{t("f.phone")}</label><input type="tel" id="phone" autoComplete="tel" placeholder={t("f.phoneph")} value={f.phone} onChange={e => set("phone", e.target.value)} /></div>
+              <div className="field"><label htmlFor="phone">{t("f.phone")}</label><input type="tel" id="phone" autoComplete="tel" placeholder={t("f.phoneph")} value={f.phone} onChange={e => set("phone", e.target.value)} required /></div>
+              <div className="hp" aria-hidden="true"><label htmlFor="sitio_web">Sitio web</label><input type="text" id="sitio_web" name="sitio_web" ref={trap} tabIndex={-1} autoComplete="off" defaultValue="" /></div>
               <div className="field full"><label htmlFor="notes">{t("f.notes")}</label><textarea id="notes" placeholder={t("f.notesph")} value={f.notes} onChange={e => set("notes", e.target.value)} /></div>
               <div className="summary" aria-live="polite">
                 <span>{t("sum.plan")}: <b>{planName}</b></span><span>{t("sum.group")}: <b>{groupLabel}</b></span>
@@ -319,8 +326,8 @@ export default function Site({ lang = "es" }) {
         </section>
 
         <section className="fullbleed closing on-photo">
-          <img className="day-only cl-day-img" src="/fotos/cierre-dia.jpg" alt="Sala exterior bajo la pérgola de madera, frente al mar, de día" loading="lazy" />
-          <img className="night-only" src="/fotos/cierre-noche.jpg" alt="La piscina y la pérgola de Casa Maracuyá iluminadas de noche" loading="lazy" />
+          <img className="day-only cl-day-img" src="/fotos/cierre-dia.webp" alt="Sala exterior bajo la pérgola de madera, frente al mar, de día" loading="lazy" />
+          <img className="night-only" src="/fotos/cierre-noche.webp" alt="La piscina y la pérgola de Casa Maracuyá iluminadas de noche" loading="lazy" />
           <div className="wrap day-only"><p className="eyebrow">{t("closed.eyebrow")}</p><h2>{t("closed.title")}</h2><p className="body">{t("closed.p")}</p><div className="ctas"><a className="btn btn-primary" href="#reservar">{t("cta.estadia")}</a></div></div>
           <div className="wrap night-only"><p className="eyebrow">{t("close.eyebrow")}</p><h2>{t("close.title")}</h2><p className="body">{t("close.p")}</p><div className="ctas"><a className="btn btn-primary" href="#reservar">{t("cta.estadia")}</a></div></div>
         </section>
