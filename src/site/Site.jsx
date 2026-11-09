@@ -53,6 +53,16 @@ export default function Site() {
     let live = true; nochesOcupadas(f.checkin, f.checkout).then(r => live && setTaken(r.length > 0)); return () => { live = false; };
   }, [f.checkin, f.checkout]);
 
+  // Menú del celular: se cierra al tocar fuera, con Escape o al bajar por la página.
+  useEffect(() => {
+    if (!menu) return;
+    const y0 = window.scrollY;
+    const onKey = e => { if (e.key === "Escape") setMenu(false); };
+    const onScroll = () => { if (Math.abs(window.scrollY - y0) > 40) setMenu(false); };
+    addEventListener("keydown", onKey); addEventListener("scroll", onScroll, { passive: true });
+    return () => { removeEventListener("keydown", onKey); removeEventListener("scroll", onScroll); };
+  }, [menu]);
+
   const set = (k, v) => { setF(x => { const n = { ...x, [k]: v }; if (k === "checkin" && n.checkout && n.checkout <= v) n.checkout = ""; return n; }); setError(""); };
   const pick = plan => { setError(""); setF(x => ({ ...x, plan, guests: group[plan] === "6-12" ? "8" : "4" })); };
   const n = Number(f.guests); const nights = nightsBetween(f.checkin, f.checkout);
@@ -118,6 +128,7 @@ export default function Site() {
           <button className="menu-btn" type="button" aria-expanded={menu} aria-controls="nav" onClick={() => setMenu(m => !m)}><span /><span /><span className="sr-only">{t("nav.menu")}</span></button>
         </div>
       </header>
+      {menu && <div className="nav-backdrop" aria-hidden="true" onClick={() => setMenu(false)} />}
 
       <main>
         <section className="hero" id="inicio">
@@ -291,6 +302,7 @@ export default function Site() {
               <div className="actions">
                 <button className="btn btn-primary" type="submit" disabled={sending}>{sending ? t("f.sending") : t("f.submit")}</button>
                 <p className="fine">{t("f.fine")}</p>
+                <p className="fine">{t("f.privacy")} <a href="/privacidad">{t("foot.privacy")}</a>.</p>
               </div>
               {result && <div className="result">
                 {result.saved && <p className="fine" style={{ fontWeight: 700 }}>{t("f.saved")}</p>}
@@ -315,7 +327,7 @@ export default function Site() {
           <div className="brandcol"><img className="flogo" src="/logo/logo-claro.svg" alt="Maracuyá Relaxing Getaway" width="146" height="58" /><p className="motto">{t("foot.motto")}</p></div>
           <div><h4>{t("foot.explore")}</h4><ul><li><a href="#casa">{t("nav.casa")}</a></li><li><a href="#planes">{t("nav.planes")}</a></li><li><a href="#mesa">{t("nav.mesa")}</a></li><li><a href="#adicora">{t("nav.adicora")}</a></li><li><a href="#reservar">{t("cta.reservar")}</a></li></ul></div>
           <div><h4>{t("foot.contact")}</h4><ul><li><a href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">Instagram</a></li><li><a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></li><li><a href="mailto:reservas@casa-maracuya.com">reservas@casa-maracuya.com</a></li><li>{t("where.v1")}</li></ul></div>
-          <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá · Relaxing Getaway</span><span>{t("foot.made")}</span></div>
+          <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá · Relaxing Getaway</span><span>{t("foot.made")} · <a href="/privacidad">{t("foot.privacy")}</a></span></div>
         </div>
       </footer>
 
