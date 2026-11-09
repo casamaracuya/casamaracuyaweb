@@ -3,5 +3,6 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  build: { target: "es2020", sourcemap: false }
+  // manifest: lo usa scripts/prerender.mjs para saber qué CSS y JS necesita cada página.
+  build: { target: "es2020", sourcemap: false, manifest: true }
 });

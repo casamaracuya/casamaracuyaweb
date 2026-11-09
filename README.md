@@ -130,7 +130,7 @@ El archivo `.env.local` no se sube (está en `.gitignore`). Las llaves van en Cl
 3. En **Settings › Build › Variables and secrets** agrega `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` y `VITE_WHATSAPP`. Van en las variables de *Build*, no en las del Worker, porque Vite las mete en la web al compilar.
 4. Guarda y despliega. Cada `git push` a `main` publica la web sola.
 
-`wrangler.jsonc` publica `dist/` y hace que `/admin/...` funcione al recargar la página. `public/_headers` agrega caché para fotos y videos, y le dice a Google que no indexe el panel. La versión de Node está en `.nvmrc` (22).
+`npm run build` compila la app y luego escribe cada página pública ya armada en HTML (`scripts/prerender.mjs`): `/`, `/en/`, `/privacidad` y `/en/privacy`, cada una con su título, descripción y enlaces entre idiomas, para que Google lea todo sin depender de JavaScript. `wrangler.jsonc` publica `dist/`; lo que no existe recibe `404.html` con código 404. `public/_headers` agrega caché para fotos y videos, y le dice a Google que no indexe el panel. La versión de Node está en `.nvmrc` (22).
 
 ---
 

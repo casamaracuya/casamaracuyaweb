@@ -4,17 +4,21 @@ import { T } from "./i18n.js";
 import { crearSolicitud, nochesOcupadas } from "../lib/api.js";
 import { WHATSAPP, supabase } from "../lib/supabase.js";
 import { MAPS_URL } from "../lib/contacto.js";
+import { useNavigate } from "react-router-dom";
+import { PATHS, saveLang } from "./paths.js";
+import { useMode } from "./shared.jsx";
 
-const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* */ } } };
 const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 10); };
 const parseISO = s => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 const nightsBetween = (a, b) => { const A = parseISO(a), B = parseISO(b); return A && B ? Math.round((B - A) / 864e5) : null; };
 
-export default function Site() {
-  // Idioma: el que la persona eligió con el botón; si no eligió, el de su dispositivo.
-  const [lang, setLangState] = useState(() => store.get("maracuya-idioma") || ((navigator.language || "").toLowerCase().startsWith("en") ? "en" : "es"));
-  const setLang = l => { setLangState(l); store.set("maracuya-idioma", l); };
-  const [mode, setMode] = useState(() => store.get("maracuya-mode") === "dark" ? "dark" : "light");
+export default function Site({ lang = "es" }) {
+  // El idioma viene de la dirección (/ o /en/). El botón cambia de dirección y recuerda la elección.
+  const navigate = useNavigate();
+  const setLang = l => { saveLang(l); if (l !== lang) navigate(PATHS.home[l] + location.hash); };
+  const [mode, setMode] = useMode();
+  const [today, setToday] = useState("");
+  useEffect(() => { setToday(todayISO()); }, []);
   const [menu, setMenu] = useState(false);
   const [group, setGroup] = useState({ esencial: "1-6", plena: "1-6" });
   const [f, setF] = useState({ plan: "esencial", guests: "4", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" });
@@ -23,7 +27,6 @@ export default function Site() {
   const root = useRef();
 
   useEffect(() => { document.documentElement.lang = lang; document.title = d["doc.title"]; }, [lang]);
-  useEffect(() => { if (mode === "dark") document.documentElement.dataset.mode = "dark"; else delete document.documentElement.dataset.mode; store.set("maracuya-mode", mode); }, [mode]);
 
   // Videos y apariciones al bajar
   useEffect(() => {
@@ -289,8 +292,8 @@ export default function Site() {
                 <select id="guests" value={f.guests} onChange={e => set("guests", e.target.value)}>{Array.from({ length: 12 }, (_, i) => i + 1).map(i => <option key={i} value={i}>{i} {i === 1 ? t("person") : t("people")}</option>)}</select></div>
               <div className="field"><label htmlFor="pet">{t("f.pet")}</label>
                 <select id="pet" value={f.pet} onChange={e => set("pet", e.target.value)}><option value="no">{t("f.no")}</option><option value="si">{t("f.yes")}</option></select></div>
-              <div className="field"><label htmlFor="checkin">{t("f.in")}</label><input type="date" id="checkin" min={todayISO()} value={f.checkin} onChange={e => set("checkin", e.target.value)} required /></div>
-              <div className="field"><label htmlFor="checkout">{t("f.out")}</label><input type="date" id="checkout" min={f.checkin || todayISO()} value={f.checkout} onChange={e => set("checkout", e.target.value)} required /></div>
+              <div className="field"><label htmlFor="checkin">{t("f.in")}</label><input type="date" id="checkin" min={today || undefined} value={f.checkin} onChange={e => set("checkin", e.target.value)} required /></div>
+              <div className="field"><label htmlFor="checkout">{t("f.out")}</label><input type="date" id="checkout" min={f.checkin || today || undefined} value={f.checkout} onChange={e => set("checkout", e.target.value)} required /></div>
               <div className="field"><label htmlFor="name">{t("f.name")}</label><input type="text" id="name" autoComplete="name" value={f.name} onChange={e => set("name", e.target.value)} required /></div>
               <div className="field"><label htmlFor="phone">{t("f.phone")}</label><input type="tel" id="phone" autoComplete="tel" placeholder={t("f.phoneph")} value={f.phone} onChange={e => set("phone", e.target.value)} /></div>
               <div className="field full"><label htmlFor="notes">{t("f.notes")}</label><textarea id="notes" placeholder={t("f.notesph")} value={f.notes} onChange={e => set("notes", e.target.value)} /></div>
@@ -303,7 +306,7 @@ export default function Site() {
               <div className="actions">
                 <button className="btn btn-primary" type="submit" disabled={sending}>{sending ? t("f.sending") : t("f.submit")}</button>
                 <p className="fine">{t("f.fine")}</p>
-                <p className="fine">{t("f.privacy")} <a href="/privacidad">{t("foot.privacy")}</a>.</p>
+                <p className="fine">{t("f.privacy")} <a href={PATHS.privacy[lang]}>{t("foot.privacy")}</a>.</p>
               </div>
               {result && <div className="result">
                 {result.saved && <p className="fine" style={{ fontWeight: 700 }}>{t("f.saved")}</p>}
@@ -328,7 +331,7 @@ export default function Site() {
           <div className="brandcol"><img className="flogo" src="/logo/logo-claro.svg" alt="Maracuyá Relaxing Getaway" width="146" height="58" /><p className="motto">{t("foot.motto")}</p></div>
           <div><h4>{t("foot.explore")}</h4><ul><li><a href="#casa">{t("nav.casa")}</a></li><li><a href="#planes">{t("nav.planes")}</a></li><li><a href="#mesa">{t("nav.mesa")}</a></li><li><a href="#adicora">{t("nav.adicora")}</a></li><li><a href="#reservar">{t("cta.reservar")}</a></li></ul></div>
           <div><h4>{t("foot.contact")}</h4><ul><li><a href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">Instagram</a></li><li><a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></li><li><a href="mailto:reservas@casa-maracuya.com">reservas@casa-maracuya.com</a></li><li>{t("where.v1")}</li></ul></div>
-          <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá · Relaxing Getaway</span><span>{t("foot.made")} · <a href="/privacidad">{t("foot.privacy")}</a></span></div>
+          <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá · Relaxing Getaway</span><span>{t("foot.made")} · <a href={PATHS.privacy[lang]}>{t("foot.privacy")}</a></span></div>
         </div>
       </footer>
 

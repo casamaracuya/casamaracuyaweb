@@ -1,10 +1,12 @@
 // Cloudflare Workers: publica la carpeta dist/ como sitio estático.
-// Las rutas que no son archivos (/admin, /admin/reservas…) devuelven index.html para que React las maneje.
+// Las páginas públicas ya vienen escritas en HTML (scripts/prerender.mjs). Lo demás
+// (el panel, /admin/...) y las direcciones que no existen reciben 404.html: la app vacía,
+// con código 404 para que Google no las guarde; React decide qué mostrar.
 {
   "name": "casamaracuyaweb",
   "compatibility_date": "2025-09-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "404-page"
   }
 }

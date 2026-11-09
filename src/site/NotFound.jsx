@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import "./site.css";
 import { usePrefs, PageHeader, PageFooter, WA_URL } from "./shared.jsx";
+import { PATHS } from "./paths.js";
 
-// Página para enlaces que no existen. Cloudflare la sirve con código 200 (es una SPA),
-// así que se marca «noindex» para que Google no la guarde.
+// Página para enlaces que no existen. Cloudflare la entrega con código 404 (dist/404.html)
+// y además se marca «noindex» para que Google no la guarde.
 const TXT = {
   es: { doc: "Página no encontrada · Casa Maracuyá", eyebrow: "Error 404", title: <>Esta página <em>se la llevó el viento.</em></>,
     p: "Puede que el enlace esté mal escrito o que la página ya no exista. La casa sigue donde siempre: frente al faro, esperándote.",
@@ -13,8 +14,8 @@ const TXT = {
     home: "Back to home", book: "See stays", wa: "Message us on WhatsApp", alt: "Casa Maracuyá's pool with the Adícora lighthouse behind it" }
 };
 
-export default function NotFound() {
-  const p = usePrefs();
+export default function NotFound({ lang = "es" }) {
+  const p = usePrefs(lang);
   const d = TXT[p.lang] || TXT.es;
   useEffect(() => { document.title = d.doc; }, [d]);
   useEffect(() => {
@@ -34,13 +35,13 @@ export default function NotFound() {
               <path pathLength="1" d="M30 34 C56 26 80 38 108 30 c12 -3 16 -12 8 -15 c-6 -2 -11 3 -7 7" strokeWidth="1.2" />
             </svg>
             <p className="sub">{d.p}</p>
-            <div className="ctas"><a className="btn btn-primary" href="/">{d.home}</a><a className="btn btn-ghost" href="/#planes">{d.book}</a></div>
+            <div className="ctas"><a className="btn btn-primary" href={PATHS.home[p.lang]}>{d.home}</a><a className="btn btn-ghost" href={PATHS.home[p.lang] + "#planes"}>{d.book}</a></div>
             <p className="fine"><a href={WA_URL} target="_blank" rel="noopener noreferrer">{d.wa}</a></p>
           </div>
           <div className="nf-media"><img src="/fotos/faro-piscina.jpg" alt={d.alt} width="1200" height="900" /></div>
         </section>
       </main>
-      <PageFooter t={p.t} />
+      <PageFooter t={p.t} lang={p.lang} />
     </>
   );
 }

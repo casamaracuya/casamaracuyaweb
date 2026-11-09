@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import "./site.css";
 import { usePrefs, PageHeader, PageFooter, EMAIL, WA_URL } from "./shared.jsx";
+import { PATHS } from "./paths.js";
 
 // Política de privacidad. Es un texto base: la dueña debe revisarlo (idealmente con un abogado)
 // antes de darlo por definitivo. Al cambiar algo, actualiza UPDATED.
@@ -88,8 +89,8 @@ const TXT = {
   }
 };
 
-export default function Privacy() {
-  const p = usePrefs();
+export default function Privacy({ lang = "es" }) {
+  const p = usePrefs(lang, PATHS.privacy);
   const d = TXT[p.lang] || TXT.es;
   useEffect(() => { document.title = d.doc; }, [d]);
   return (
@@ -133,7 +134,7 @@ export default function Privacy() {
           </div>
         </div>
       </main>
-      <PageFooter t={p.t} />
+      <PageFooter t={p.t} lang={p.lang} />
     </>
   );
 }
