@@ -1,0 +1,66 @@
+<!doctype html>
+<!--
+  Casa Maracuyá · Correo de invitación al panel (Supabase Auth › «Invite user»)
+  Dónde se pega: Supabase › Authentication › Emails › Templates › Invite user
+  Asunto:  Te damos la bienvenida a Maracuyá Control
+  Variables de Supabase: {{ .ConfirmationURL }} (enlace para crear la contraseña), {{ .Email }}.
+  Mismos colores y letras que la web y que el correo del comprobante
+  (supabase/functions/enviar-comprobante). Tablas y estilos en línea para Gmail, Outlook y el teléfono.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Te damos la bienvenida a Maracuyá Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#E8DCCD">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#E8DCCD"><tr><td align="center" style="padding:28px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:20px;overflow:hidden">
+
+  <tr><td style="padding:30px 32px 6px;text-align:center">
+    <div style="font:500 28px/1 'Cormorant Garamond',Georgia,'Times New Roman',serif;letter-spacing:.08em;color:#2E2E24">CASA MARACUYÁ</div>
+    <div style="font:700 10px/1 Manrope,'Segoe UI',Arial,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#C4A56C;margin-top:8px">Maracuyá Control · el panel de la casa</div>
+  </td></tr>
+
+  <tr><td style="padding:26px 32px 4px">
+    <p style="margin:0;font:500 30px/1.12 'Cormorant Garamond',Georgia,'Times New Roman',serif;color:#2E2E24">Te damos la <em style="color:#778B63">bienvenida</em> al equipo.</p>
+    <p style="margin:14px 0 0;font:500 15px/1.65 Manrope,'Segoe UI',Arial,sans-serif;color:#3D3D2A">
+      Te invitamos a <b style="color:#2E2E24">Maracuyá Control</b>, el panel donde trabaja toda la casa: reservas, tareas de cada área,
+      fichas de los huéspedes y el estado de las habitaciones. Cada persona ve solo lo que le toca.
+    </p>
+  </td></tr>
+
+  <tr><td style="padding:20px 32px 0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FFF4;border:1px solid #D4C7BE;border-radius:16px"><tr><td style="padding:18px 22px">
+      <p style="margin:0 0 10px;font:700 11px/1 Manrope,'Segoe UI',Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#778B63">Para entrar</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr><td valign="top" style="width:28px;padding:5px 0;font:500 italic 20px/1 'Cormorant Garamond',Georgia,serif;color:#C4A56C">1</td>
+            <td style="padding:5px 0;font:500 14px/1.55 Manrope,'Segoe UI',Arial,sans-serif;color:#3D3D2A">Toca el botón de abajo y crea tu contraseña.</td></tr>
+        <tr><td valign="top" style="width:28px;padding:5px 0;font:500 italic 20px/1 'Cormorant Garamond',Georgia,serif;color:#C4A56C">2</td>
+            <td style="padding:5px 0;font:500 14px/1.55 Manrope,'Segoe UI',Arial,sans-serif;color:#3D3D2A">Desde ahí entras siempre en <b style="color:#2E2E24">casa-maracuya.com/admin</b> con este correo: <b style="color:#2E2E24">{{ .Email }}</b></td></tr>
+        <tr><td valign="top" style="width:28px;padding:5px 0;font:500 italic 20px/1 'Cormorant Garamond',Georgia,serif;color:#C4A56C">3</td>
+            <td style="padding:5px 0;font:500 14px/1.55 Manrope,'Segoe UI',Arial,sans-serif;color:#3D3D2A">Si todavía no ves nada, avísale a Dirección para que te asigne tu rol.</td></tr>
+      </table>
+    </td></tr></table>
+  </td></tr>
+
+  <tr><td align="center" style="padding:26px 32px 8px">
+    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:16px 30px;border-radius:999px;background:#C4A56C;color:#2E2E24;font:700 12px/1 Manrope,'Segoe UI',Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;text-decoration:none">Crear mi contraseña</a>
+  </td></tr>
+
+  <tr><td style="padding:10px 32px 26px;font:500 12px/1.6 Manrope,'Segoe UI',Arial,sans-serif;color:#5f604f">
+    El enlace es personal y vence en poco tiempo. Si ya venció, pídele a Dirección que te envíe una invitación nueva.<br>
+    Si el botón no abre, copia este enlace en tu navegador:<br>
+    <a href="{{ .ConfirmationURL }}" style="color:#3D3D2A;word-break:break-all">{{ .ConfirmationURL }}</a><br><br>
+    ¿No esperabas este correo? Puedes ignorarlo: nadie entra sin crear la contraseña.
+  </td></tr>
+
+  <tr><td style="padding:22px 32px;background:#2E352A;color:#E8DCCD">
+    <p style="margin:0;font:500 italic 20px/1.2 'Cormorant Garamond',Georgia,'Times New Roman',serif">Viento, mar y cero prisa.</p>
+    <p style="margin:8px 0 0;font:500 12px/1.6 Manrope,'Segoe UI',Arial,sans-serif;color:#B8B89C">Casa Maracuyá · Adícora, Falcón, Venezuela · casa-maracuya.com</p>
+  </td></tr>
+
+</table></td></tr></table>
+</body>
+</html>

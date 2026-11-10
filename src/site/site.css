@@ -550,4 +550,29 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
   .receipt-page{padding:0}
   .receipt{box-shadow:none;border-radius:0;padding:0}
   .receipt,.receipt *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  /* Todo el comprobante en una sola hoja carta */
+  body{font-size:10pt;line-height:1.45}
+  .receipt-page .wrap{max-width:none;padding:0}
+  .receipt{gap:5mm}
+  .rc-head{padding-bottom:4mm;gap:6mm}
+  .rc-head img{height:13mm}
+  .rc-place{margin-top:1.5mm;font-size:8pt}
+  .rc-no h1{font-size:20pt;max-width:none}
+  .rc-no p{margin-top:1mm;font-size:8.5pt}
+  .rc-name{font-size:15pt;margin-top:1mm}
+  .rc-sub{font-size:8.5pt}
+  .rc-stay{grid-template-columns:repeat(3,minmax(0,1fr));gap:2.5mm}
+  .rc-stay div{padding:2.5mm 3.5mm;border-radius:3mm}
+  .rc-stay dt{font-size:6.5pt}
+  .rc-stay dd{font-size:11.5pt;margin-top:.8mm}
+  .rc-stay small{font-size:7.5pt}
+  .rc-lines th,.rc-lines td{padding:2.4mm 0}
+  .rc-lines th{font-size:7pt}
+  .rc-lines td{font-size:10pt}
+  .rc-lines tr.strong td{font-size:14pt}
+  .rc-pays{gap:1.5mm}
+  .rc-pays th,.rc-pays td{padding:1.6mm 0;font-size:9pt}
+  .rc-pays th{font-size:6.5pt}
+  .rc-foot{gap:1mm;padding-top:3mm;font-size:8pt}
+  .receipt,.rc-pays,.rc-lines{break-inside:avoid}
 }
