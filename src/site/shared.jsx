@@ -20,7 +20,39 @@ export function useMode() {
     if (mode === "dark") document.documentElement.dataset.mode = "dark"; else delete document.documentElement.dataset.mode;
     try { localStorage.setItem("maracuya-mode", mode); } catch { /* sin almacenamiento */ }
   }, [mode]);
+  useScrollbar();
   return [mode || "light", setMode];
+}
+
+// Barra de desplazamiento: se esconde sola y aparece al bajar por la página o al acercar
+// el ratón al borde derecho. El estilo está en site.css («Barra de desplazamiento»).
+function useScrollbar() {
+  useEffect(() => {
+    const root = document.documentElement;
+    let timer;
+    const hideLater = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (!root.classList.contains("sb-cerca")) root.classList.remove("sb-on"); }, 1100);
+    };
+    const show = () => { root.classList.add("sb-on"); hideLater(); };
+    const onMove = e => {
+      const cerca = innerWidth - e.clientX < 32;
+      if (cerca === root.classList.contains("sb-cerca")) return;
+      root.classList.toggle("sb-cerca", cerca);
+      if (cerca) root.classList.add("sb-on"); else hideLater();
+    };
+    const onLeave = () => { root.classList.remove("sb-cerca"); hideLater(); };
+    addEventListener("scroll", show, { passive: true });
+    addEventListener("mousemove", onMove, { passive: true });
+    document.addEventListener("mouseleave", onLeave);
+    return () => {
+      clearTimeout(timer);
+      removeEventListener("scroll", show);
+      removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+      root.classList.remove("sb-on", "sb-cerca");
+    };
+  }, []);
 }
 
 // alt: la dirección de esta misma página en cada idioma. Sin alt (404), el idioma cambia en el sitio.

@@ -582,7 +582,41 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
    Desde 1600px todo escala con la pantalla: la letra, los espacios y el ancho del
    contenido crecen juntos, como si la web se "agrandara" sola. Los videos no cambian. */
 @media (min-width:1600px){
-  :root{--ancho:min(88vw,2200px)}
+  :root{--ancho:min(96vw,2400px)}
   html{font-size:min(calc(16px + (100vw - 1600px) * .0065),23px)}
   .hero .sub{max-width:min(46ch,100%)}
+  .hero h1 em{display:block}
+}
+
+/* ===== Barra de desplazamiento =====
+   Invisible mientras no se usa. Aparece al bajar por la página o al acercar el ratón al
+   borde derecho (shared.jsx pone la clase .sb-on en <html>). Riel casi transparente,
+   indicador dorado maracuyá y flechas finas. Solo con ratón: en el celular no cambia. */
+@media (pointer:fine){
+  ::-webkit-scrollbar{width:12px;height:12px;background:transparent}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:transparent;border:3px solid transparent;border-radius:99px;background-clip:padding-box;min-height:48px}
+  ::-webkit-scrollbar-button{display:none;width:12px;height:14px;background:transparent no-repeat center/9px 9px}
+  ::-webkit-scrollbar-button:vertical:start:decrement,
+  ::-webkit-scrollbar-button:vertical:end:increment{display:block}
+  ::-webkit-scrollbar-corner{background:transparent}
+  html.sb-on::-webkit-scrollbar-track,
+  html.sb-on body::-webkit-scrollbar-track,
+  html.sb-on::-webkit-scrollbar-button,
+  html.sb-on body::-webkit-scrollbar-button{background-color:rgba(46,53,42,.05)}
+  html.sb-on::-webkit-scrollbar-thumb,
+  html.sb-on body::-webkit-scrollbar-thumb{background-color:rgba(226,184,64,.72)}
+  html.sb-on::-webkit-scrollbar-thumb:hover,
+  html.sb-on body::-webkit-scrollbar-thumb:hover{background-color:rgba(226,184,64,.95);border-width:2px}
+  html.sb-on::-webkit-scrollbar-thumb:active,
+  html.sb-on body::-webkit-scrollbar-thumb:active{background-color:#D9A92A}
+  html.sb-on::-webkit-scrollbar-button:vertical:start:decrement,
+  html.sb-on body::-webkit-scrollbar-button:vertical:start:decrement{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 6.2 5 3.8l2.5 2.4' fill='none' stroke='%23B8952F' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  html.sb-on::-webkit-scrollbar-button:vertical:end:increment,
+  html.sb-on body::-webkit-scrollbar-button:vertical:end:increment{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 3.8 5 6.2l2.5-2.4' fill='none' stroke='%23B8952F' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  :root[data-mode="dark"].sb-on::-webkit-scrollbar-track,:root[data-mode="dark"].sb-on body::-webkit-scrollbar-track{background:rgba(255,255,255,.05)}
+}
+@supports not selector(::-webkit-scrollbar){
+  html{scrollbar-width:thin;scrollbar-color:transparent transparent}
+  html.sb-on{scrollbar-color:rgba(226,184,64,.8) transparent}
 }
