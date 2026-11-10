@@ -23,6 +23,7 @@ html,body{margin:0;padding:0}
   --r-direccion:var(--alga); --r-direccion-ink:var(--arena-seca); --r-admin:var(--arena); --r-admin-ink:var(--alga);
   --r-recepcion:var(--laguna); --r-recepcion-ink:var(--verde-tabla); --r-cocina:var(--sol); --r-cocina-ink:var(--alga);
   --r-limpieza:var(--merey); --r-limpieza-ink:var(--alga); --r-mantenimiento:var(--aguacate); --r-mantenimiento-ink:var(--alga);
+  --r-operaciones:var(--melon); --r-operaciones-ink:var(--raspao); --r-servicio:var(--laguna); --r-servicio-ink:var(--verde-tabla); --r-calidad:var(--arena-seca); --r-calidad-ink:var(--alga);
   --s-nueva-bg:var(--laguna); --s-nueva-ink:var(--verde-tabla); --s-nueva:var(--laguna);
   --s-conversacion-bg:var(--merey); --s-conversacion-ink:var(--alga); --s-conversacion:var(--merey);
   --s-pre-bg:var(--sol); --s-pre-ink:var(--alga); --s-pre:var(--sol);

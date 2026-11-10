@@ -8,7 +8,7 @@ import { Tour, tourSeen } from "./Tour.jsx";
 import { Ctx, Icon } from "./ui.jsx";
 import { VIEW_CMP } from "./views.jsx";
 import { SHEETS } from "./sheets.jsx";
-import { ROLES, VIEWS, TODAY } from "./util.js";
+import { ROLES, VIEWS, TODAY, can } from "./util.js";
 
 const ROLE_KEY = "mc-role";
 const getSaved = () => { try { return localStorage.getItem(ROLE_KEY); } catch { return null; } };
@@ -109,10 +109,10 @@ function Shell({ S, role, setRole, me, reload }) {
   }, [bound, reload, toast]);
 
   const badge = v => v === "reservas" ? S.reservas.filter(r => r.state === "nueva").length : v === "tareas" ? S.tasks.filter(t => t.area === role && !t.done && t.due <= TODAY).length : 0;
-  const canMove = ["direccion","recepcion","admin"].includes(role), canMoney = !!R.money;
+  const canMove = can(role, "vender"), canReceive = can(role, "recibir"), canMoney = !!R.money;
   // «Nueva reserva» tiene su propio botón fijo, así que el + de la barra queda para lo demás.
-  const plus = { tareas: "newTask", casa: ["mantenimiento","direccion"].includes(role) ? "block" : "" }[view];
-  const ctx = { S, role, R, me, setRole, act, toast, openSheet, closeSheet, bandEl, canMove, canMoney,
+  const plus = { tareas: "newTask", casa: can(role, "afuera") ? "block" : "" }[view];
+  const ctx = { S, role, R, me, setRole, act, toast, openSheet, closeSheet, bandEl, canMove, canReceive, canMoney,
     openTour: () => { closeSheet(); setTour(true); },
     signOut: async () => { await api.signOut(); location.href = "/admin"; } };
   const V = VIEW_CMP[view];

@@ -20,42 +20,83 @@ export const left = t => { const m = Math.max(0, Math.round((t - Date.now()) / 6
 export const initials = s => (s || "").replace(/^(Familia|Grupo)\s+/i, "").split(/\s+/).filter(w => /^[A-ZÁÉÍÓÚÑ]/.test(w)).slice(0, 2).map(w => w[0]).join("") || "·";
 export const nights = r => diff(r.in, r.out);
 
-// Roles (del documento «Sistema Casa Maracuyá»)
+// Roles: uno por puesto del organigrama («Desglose de funciones por miembro del equipo»).
+// jefe: a quién reporta. money: ve dinero. phone: ve teléfonos y documentos de los huéspedes.
 export const ROLES = {
-  direccion: { name: "Dirección", sub: "La dueña", icon: "crown", money: true, phone: true,
+  direccion: { name: "Dirección", sub: "CEO & Founder · reservas y estrategia", icon: "crown", money: true, phone: true, jefe: null,
     tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["tareas","casa","pagos","tarifas","reportes","equipo"],
-    ve: "Todo: ocupación, ingresos, reservas, huéspedes y el trabajo de cada área.",
-    hace: ["Tarifas por temporada y promociones","Descuentos especiales","Quién entra al panel y con qué permisos"],
-    recibe: "Un resumen semanal: ocupación, ingresos y lo que necesita su atención." },
-  admin: { name: "Administración", sub: "Pagos y compras", icon: "money", money: true, phone: true,
+    ve: "Todo: reservas, ingresos, fichas de los huéspedes, el trabajo de cada área y el semáforo de calidad de cada estadía.",
+    hace: ["Vende las fechas y cobra el 100% para confirmar","Ficha de registro de cada grupo: el titular la firma en papel y se pasa al panel","Tarifas, promociones y quién entra al panel","Revisa los informes de Calidad y los balances de Administración"],
+    recibe: "Las solicitudes nuevas, cada semáforo en rojo y el informe de Calidad al final de cada estadía." },
+  admin: { name: "Administración y Finanzas", sub: "Faby · contabilidad, nómina y caja chica", icon: "money", money: true, phone: true, jefe: "direccion",
     tabs: ["hoy","reservas","pagos","calendario","reportes"], more: [],
     ve: "Reservas, pagos recibidos e ingresos del mes y del año.",
-    hace: ["Registra anticipos y pagos finales","Revisa los ingresos de cada mes","Ve qué temporadas y días se llenan"],
-    recibe: "Aviso cuando una pre-reserva está por vencer sin pago." },
-  recepcion: { name: "Recepción", sub: "La anfitriona del huésped", icon: "bell", phone: true,
+    hace: ["Registra los pagos de cada reserva","Revisa los ingresos de cada mes y temporada","Contabilidad, nómina, caja chica e inventarios (en su sistema contable)"],
+    recibe: "Aviso cuando una reserva apartada está por vencer sin pago." },
+  operaciones: { name: "Operaciones", sub: "Robert · técnica, logística y check-in", icon: "bell", phone: true, jefe: "direccion",
+    tabs: ["hoy","tareas","casa","calendario","mas"], more: ["huespedes","cocina"],
+    ve: "Las tareas de todo el equipo, la casa, quién llega y cuándo, y la lista de compras.",
+    hace: ["Planta eléctrica, agua dulce, calentadores y anti-salitre","Recibe y despide al grupo: recorrido, normas y llaves","Compras y logística de insumos","Supervisa a Gabriel, Victoria, Odely y Zai"],
+    recibe: "«Planta, agua y calentadores listos» el día antes y «Recibir al grupo» el día de llegada." },
+  mantenimiento: { name: "Áreas verdes y equipos", sub: "Gabriel · jardín, piscina y caminería", icon: "wrench", jefe: "operaciones",
+    tabs: ["hoy","tareas","casa","calendario"], more: [],
+    ve: "Sus tareas, los daños reportados y el estado de piscina, jardín y muelle.",
+    hace: ["Riego y cuidado diario de jardines","Piscina: aspirado, cepillado y químicos","Lavado anti-salitre de la caminería y apoyo con bombas y planta"],
+    recibe: "«Piscina, jardín y caminería» el día antes de cada llegada y cada daño con foto." },
+  cocina: { name: "Cocina", sub: "Victoria · chef ejecutiva", icon: "chef", jefe: "operaciones",
+    tabs: ["hoy","cocina","huespedes","tareas"], more: [],
+    ve: "Quién llega, cuántos son, su plan, alergias, dietas, bebidas y gustos.",
+    hace: ["Planifica el menú con el grupo 24 horas antes","Lista de compras para Robert (PEPS en cavas y despensa)","Adapta las recetas a las alergias de la ficha"],
+    recibe: "La ficha de cocina 7 días antes de cada llegada." },
+  servicio: { name: "Servicio y protocolo", sub: "Odely · bienvenida, mesa y sala", icon: "sparkle", jefe: "operaciones",
+    tabs: ["hoy","huespedes","casa","tareas"], more: [],
+    ve: "Quién llega, qué celebran, sus gustos y alergias, y el estado de las habitaciones.",
+    hace: ["Bienvenida oficial con bebidas de cortesía","Montaje de mesa y servicio de comidas","Tendido de camas junto a Zai y Yanely"],
+    recibe: "«Bienvenida y montaje de mesa» el día de llegada, con la hora estimada." },
+  calidad: { name: "Calidad y auditoría", sub: "Yanely · semáforo, Yeti y apoyo en sala", icon: "check", jefe: "direccion",
+    tabs: ["hoy","tareas","casa","huespedes","mas"], more: ["calendario","cocina"],
+    ve: "Las tareas de todo el equipo, la casa, los huéspedes y el semáforo de cada estadía.",
+    hace: ["Revisa cada área antes de que entre el huésped","Entrega y cuenta los vasos Yeti","Semáforo de calidad e informe a la CEO al final de cada estadía","Apoya a Odely en sala y en el tendido de camas"],
+    recibe: "La revisión de detalle el día antes de cada llegada y el semáforo al cerrar cada estadía." },
+  limpieza: { name: "Housekeeping y patrimonio", sub: "Zai · limpieza profunda y lencería", icon: "broom", jefe: "operaciones",
+    tabs: ["hoy","casa","tareas"], more: [],
+    ve: "El estado de cada habitación: sucia, en limpieza, lista y revisada.",
+    hace: ["Limpieza y desinfección profunda con presencia invisible","Lidera el tendido de camas con Odely y Yanely","Cuida las antigüedades y controla la lencería"],
+    recibe: "«Preparar habitaciones y tendido de camas» el día antes de cada llegada." },
+  // Rol anterior: sus funciones pasaron a Dirección, Operaciones y Servicio. Solo sigue
+  // funcionando para quien ya lo tenía; ya no se ofrece al asignar roles.
+  recepcion: { name: "Recepción (anterior)", sub: "Ya no se usa: asigna Dirección, Operaciones o Servicio", icon: "bell", phone: true, legacy: true, jefe: "direccion",
     tabs: ["hoy","reservas","calendario","huespedes","tareas"], more: [],
     ve: "Solicitudes, calendario, fichas de huéspedes y llegadas y salidas de la semana.",
-    hace: ["Responde WhatsApp y mueve los estados de la reserva","Recibe y despide a los huéspedes","Convierte pedidos en tareas para el área correcta"],
-    recibe: "Aviso de cada solicitud nueva y la ficha de llegada el día antes." },
-  cocina: { name: "Cocina", sub: "El chef y su equipo", icon: "chef",
-    tabs: ["hoy","cocina","huespedes","tareas"], more: [],
-    ve: "Quién llega, cuántos son, su plan (Esencial o Plena), alergias, dietas y gustos.",
-    hace: ["Arma el menú de cada estadía","Lista de compras e insumos","Anota lo que más le gustó a cada huésped"],
-    recibe: "La ficha de cocina 7 días antes y el recordatorio 48 horas antes." },
-  limpieza: { name: "Limpieza", sub: "Habitaciones y lencería", icon: "broom",
-    tabs: ["hoy","casa","tareas"], more: [],
-    ve: "Estado de cada habitación: sucia, en limpieza, lista, revisada.",
-    hace: ["Prepara la casa con lista de verificación","Pone los detalles de bienvenida (toallas, bolsos)","Lavandería y reposición"],
-    recibe: "Las tareas de preparación según la hora de llegada." },
-  mantenimiento: { name: "Mantenimiento", sub: "Piscina, jardín y casa", icon: "wrench",
-    tabs: ["hoy","tareas","casa","calendario"], more: [],
-    ve: "Tareas pendientes, reportes de daños y el calendario de mantenimiento.",
-    hace: ["Piscina y jardín antes de cada llegada","Arregla lo que se reporta","Bloquea fechas si algo no está listo"],
-    recibe: "Cada daño reportado como tarea con foto." }
+    hace: ["Rol anterior al organigrama actual"],
+    recibe: "Aviso de cada solicitud nueva." }
 };
+// Quién puede hacer qué en el panel (la base de datos lo vuelve a comprobar).
+export const CAN = {
+  vender: ["direccion","recepcion","admin"],                           // mover reservas y crear nuevas
+  recibir: ["direccion","recepcion","admin","operaciones"],            // «Ya llegaron» y «Cerrar la cuenta»
+  supervisar: ["direccion","recepcion","operaciones","calidad"],       // ven y marcan tareas de todas las áreas
+  habitaciones: ["direccion","limpieza","servicio","calidad","operaciones"],
+  afuera: ["direccion","mantenimiento","operaciones"],                 // piscina, jardín, muelle y fechas bloqueadas
+  datosHuesped: ["direccion","recepcion"],
+  notasHuesped: ["direccion","recepcion","cocina","servicio","calidad"],
+  compras: ["direccion","cocina","operaciones"],
+  semaforo: ["direccion","calidad"]
+};
+export const can = (role, what) => CAN[what].includes(role);
+// Semáforo de calidad: los cuatro ámbitos que revisa Calidad en cada estadía.
+export const AMBITOS = {
+  tecnica: { name: "Operatividad técnica", who: "Robert y Gabriel", check: "Planta eléctrica lista, bombas con presión, calentadores, piscina cristalina y caminería sin salitre." },
+  cocina: { name: "Experiencia culinaria", who: "Victoria", check: "Menú planificado 24 horas antes, ingredientes frescos, tiempos de salida e higiene en cocina." },
+  servicio: { name: "Servicio y protocolo", who: "Odely y Yanely", check: "Bienvenida cálida, mesa impecable, atención continua en piscina y vasos Yeti completos." },
+  limpieza: { name: "Housekeeping y limpieza", who: "Zai, Odely y Yanely", check: "Habitaciones y baños impecables, camas armadas en equipo, cuidado de las antigüedades y presencia invisible." }
+};
+export const NIVEL = { verde: "Excelente", amarillo: "Detalle a corregir", rojo: "Fallo en estándar" };
 export const VIEWS = { hoy:"Hoy", reservas:"Reservas", calendario:"Calendario", huespedes:"Huéspedes", tareas:"Tareas", cocina:"Cocina", casa:"La casa", pagos:"Ingresos", tarifas:"Tarifas", reportes:"Reportes", equipo:"Equipo", mas:"Más" };
-export const AREAS = { recepcion:"Recepción", cocina:"Cocina", limpieza:"Limpieza", mantenimiento:"Mantenimiento", admin:"Administración" };
-export const AREA_C = { recepcion:"var(--melon)", cocina:"var(--arena)", limpieza:"var(--aguacate)", mantenimiento:"var(--verde-tabla)", admin:"var(--nocturna)" };
+// Áreas de las tareas, en el orden del organigrama. «recepcion» solo para tareas viejas.
+export const AREAS = { direccion:"Dirección", admin:"Administración", operaciones:"Operaciones", calidad:"Calidad", mantenimiento:"Áreas verdes", cocina:"Cocina", servicio:"Servicio", limpieza:"Housekeeping", recepcion:"Recepción" };
+export const AREAS_NUEVAS = Object.keys(AREAS).filter(k => k !== "recepcion");
+export const AREA_C = { direccion:"var(--alga)", admin:"var(--nocturna)", operaciones:"var(--melon)", calidad:"var(--arena)", mantenimiento:"var(--verde-tabla)", cocina:"var(--sol)", servicio:"var(--laguna)", limpieza:"var(--aguacate)", recepcion:"var(--merey)" };
 export const FLOW = ["nueva","conversacion","pre","confirmada","casa","finalizada"];
 export const STATE = { nueva:"Nueva", conversacion:"En conversación", pre:"Pre-reservada", confirmada:"Confirmada", casa:"En casa", finalizada:"Finalizada", rechazada:"Rechazada", vencida:"Vencida", cancelada:"Cancelada" };
 export const STATE_SHORT = { nueva:"Nueva", conversacion:"Conversa", pre:"Apartada", confirmada:"Confirmada", casa:"En casa", finalizada:"Salió" };

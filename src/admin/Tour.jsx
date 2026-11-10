@@ -2,7 +2,7 @@
 // desde Perfil › «Cómo funciona el panel». Se adapta al rol con el que se está trabajando.
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./ui.jsx";
-import { ROLES, VIEWS, STATE } from "./util.js";
+import { ROLES, VIEWS, STATE, can } from "./util.js";
 
 const KEY = "mc-tour-2:";
 export const tourSeen = uid => { try { return !!localStorage.getItem(KEY + uid); } catch { return true; } };
@@ -33,25 +33,34 @@ const STEPS = [
 ];
 
 const WORK = {
+  operaciones: [["Se confirma una reserva", "«Planta eléctrica, agua y calentadores» te llega el día antes y «Recibir al grupo» el día de llegada, con la hora."],
+                ["Cuando llegan y se van", "En la reserva tocas «Ya llegaron» y, al despedirlos, «Cerrar la cuenta»."],
+                ["Siempre", "Ves las tareas de todo el equipo y la lista de compras de Cocina."]],
+  servicio: [["El día de llegada", "«Bienvenida, bebidas de cortesía y montaje de mesa» te llega con la hora estimada."],
+             ["Antes de cada llegada", "En La casa ayudas con el tendido de camas junto a Zai y Yanely."],
+             ["Mientras están en casa", "Anota en su ficha lo que les gustó: bebidas, horarios, detalles."]],
+  calidad: [["Antes de cada llegada", "«Revisión de detalle» te llega el día antes: revisa cada área antes de que entre el huésped."],
+            ["Llegada y salida", "Entregas los vasos Yeti al llegar y los cuentas antes de la salida."],
+            ["Al cerrar la estadía", "Llenas el semáforo de calidad en la reserva. La CEO lo ve al momento; un rojo le llega como alerta."]],
   cocina: [["Se confirma una reserva", "«Menú para…» te llega 7 días antes de la llegada, con plan, alergias y gustos."],
            ["Mientras están en casa", "Anota en su ficha lo que más le gustó. La próxima vez ya lo sabremos."],
            ["Siempre", "La lista de compras está en Cocina: marca lo que ya compraste."]],
-  limpieza: [["Se confirma una reserva", "«Preparar la casa y la bienvenida» te llega el día antes de la llegada."],
+  limpieza: [["Se confirma una reserva", "«Preparar habitaciones y tendido de camas» te llega el día antes. Las camas se arman con Odely y Yanely."],
              ["Mientras limpias", "En La casa, toca una habitación para pasarla de sucia a en limpieza, lista y revisada."],
              ["Cuando se van", "Te llega «Limpieza de salida y lavandería» ese mismo día."]],
-  mantenimiento: [["Se confirma una reserva", "«Piscina y jardín listos» te llega el día antes de la llegada."],
+  mantenimiento: [["Se confirma una reserva", "«Piscina, jardín y caminería sin salitre» te llega el día antes de la llegada."],
                   ["Si algo se daña", "Repórtalo en Tareas con el botón + y una foto. Queda guardado para todos."],
                   ["Si algo no está listo", "En La casa puedes bloquear fechas para que nadie reserve esas noches."]]
 };
 
 function slides(role, R, name) {
   const first = (name || "").split(" ")[0];
-  const moves = ["direccion", "recepcion", "admin"].includes(role);
+  const moves = can(role, "vender");
   const list = [
     { id: "hola", title: <>Hola{first ? <>, <em>{first}</em></> : null}.</>,
       text: <>Esto es <b>Maracuyá Control</b>, donde trabaja toda la casa. Entras como <b>{R.name}</b>: {R.ve.charAt(0).toLowerCase() + R.ve.slice(1)}</>,
       art: <div className="tv-hola"><span className="tv-badge" style={{ background: `var(--r-${role})`, color: `var(--r-${role}-ink)` }}><Icon n={R.icon} c="xl" w="d" /></span>
-        {Object.keys(ROLES).filter(k => k !== role).slice(0, 5).map((k, i) => <span key={k} className={`tv-orb o${i}`} style={{ background: `var(--r-${k})`, color: `var(--r-${k}-ink)` }}><Icon n={ROLES[k].icon} c="s" w="d" /></span>)}</div> },
+        {Object.keys(ROLES).filter(k => k !== role && !ROLES[k].legacy).slice(0, 5).map((k, i) => <span key={k} className={`tv-orb o${i}`} style={{ background: `var(--r-${k})`, color: `var(--r-${k}-ink)` }}><Icon n={ROLES[k].icon} c="s" w="d" /></span>)}</div> },
     { id: "menu", title: <>Tu <em>menú</em>.</>, text: "Abajo en el teléfono, o a la izquierda en la computadora. Solo ves lo que te toca.",
       art: <ul className="tv-menu">{[...R.tabs.filter(t => t !== "mas"), ...R.more].slice(0, 6).map(t =>
         <li key={t}><span className="ic"><Icon n={t} c="s" w="f" /></span><span><b>{VIEWS[t]}</b><small>{VIEW_DESC[t]}</small></span></li>)}</ul> }

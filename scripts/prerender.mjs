@@ -13,6 +13,7 @@ const { render } = await import(pathToFileURL(path.resolve("dist-ssr", "entry-se
 
 const HOME = { es: "/", en: "/en/" };
 const PRIVACY = { es: "/privacidad", en: "/en/privacy" };
+const NORMAS = { es: "/normas", en: "/en/house-rules" };
 
 const PAGES = [
   { url: "/", out: "index.html", src: "src/site/Site.jsx", lang: "es", alt: HOME,
@@ -26,7 +27,13 @@ const PAGES = [
     desc: "Qué datos guarda Casa Maracuyá cuando pides una estadía, para qué los usa y cómo pedir que los corrijamos o borremos." },
   { url: "/en/privacy", out: "en/privacy.html", src: "src/site/Privacy.jsx", lang: "en", alt: PRIVACY,
     title: "Privacy policy · Casa Maracuyá",
-    desc: "What data Casa Maracuyá keeps when you request a stay, what it's used for and how to ask us to correct or delete it." }
+    desc: "What data Casa Maracuyá keeps when you request a stay, what it's used for and how to ask us to correct or delete it." },
+  { url: "/normas", out: "normas.html", src: "src/site/Normas.jsx", lang: "es", alt: NORMAS,
+    title: "Normas de la casa · Casa Maracuyá",
+    desc: "Horarios de check-in y check-out, reservaciones, capacidad, mascotas, piscina y convivencia en Casa Maracuyá, Adícora." },
+  { url: "/en/house-rules", out: "en/house-rules.html", src: "src/site/Normas.jsx", lang: "en", alt: NORMAS,
+    title: "House rules · Casa Maracuyá",
+    desc: "Check-in and check-out times, bookings, capacity, pets, pool and house rules at Casa Maracuyá, Adícora." }
 ];
 
 // CSS y JS que necesita cada página, para que llegue con estilos desde el primer instante.
@@ -82,6 +89,8 @@ fs.writeFileSync(path.join(DIST, "404.html"), shell);
 // El panel: /admin y cada sección (/admin/reservas…) responden 200 con la app vacía.
 const VIEWS = fs.readFileSync("src/admin/util.js", "utf8").match(/export const VIEWS = \{([^}]*)\}/)[1].match(/\b[a-z]+(?=:)/g);
 fs.writeFileSync(path.join(DIST, "admin.html"), shell);
+// El comprobante (/comprobante?c=…): app vacía con código 200, para que el enlace del correo y de WhatsApp abra bien.
+fs.writeFileSync(path.join(DIST, "comprobante.html"), shell);
 fs.mkdirSync(path.join(DIST, "admin"), { recursive: true });
 VIEWS.forEach(v => fs.writeFileSync(path.join(DIST, "admin", `${v}.html`), shell));
 console.log(`✓ 404.html y el panel: admin.html + ${VIEWS.length} secciones (app vacía)`);

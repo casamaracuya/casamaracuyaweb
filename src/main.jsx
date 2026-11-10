@@ -26,6 +26,8 @@ const C = {
   Site: lazy(() => import("./site/Site.jsx")),
   AdminApp: lazy(() => import("./admin/AdminApp.jsx")),
   Privacy: lazy(() => import("./site/Privacy.jsx")),
+  Normas: lazy(() => import("./site/Normas.jsx")),
+  Comprobante: lazy(() => import("./site/Comprobante.jsx")),
   NotFound: lazy(() => import("./site/NotFound.jsx"))
 };
 

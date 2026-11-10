@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks } from "./ui.jsx";
-import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREA_C, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
+import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
 const L = ({ to, children, className }) => <Link className={className} to={`/admin/${to}`}>{children}</Link>;
@@ -25,6 +25,9 @@ export function Hoy() {
   if (role === "admin") { const yr = S.payments.filter(p => p.date.startsWith(String(T0.getFullYear()))).reduce((s, p) => s + p.amount, 0); stats = <>{st(money(m.cash), "cobrado este mes", "pagos")}{st(money(yr), `ingresos de ${T0.getFullYear()}`, "reportes")}{st(pres.length, "esperan anticipo", "pagos")}</>; }
   if (role === "cocina") { const al = act.filter(r => HOLDS.includes(r.state) && r.out >= TODAY).flatMap(r => G(r.g).allergies || []); stats = <>{st(enCasa ? enCasa.people : 0, "personas en casa", "cocina")}{st(al.length, al.length === 1 ? "alergia a cuidar" : "alergias a cuidar", "cocina")}{st(S.shopping.filter(s => !s.done).length, "cosas por comprar", "cocina")}</>; }
   if (role === "limpieza") { const ready = S.rooms.filter(x => ["lista","revisada"].includes(x.state)).length; stats = <>{st(<>{ready}<small>/{S.rooms.length}</small></>, "espacios listos", "casa")}{st(S.rooms.length - ready, "por limpiar", "casa")}{st(pend, "tareas de hoy", "tareas")}</>; }
+  if (role === "operaciones") { const hoyLlegan = act.filter(r => ["confirmada","casa"].includes(r.state) && r.in === TODAY).length; stats = <>{st(hoyLlegan, hoyLlegan === 1 ? "grupo llega hoy" : "grupos llegan hoy", "calendario")}{st(S.tasks.filter(t => !t.done && t.due <= TODAY).length, "tareas del equipo hoy", "tareas")}{st(S.shopping.filter(s => !s.done).length, "cosas por comprar", "cocina")}</>; }
+  if (role === "servicio") { const ready = S.rooms.filter(x => ["lista","revisada"].includes(x.state)).length; stats = <>{st(enCasa ? enCasa.people : 0, "personas en casa", "huespedes")}{st(<>{ready}<small>/{S.rooms.length}</small></>, "espacios listos", "casa")}{st(pend, "tareas de hoy", "tareas")}</>; }
+  if (role === "calidad") { const rojos = (S.audits || []).filter(a => a.level === "rojo").length; stats = <>{st(S.rooms.filter(x => x.state === "revisada").length, "espacios revisados", "casa")}{st(S.tasks.filter(t => !t.done && t.due < TODAY).length, "tareas atrasadas", "tareas")}{st(rojos, rojos === 1 ? "semáforo en rojo" : "semáforos en rojo", "tareas")}</>; }
   if (role === "mantenimiento") stats = <>{st(S.tasks.filter(t => t.area === "mantenimiento" && !t.done).length, "tareas abiertas", "tareas")}{st(S.tasks.filter(t => t.area === "mantenimiento" && t.damage && !t.done).length, "daños reportados", "tareas")}{st(S.blocks.length, "fechas bloqueadas", "casa")}</>;
 
   let feature = null;
@@ -46,11 +49,15 @@ export function Hoy() {
   const res = id => () => openSheet("res", { id });
   if (see(["direccion","recepcion"])) nuevas.forEach(r => al.push({ i: "chat", c: "var(--s-nueva-bg)", k: "var(--s-nueva-ink)", t: `${G(r.g).name} pidió fechas`, s: `${frange(r.in, r.out)} · ${r.people} pers. · ${ago(r.created)}`, on: res(r.id) }));
   if (see(["direccion","recepcion","admin"])) pres.forEach(r => al.push({ i: "clock", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `${G(r.g).name}: el anticipo vence en ${left(r.hold)}`, s: "Si no paga, las fechas se liberan solas", on: res(r.id) }));
-  if (see(["direccion","recepcion","admin","limpieza"])) act.filter(r => r.state === "casa" && r.out === TODAY).forEach(r => al.push({ i: "out", c: "var(--s-casa-bg)", k: "var(--s-casa-ink)", t: `Hoy sale ${G(r.g).name}`, s: "Cerrar la cuenta y revisar la casa", on: res(r.id) }));
+  // Semáforo en rojo: aviso inmediato a la CEO (y a Calidad, que lo registró).
+  if (see(["direccion","calidad"])) (S.audits || []).filter(a => a.level === "rojo").forEach(a => { const r = act.find(x => x.id === a.res); if (r && r.out >= addDays(TODAY, -7))
+    al.push({ i: "alert", c: "var(--danger-bg)", k: "var(--danger)", t: `Semáforo en rojo: ${AMBITOS[a.area]?.name || a.area}`, s: `${G(r.g).name}${a.note ? ` · ${a.note}` : ""}`, on: res(r.id) }); });
+  if (see(["operaciones","servicio","calidad"])) act.filter(r => ["confirmada","casa"].includes(r.state) && r.in === TODAY).forEach(r => al.push({ i: "door", c: "var(--s-confirmada-bg)", k: "var(--s-confirmada-ink)", t: `Hoy llega ${G(r.g).name}`, s: `${r.people} personas${r.ficha?.arrival ? ` · llegada estimada ${r.ficha.arrival}` : " · check-in desde las 3:00 PM"}`, on: res(r.id) }));
+  if (see(["direccion","recepcion","admin","limpieza","operaciones","calidad"])) act.filter(r => r.state === "casa" && r.out === TODAY).forEach(r => al.push({ i: "out", c: "var(--s-casa-bg)", k: "var(--s-casa-ink)", t: `Hoy sale ${G(r.g).name}`, s: "Cerrar la cuenta y revisar la casa", on: res(r.id) }));
   if (see(["cocina"])) act.filter(r => ["confirmada","pre"].includes(r.state) && diff(TODAY, r.in) >= 0 && diff(TODAY, r.in) <= 7).forEach(r => { const g = G(r.g); al.push({ i: "chef", c: "var(--r-cocina)", k: "var(--r-cocina-ink)", t: `Ficha de cocina: ${g.name}`, s: `Llegan ${rel(r.in)} · ${r.people} pers.${(g.allergies || [])[0] ? " · Alergia: " + g.allergies[0] : ""}`, to: "cocina" }); });
-  if (see(["mantenimiento","direccion"])) S.tasks.filter(t => t.damage && !t.done).forEach(t => al.push({ i: "camera", c: "var(--danger-bg)", k: "var(--danger)", t: `Daño: ${t.title}`, s: `Reportado ${rel(t.due)}`, to: "tareas" }));
+  if (see(["mantenimiento","direccion","operaciones"])) S.tasks.filter(t => t.damage && !t.done).forEach(t => al.push({ i: "camera", c: "var(--danger-bg)", k: "var(--danger)", t: `Daño: ${t.title}`, s: `Reportado ${rel(t.due)}`, to: "tareas" }));
   // Cumpleaños: de los huéspedes y sus acompañantes en los próximos 14 días, o durante una estadía próxima.
-  if (see(["direccion","recepcion","cocina"])) {
+  if (see(["direccion","recepcion","cocina","servicio","calidad"])) {
     const seen = new Set();
     act.filter(r => HOLDS.includes(r.state) && r.out >= TODAY).forEach(r => { const g = G(r.g); const bd = birthdaysIn(g, r.in, r.out);
       if (bd.length) { seen.add(r.g); al.push({ i: "gift", c: "var(--sol)", k: "var(--alga)", t: `Cumpleaños durante la estadía: ${bd.join(", ")}`, s: `${g.name} · ${frange(r.in, r.out)}`, on: res(r.id) }); } });
@@ -134,7 +141,7 @@ export function Huespedes() {
         <span className="tags" style={{ justifyContent: "flex-end" }}>{g.birthday && nextBirthday(g.birthday).days <= 14 && <span className="tag gold"><Icon n="gift" c="xs" w="f" />Cumple</span>}{g.visits > 1 && <span className="tag good"><Icon n="heart" c="xs" w="f" />Vuelve</span>}{(g.allergies || []).length > 0 && <span className="tag warn">Alergia</span>}</span>
         <Icon n="chev" c="s chev" />
       </button>) : <Empty icon="search">{q.trim() ? "No encontramos a nadie con ese nombre." : "Todavía no hay huéspedes. Aparecen solos con cada solicitud."}</Empty>}</div></section>
-    {["direccion","recepcion"].includes(role) && <div className="btns"><button className="btn plain press" onClick={() => openSheet("newGuest")}><Icon n="plus" />Agregar un huésped</button></div>}
+    {can(role, "datosHuesped") && <div className="btns"><button className="btn plain press" onClick={() => openSheet("newGuest")}><Icon n="plus" />Agregar un huésped</button></div>}
   </>;
 }
 
@@ -145,7 +152,7 @@ export function Tareas() {
   const whoF = { todas: () => true, mias: t => me && t.who === me.id, libres: t => !t.who && !t.done };
   const all = myTasks(S, role).filter(whoF[who]);
   const segF = { hoy: t => !t.done && t.due <= TODAY, proximas: t => !t.done && t.due > TODAY, hechas: t => t.done };
-  const showArea = role === "direccion" || role === "recepcion";
+  const showArea = can(role, "supervisar");
   let list = all.filter(segF[seg]); if (showArea && area !== "todas") list = list.filter(t => t.area === area);
   list.sort((a, b) => a.due < b.due ? -1 : 1);
   const n = k => all.filter(segF[k]).length;
@@ -153,7 +160,7 @@ export function Tareas() {
     <Head title="Tareas" lead={role === "mantenimiento" ? "Lo que hay que arreglar o preparar. Toca una tarea para tomarla o ponerla en proceso." : "Toca una tarea para tomarla o ponerla en proceso, y el círculo cuando termines. Todo el equipo ve el avance."} />
     <Seg value={seg} onChange={setSeg} label="Cuándo" options={[["hoy", `Hoy · ${n("hoy")}`], ["proximas", `Próximas · ${n("proximas")}`], ["hechas", `Hechas · ${n("hechas")}`]]} />
     <div style={{ marginTop: 12 }}><Chips value={who} onChange={setWho} label="De quién" options={[["todas", "Todas"], ["mias", "Mías"], ["libres", "Sin asignar"]]} /></div>
-    {showArea && <div style={{ marginTop: 8 }}><Chips value={area} onChange={setArea} label="Área" options={[["todas", "Todas"], ...Object.entries(AREAS).map(([k, l]) => [k, l, <i className="dot" style={{ background: AREA_C[k] }} />])]} /></div>}
+    {showArea && <div style={{ marginTop: 8 }}><Chips value={area} onChange={setArea} label="Área" options={[["todas", "Todas"], ...AREAS_NUEVAS.map(k => [k, AREAS[k], <i className="dot" style={{ background: AREA_C[k] }} />])]} /></div>}
     <section className="sec"><div className="group">{list.length ? list.map(t => <TaskRow key={t.id} t={t} />) : <Empty icon="check">{seg === "hechas" ? "Todavía no hay tareas hechas." : "Nada pendiente aquí."}</Empty>}</div></section>
     <div className="btns"><button className="btn plain press" onClick={() => openSheet("newTask")}><Icon n={role === "mantenimiento" ? "camera" : "plus"} />{role === "mantenimiento" ? "Reportar un daño" : "Nueva tarea"}</button></div>
   </>;
@@ -166,7 +173,7 @@ function MenuBox({ id, initial }) {
   return <textarea id={`menu-${id}`} value={v} placeholder="Escribe aquí el menú. Se guarda solo." onChange={e => { setV(e.target.value); clearTimeout(t.current); const val = e.target.value; t.current = setTimeout(() => act(a => a.setMenu(id, val), null, { quiet: true }), 700); }} />;
 }
 export function Cocina() {
-  const { S, act } = useMC();
+  const { S, act, role } = useMC(); const buy = can(role, "compras");
   const [seg, setSeg] = useState("fichas"); const [nuevo, setNuevo] = useState("");
   const segs = <Seg value={seg} onChange={setSeg} label="Vista" options={[["fichas", "Fichas de cocina"], ["compras", "Compras"]]} />;
   if (seg === "compras") {
@@ -174,8 +181,8 @@ export function Cocina() {
     return <>
       <Head title="Cocina" lead="Lo que hay que comprar para las próximas estadías." />{segs}
       <section className="sec"><div className="group">
-        {items.map(s => <div key={s.id} className={`row task ${s.done ? "done" : ""}`}><button className="check press" role="checkbox" aria-checked={s.done} aria-label={`Comprado: ${s.text}`} onClick={() => act(a => a.setCompra(s.id, !s.done))} style={{ "--c": AREA_C.cocina }}><Icon n="check" w="b" /></button><span className="grow"><span className="t">{s.text}</span></span></div>)}
-        <form className="row" style={{ "--inset": "62px" }} onSubmit={e => { e.preventDefault(); if (nuevo.trim()) { act(a => a.addCompra(nuevo.trim())); setNuevo(""); } }}><span style={{ width: 30, display: "grid", placeItems: "center", color: "var(--accent-ink)" }}><Icon n="plus" c="s" /></span><label htmlFor="shopIn" className="sr">Agregar a la lista</label><input id="shopIn" className="field-in" style={{ textAlign: "left", color: "var(--ink)" }} placeholder="Agregar a la lista" value={nuevo} onChange={e => setNuevo(e.target.value)} autoComplete="off" /></form>
+        {items.map(s => <div key={s.id} className={`row task ${s.done ? "done" : ""}`}><button className="check press" role="checkbox" aria-checked={s.done} aria-label={`Comprado: ${s.text}`} disabled={!buy} onClick={() => act(a => a.setCompra(s.id, !s.done))} style={{ "--c": AREA_C.cocina }}><Icon n="check" w="b" /></button><span className="grow"><span className="t">{s.text}</span></span></div>)}
+        {buy && <form className="row" style={{ "--inset": "62px" }} onSubmit={e => { e.preventDefault(); if (nuevo.trim()) { act(a => a.addCompra(nuevo.trim())); setNuevo(""); } }}><span style={{ width: 30, display: "grid", placeItems: "center", color: "var(--accent-ink)" }}><Icon n="plus" c="s" /></span><label htmlFor="shopIn" className="sr">Agregar a la lista</label><input id="shopIn" className="field-in" style={{ textAlign: "left", color: "var(--ink)" }} placeholder="Agregar a la lista" value={nuevo} onChange={e => setNuevo(e.target.value)} autoComplete="off" /></form>}
       </div></section>
     </>;
   }
@@ -199,7 +206,7 @@ export function Cocina() {
 /* ---------- LA CASA ---------- */
 export function Casa() {
   const { S, role, act, openSheet } = useMC();
-  const canRoom = ["limpieza","direccion"].includes(role); const canOut = ["mantenimiento","direccion"].includes(role);
+  const canRoom = can(role, "habitaciones"); const canOut = can(role, "afuera");
   return <>
     <Head title="La casa" lead={canRoom ? "Toca una habitación para pasarla al siguiente estado: sucia, en limpieza, lista y revisada." : "Así está cada espacio de la casa ahora mismo."} />
     <div className="rooms">{S.rooms.map(x => { const k = ROOM_ST.indexOf(x.state); return (
@@ -354,8 +361,8 @@ export function Reportes() {
 export function Equipo() {
   const { S, openSheet } = useMC();
   return <>
-    <Head title="Equipo" lead="Cada persona entra con su propio usuario y ve solo lo que le toca. Una persona puede tener dos roles." />
-    <section className="sec"><div className="sec-h">Roles</div><div className="group inset-av">{Object.entries(ROLES).map(([k, r]) => { const people = S.team.filter(p => (p.roles || []).includes(k)); return (
+    <Head title="Equipo" lead="Un rol por puesto del organigrama. Cada persona entra con su propio usuario y ve solo lo que le toca. Una persona puede tener dos roles." />
+    <section className="sec"><div className="sec-h">Roles</div><div className="group inset-av">{Object.entries(ROLES).filter(([k, r]) => !r.legacy || S.team.some(p => (p.roles || []).includes(k))).map(([k, r]) => { const people = S.team.filter(p => (p.roles || []).includes(k)); return (
       <button key={k} className="row press" onClick={() => openSheet("role", { id: k })}><span className="avatar m" style={{ background: `var(--r-${k})`, color: `var(--r-${k}-ink)` }}><Icon n={r.icon} c="s" w="d" /></span><span className="grow"><span className="t">{r.name}</span><span className="st">{people.length ? people.map(p => p.name).join(", ") : "Sin personas todavía"}</span></span><Icon n="chev" c="s chev" /></button>); })}</div></section>
     <section className="sec"><div className="sec-h">Personas</div><div className="group inset-av">{S.team.length ? S.team.map(p =>
       <button key={p.id} className="row press" onClick={() => openSheet("person", { id: p.id })}><span className="avatar m" style={{ background: "var(--accent-bg)", color: "var(--accent-ink)" }}>{initials(p.name)}</span><span className="grow"><span className="t">{p.name}</span><span className="st">{(p.roles || []).length ? p.roles.map(x => ROLES[x]?.name).join(" y ") : "Sin rol: no puede entrar todavía"}</span></span><Icon n="chev" c="s chev" /></button>) : <Empty icon="huespedes">Todavía no hay personas.</Empty>}</div>

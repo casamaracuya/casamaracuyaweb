@@ -338,7 +338,7 @@ export default function Site({ lang = "es" }) {
           <div className="brandcol"><img className="flogo" src="/logo/logo-claro.svg" alt="Maracuyá Relaxing Getaway" width="146" height="58" /><p className="motto">{t("foot.motto")}</p></div>
           <div><h4>{t("foot.explore")}</h4><ul><li><a href="#casa">{t("nav.casa")}</a></li><li><a href="#planes">{t("nav.planes")}</a></li><li><a href="#mesa">{t("nav.mesa")}</a></li><li><a href="#adicora">{t("nav.adicora")}</a></li><li><a href="#reservar">{t("cta.reservar")}</a></li></ul></div>
           <div><h4>{t("foot.contact")}</h4><ul><li><a href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">Instagram</a></li><li><a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></li><li><a href="mailto:reservas@casa-maracuya.com">reservas@casa-maracuya.com</a></li><li>{t("where.v1")}</li></ul></div>
-          <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá · Relaxing Getaway</span><span>{t("foot.made")} · <a href={PATHS.privacy[lang]}>{t("foot.privacy")}</a></span></div>
+          <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá · Relaxing Getaway</span><span>{t("foot.made")} · <a href={PATHS.normas[lang]}>{t("foot.rules")}</a> · <a href={PATHS.privacy[lang]}>{t("foot.privacy")}</a></span></div>
         </div>
       </footer>
 

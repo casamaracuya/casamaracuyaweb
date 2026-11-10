@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { PH } from "./icons-data.js";
-import { STATE, PLAN, AREAS, AREA_C, TODAY, MES, parse, nights, ago, rel } from "./util.js";
+import { STATE, PLAN, AREAS, AREA_C, TODAY, MES, parse, nights, ago, rel, can } from "./util.js";
 
 export const Ctx = createContext(null);
 export const useMC = () => useContext(Ctx);
@@ -52,7 +52,7 @@ export function TaskRow({ t }) {
   const [pop, setPop] = useState(false);
   const r = t.res && S.reservas.find(x => x.id === t.res);
   const late = !t.done && t.due < TODAY;
-  const showArea = role === "direccion" || role === "recepcion";
+  const showArea = can(role, "supervisar");
   const who = t.who && S.team.find(p => p.id === t.who);
   const mine = me && t.who === me.id;
   const canTake = !t.done && !t.who && role === t.area;
@@ -90,4 +90,5 @@ export function Chips({ value, onChange, options, label, form }) {
 export function Switch({ id, checked, onChange, label, disabled }) {
   return <label className="switch"><input type="checkbox" id={id} checked={!!checked} disabled={disabled} aria-label={label} onChange={e => onChange(e.target.checked)} /><span /></label>;
 }
-export const myTasks = (S, role) => (role === "direccion" || role === "recepcion") ? S.tasks : S.tasks.filter(t => t.area === role);
+// Dirección, Operaciones y Calidad supervisan: ven las tareas de todas las áreas.
+export const myTasks = (S, role) => can(role, "supervisar") ? S.tasks : S.tasks.filter(t => t.area === role);

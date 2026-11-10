@@ -25,6 +25,7 @@ const TXT = {
       ["datos", "Qué datos guardamos", [
         { list: [
           <><b>Cuando pides una estadía:</b> tu nombre, tu WhatsApp, el plan, las fechas, cuántas personas vienen, si traes mascota y los comentarios que escribas.</>,
+          <><b>En la ficha de registro de tu estadía:</b> la cédula o el pasaporte del titular, el nombre, el documento y la edad (si es menor) de cada persona que se queda en la casa, la hora de llegada y las placas y modelos de los vehículos. La casa los necesita para saber quién pernocta y por seguridad.</>,
           <><b>Durante tu estadía, si nos lo cuentas:</b> alergias, gustos de comida, cumpleaños u otras fechas especiales y los nombres de quienes te acompañan.</>,
           <><b>Sobre los pagos:</b> el monto, la fecha y el medio de pago. Nunca guardamos números de tarjeta ni claves bancarias.</>] }]],
       ["uso", "Para qué los usamos", [
@@ -64,6 +65,7 @@ const TXT = {
       ["datos", "What we keep", [
         { list: [
           <><b>When you request a stay:</b> your name, your WhatsApp number, the stay, your dates, how many guests are coming, whether you bring a pet and any comments you write.</>,
+          <><b>In the registration form for your stay:</b> the main guest's ID or passport, the name, document and age (if under 18) of each person staying at the house, your arrival time and the plates and models of your vehicles. The house needs them to know who is staying overnight and for safety.</>,
           <><b>During your stay, if you tell us:</b> allergies, food preferences, birthdays or other special dates and the names of those travelling with you.</>,
           <><b>About payments:</b> the amount, the date and the payment method. We never keep card numbers or bank passwords.</>] }]],
       ["uso", "What we use it for", [

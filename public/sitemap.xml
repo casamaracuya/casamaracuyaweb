@@ -15,6 +15,18 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://casa-maracuya.com/normas</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casa-maracuya.com/normas"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casa-maracuya.com/en/house-rules"/>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://casa-maracuya.com/en/house-rules</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casa-maracuya.com/normas"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casa-maracuya.com/en/house-rules"/>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://casa-maracuya.com/privacidad</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casa-maracuya.com/privacidad"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casa-maracuya.com/en/privacy"/>
