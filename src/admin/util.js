@@ -24,7 +24,7 @@ export const nights = r => diff(r.in, r.out);
 // jefe: a quién reporta. money: ve dinero. phone: ve teléfonos y documentos de los huéspedes.
 export const ROLES = {
   direccion: { name: "Dirección", sub: "CEO & Founder · reservas y estrategia", icon: "crown", money: true, phone: true, jefe: null,
-    tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["tareas","casa","pagos","tarifas","reportes","equipo"],
+    tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["tareas","casa","cocina","pagos","tarifas","reportes","equipo"],
     ve: "Todo: reservas, ingresos, fichas de los huéspedes, el trabajo de cada área y el semáforo de calidad de cada estadía.",
     hace: ["Vende las fechas y cobra el 100% para confirmar","Ficha de registro de cada grupo: el titular la firma en papel y se pasa al panel","Tarifas, promociones y quién entra al panel","Revisa los informes de Calidad y los balances de Administración"],
     recibe: "Las solicitudes nuevas, cada semáforo en rojo y el informe de Calidad al final de cada estadía." },
@@ -151,6 +151,12 @@ export function season(s) {
   if (dow === 5 || dow === 6 || H.fixed.has(s) || H.fixed.has(addDays(s, 1))) return "media";
   return "baja";
 }
+// Tarifas: cada plan tiene precio de semana y de fin de semana (por noche, casa completa).
+// Fin de semana: noches de viernes, sábado y domingo, y feriados con sus vísperas.
+// En temporada alta no hay precio de semana: todas las noches van a precio de fin de semana.
+export const RATE_KIND = { semana: "Días de semana", finde: "Fines de semana" };
+export const rateKind = s => { const k = season(s); return k === "alta" || k === "media" || parse(s).getDay() === 0 ? "finde" : "semana"; };
+export const rateKey = (plan, s) => `${plan}-${rateKind(s)}`;
 // Cada noche de una reserva: [fecha, reserva].
 export const nightsList = r => { const out = []; for (let s = r.in; s < r.out; s = addDays(s, 1)) out.push(s); return out; };
 export const SOLD = ["confirmada", "casa", "finalizada"];

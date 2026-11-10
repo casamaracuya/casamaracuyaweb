@@ -42,8 +42,10 @@ const real = {
     ]);
     // Semáforo de calidad: la base de datos solo se lo entrega a Dirección y Calidad.
     const au = await q("auditorias");
+    // Cartas de menú (0013). Si la tabla aún no existe, el editor funciona pero no guarda.
+    const ca = await q("cartas").order("creado");
     const S = {
-      guests: {}, reservas: [], tasks: [], rooms: [], outside: [], blocks: [], payments: [], shopping: [], menus: {}, rates: {}, promos: [], team: [], audits: []
+      guests: {}, reservas: [], tasks: [], rooms: [], outside: [], blocks: [], payments: [], shopping: [], menus: {}, rates: {}, promos: [], team: [], audits: [], cartas: null
     };
     (hu.data || []).forEach(g => S.guests[g.id] = { name: g.nombre, city: g.ciudad, phone: g.telefono, telNorm: g.tel_norm || "", email: g.email || "", doc: g.documento || "", birthday: g.cumple,
       allergies: g.alergias || [], likes: g.gustos || [], dislikes: g.no_le_gusta || [], notes: g.notas || "", pet: g.mascota, visits: g.visitas, kite: g.kite, celebra: g.celebra, companions: [] });
@@ -72,6 +74,7 @@ const real = {
     S.promos = (pr.data || []).map(p => ({ id: p.id, name: p.nombre, on: p.activa }));
     S.team = (pe.data || []).map(p => ({ id: p.id, name: p.nombre, roles: p.roles || [], phone: p.telefono || "" }));
     S.audits = (au.data || []).map(a => ({ id: a.id, res: a.reserva_id, area: a.ambito, level: a.nivel, note: a.nota, at: ms(a.creado) }));
+    if (!ca.error) S.cartas = (ca.data || []).map(c => ({ id: c.id, name: c.nombre, data: c.datos || {}, updated: ms(c.actualizado) }));
     return S;
   },
   subscribe(onChange) {
@@ -123,6 +126,12 @@ const real = {
   async asignarTarea(_S, id, who) { ok(await supabase.from("tareas").update({ asignada_a: who === "me" ? await myId() : who }).eq("id", id)); },
   async setCompra(_S, id, done) { ok(await supabase.from("compras").update({ hecho: done }).eq("id", id)); },
   async addCompra(_S, text) { ok(await supabase.from("compras").insert({ texto: text })); },
+  async guardarCarta(_S, c) {
+    const row = { nombre: c.name || "Menú", datos: c.data || {} };
+    if (c.id) { ok(await supabase.from("cartas").update(row).eq("id", c.id)); return c.id; }
+    return ok(await supabase.from("cartas").insert(row).select("id").single()).id;
+  },
+  async borrarCarta(_S, id) { ok(await supabase.from("cartas").delete().eq("id", id)); },
   async setMenu(_S, resId, text) { ok(await supabase.from("menus").upsert({ reserva_id: resId, texto: text })); },
   async nextRoom(_S, id) { ok(await supabase.rpc("siguiente_estado_habitacion", { p_id: id })); },
   async setExterior(_S, id, v) { ok(await supabase.from("exteriores").update({ al_dia: v }).eq("id", id)); },

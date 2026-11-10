@@ -235,6 +235,7 @@ export function ResSheet({ id }) {
     <Err msg={err} />
     {actions && <div className="btns">{actions}</div>}
     <section className="sec"><div className="sec-h">Estadía</div><div className="group kv"><KV k="Llegada" v={fdate(r.in)} /><KV k="Salida" v={fdate(r.out)} /><KV k="Noches" v={nights(r)} /><KV k="Plan" v={PLAN[r.plan].name} /><KV k="Personas" v={r.people} /><KV k="Mascota" v={r.pet ? (g.pet || "Sí") : "No"} /></div></section>
+    {canMove && ["nueva","conversacion","pre"].includes(r.state) && <section className="sec"><div className="group"><button className="row press" onClick={() => openSheet("budget", { res: r.id })}><span className="ico"><Icon n="receipt" c="s" /></span><span className="grow"><span className="t">Hacer presupuesto</span><span className="st">Con su nombre, fechas, personas y plan ya puestos</span></span><Icon n="chev" c="s chev" /></button></div></section>}
     <ReceiptSec r={r} g={g} />
     <FichaSec r={r} g={g} />
     <AuditSec r={r} />
@@ -648,7 +649,9 @@ export function ProfileSheet() {
   </>;
 }
 
+import { BudgetSheet } from "./docs.jsx";
 export const SHEETS = {
+  budget: ["Presupuesto", BudgetSheet],
   res: ["Reserva", ResSheet], pay: ["Registrar pago", PaySheet], guest: ["Huésped", GuestSheet], newRes: ["Nueva reserva", NewResSheet],
   newTask: ["Nueva tarea", NewTaskSheet], block: ["Bloquear fechas", BlockSheet], task: ["Tarea", TaskSheet], newGuest: ["Nuevo huésped", NewGuestSheet],
   role: ["Rol", RoleSheet], person: ["Persona", PersonSheet], profile: ["Perfil", ProfileSheet], ficha: ["Ficha de registro", FichaSheet], total: ["Total y concepto", TotalSheet]

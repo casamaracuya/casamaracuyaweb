@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { MenuStudio } from "./docs.jsx";
 import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks } from "./ui.jsx";
-import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
+import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
 const L = ({ to, children, className }) => <Link className={className} to={`/admin/${to}`}>{children}</Link>;
@@ -175,7 +176,8 @@ function MenuBox({ id, initial }) {
 export function Cocina() {
   const { S, act, role } = useMC(); const buy = can(role, "compras");
   const [seg, setSeg] = useState("fichas"); const [nuevo, setNuevo] = useState("");
-  const segs = <Seg value={seg} onChange={setSeg} label="Vista" options={[["fichas", "Fichas de cocina"], ["compras", "Compras"]]} />;
+  const segs = <Seg value={seg} onChange={setSeg} label="Vista" options={[["fichas", "Fichas"], ["menu", "Menú"], ["compras", "Compras"]]} />;
+  if (seg === "menu") return <><Head title="Cocina" lead="El menú impreso de la mesa. Edítalo, guarda varios para irlos rotando y descárgalo en PDF." />{segs}<section className="sec"><MenuStudio /></section></>;
   if (seg === "compras") {
     const items = S.shopping.slice().sort((a, b) => a.done - b.done);
     return <>
@@ -231,12 +233,11 @@ function RateInput({ k }) {
 export function Tarifas() {
   const { S, act } = useMC();
   const [promo, setPromo] = useState("");
-  const seasons = Object.keys(SEASONS).map(k => [k, SEASONS[k], SEASON_DESC[k]]);
   return <>
-    <Head title="Tarifas" lead="Precio por noche de la casa completa. Se guarda solo al escribir." />
-    <div className="note"><Icon n="alert" c="s" w="f" /><span>Las tarifas reales están <b>por definir con la dueña</b>.</span></div>
-    {seasons.map(([k, t, s]) => <section key={k} className="sec"><div className="sec-h">{t}</div><div className="group form">{["esencial","plena"].flatMap(p => ["1-6","6-12"].map(gr =>
-      <div key={`${p}${gr}`} className="row"><label className="k" htmlFor={`rate-${k}-${p}-${gr}`}>{PLAN[p].short} · {gr.replace("-", " a ")} pers.</label><span style={{ color: "var(--ink3)" }}>$</span><RateInput k={`${k}-${p}-${gr}`} /></div>))}</div><p className="sec-f">{s}</p></section>)}
+    <Head title="Tarifas" lead="Precio por noche de la casa completa. Se guarda solo al escribir y el presupuesto lo usa." />
+    {["esencial","plena"].map(p => <section key={p} className="sec"><div className="sec-h">{PLAN[p].name}</div><div className="group form">{Object.entries(RATE_KIND).map(([k, l]) =>
+      <div key={k} className="row"><label className="k" htmlFor={`rate-${p}-${k}`}>{l}</label><span style={{ color: "var(--ink3)" }}>$</span><RateInput k={`${p}-${k}`} /></div>)}</div></section>)}
+    <p className="sec-f" style={{ marginTop: 10 }}>Fin de semana: noches de viernes, sábado y domingo, feriados y sus vísperas. En temporada alta ({SEASON_DESC.alta.toLowerCase().replace(/\.$/, "")}) no aplica el precio de semana: todas las noches van a precio de fin de semana.</p>
     <section className="sec"><div className="sec-h">Promociones</div><div className="group">{S.promos.length ? S.promos.map(p =>
       <div key={p.id} className="row"><span className="grow"><span className="t" style={{ whiteSpace: "normal", fontWeight: 600 }}>{p.name}</span></span><Switch id={`promo-${p.id}`} checked={p.on} label={p.name} onChange={v => act(a => a.setPromo(p.id, v), v ? "Promoción activa en la web" : "Promoción pausada")} /></div>) : <Empty icon="tarifas">Todavía no hay promociones.</Empty>}
       <form className="row" onSubmit={e => { e.preventDefault(); if (promo.trim()) { act(a => a.addPromo(promo.trim()), "Promoción creada. Actívala cuando quieras"); setPromo(""); } }}><span className="ico"><Icon n="plus" c="s" /></span><label htmlFor="promoIn" className="sr">Nueva promoción</label><input id="promoIn" className="field-in" style={{ textAlign: "left", color: "var(--ink)" }} placeholder="Nueva promoción. Ej.: entre semana, 10% menos" value={promo} onChange={e => setPromo(e.target.value)} autoComplete="off" /></form></div>
