@@ -4,6 +4,7 @@ html,body{margin:0;padding:0}
 /* Layout: lujo descalzo. Fondo claro de casa de playa, fotos grandes y asimétricas,
    una sola forma propia (el canto rodado del símbolo) como ventana del video. */
 :root{
+  --ancho:1240px; /* ancho del contenido; crece en pantallas anchas (ver final del archivo) */
   /* Paleta oficial Maracuyá */
   --arena-adicora:#C4A56C; --arena-seca:#E8DCCD; --alga:#2E2E24; --aguacate:#B8B89C;
   --sol:#F9EC9E; --laguna:#E6EFEE; --raspao:#F9FFF4; --merey:#D4C7BE; --melon:#778B63;
@@ -63,7 +64,7 @@ img{height:auto}
 a{color:inherit}
 h1,h2,h3{font-family:var(--f-display);font-weight:500;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
 p{margin:0}
-.wrap{max-width:1240px;margin-inline:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
+.wrap{max-width:var(--ancho);margin-inline:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
 .eyebrow{font-size:var(--step--1);text-transform:uppercase;letter-spacing:.2em;font-weight:700;color:var(--eyebrow)}
 .lede{font-size:var(--step-1);font-family:var(--f-display);font-style:italic;color:var(--ink-soft);line-height:1.35}
 .prose{max-width:58ch;color:var(--ink-soft)}
@@ -130,7 +131,7 @@ section{padding-block:clamp(64px,9vw,128px)}
 
 /* Portada */
 .hero{--hero-bg:var(--s-hero);position:relative;padding:0;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);align-items:stretch;min-height:clamp(520px,calc(100svh - 73px),820px);background-color:var(--hero-bg)}
-.hero .copy{position:relative;z-index:2;align-self:center;padding-block:clamp(28px,5vh,72px);padding-right:clamp(16px,3vw,40px);padding-left:max(var(--gutter-l),calc((100vw - 1240px) / 2 + 16px))}
+.hero .copy{position:relative;z-index:2;align-self:center;padding-block:clamp(28px,5vh,72px);padding-right:clamp(16px,3vw,40px);padding-left:max(var(--gutter-l),calc((100vw - var(--ancho)) / 2 + 16px))}
 .hero-media{position:relative;overflow:hidden;background:var(--band);margin-left:clamp(-240px,-16vw,-80px)}
 .hero-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 58%;animation:settle 1.6s cubic-bezier(.2,.7,.2,1) both}
 /* Funde el video con el fondo para que texto y video sean una sola escena */
@@ -419,7 +420,7 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
 .legal-hero{background-color:var(--s-hero);padding-block:clamp(56px,9vw,112px) clamp(44px,6vw,72px);border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
 .legal-hero{position:relative;overflow:hidden}
 .legal-hero .wrap{display:grid;gap:18px;justify-items:start}
-.legal-seal{position:absolute;top:50%;right:max(var(--gutter-r),calc((100vw - 1240px) / 2 + 48px));width:clamp(190px,19vw,250px);height:auto;margin-top:calc(clamp(190px,19vw,250px) / -2);opacity:.85;animation:seal-spin 80s linear infinite}
+.legal-seal{position:absolute;top:50%;right:max(var(--gutter-r),calc((100vw - var(--ancho)) / 2 + 48px));width:clamp(190px,19vw,250px);height:auto;margin-top:calc(clamp(190px,19vw,250px) / -2);opacity:.85;animation:seal-spin 80s linear infinite}
 @keyframes seal-spin{to{rotate:360deg}}
 :root[data-mode="dark"] .legal-seal{filter:invert(.9) sepia(.35);opacity:.22}
 @media (max-width:900px){.legal-seal{display:none}}
@@ -466,7 +467,7 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
 
 /* Página 404 */
 .nf-hero{padding:0;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);min-height:clamp(520px,calc(100svh - 73px),780px);background-color:var(--s-hero)}
-.nf-copy{align-self:center;display:grid;justify-items:start;gap:16px;padding-block:clamp(48px,8vh,96px);padding-right:clamp(16px,4vw,56px);padding-left:max(var(--gutter-l),calc((100vw - 1240px) / 2 + 16px))}
+.nf-copy{align-self:center;display:grid;justify-items:start;gap:16px;padding-block:clamp(48px,8vh,96px);padding-right:clamp(16px,4vw,56px);padding-left:max(var(--gutter-l),calc((100vw - var(--ancho)) / 2 + 16px))}
 .nf-copy h1{font-size:var(--step-4);max-width:13ch}
 .nf-copy h1 em{font-style:italic;color:var(--hero-em)}
 .nf-copy .sub{max-width:44ch;color:var(--ink-soft);font-size:1.06rem}
@@ -575,4 +576,13 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
   .rc-pays th{font-size:6.5pt}
   .rc-foot{gap:1mm;padding-top:3mm;font-size:8pt}
   .receipt,.rc-pays,.rc-lines{break-inside:avoid}
+}
+
+/* ===== Pantallas anchas o navegador con zoom reducido =====
+   Desde 1600px todo escala con la pantalla: la letra, los espacios y el ancho del
+   contenido crecen juntos, como si la web se "agrandara" sola. Los videos no cambian. */
+@media (min-width:1600px){
+  :root{--ancho:min(88vw,2200px)}
+  html{font-size:min(calc(16px + (100vw - 1600px) * .0065),23px)}
+  .hero .sub{max-width:min(46ch,100%)}
 }
