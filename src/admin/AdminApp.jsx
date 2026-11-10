@@ -125,6 +125,7 @@ function Shell({ S, role, setRole, me, reload }) {
         <aside className="side" aria-label="Menú">
           <div className="side-brand"><img src="/logo/logo-claro.svg" alt="Maracuyá" width="110" height="44" /><span>Control</span></div>
           {canMove && <button className="side-new press" onClick={() => openSheet("newRes")}><Icon n="plus" c="s" w="b" />Nueva reserva</button>}
+          {canMove && <button className="side-doc press" onClick={() => openSheet("budget")}><Icon n="receipt" c="s" />Presupuesto</button>}
           {items.map(t => { const b = badge(t); return <Link key={t} to={`/admin/${t}`} aria-current={t === view ? "page" : undefined}><Icon n={t} w={t === view ? "f" : "r"} /><span>{VIEWS[t]}</span>{b > 0 && <span className="badge">{b}</span>}</Link>; })}
           <div className="side-foot">
             <button className="me press" onClick={() => openSheet("profile")}><span className="avatar m" style={{ background: `var(--r-${role})`, color: `var(--r-${role}-ink)` }}><Icon n={R.icon} w="d" /></span><span><b>{me?.name || R.name}</b><small>{me ? R.name : "Cambiar de perfil"}</small></span></button></div>
@@ -135,6 +136,7 @@ function Shell({ S, role, setRole, me, reload }) {
               <div className="nb-left">{R.more.includes(view) && <button className="back" onClick={() => nav("/admin/mas")}><Icon n="chevL" c="s" />Más</button>}</div>
               <div className="nb-title">{VIEWS[view]}</div>
               <div className="nb-right">
+                {canMove && <button className="icon-btn press nb-doc" onClick={() => openSheet("budget")} aria-label="Hacer un presupuesto" title="Presupuesto"><Icon n="receipt" c="s" /></button>}
                 {plus && <button className="icon-btn press" onClick={() => openSheet(plus)} aria-label="Agregar"><Icon n="plus" c="s" /></button>}
                 <button className="avatar-btn press" onClick={() => openSheet("profile")} aria-label={`Perfil: ${R.name}`}><span className="avatar" style={{ background: `var(--r-${role})`, color: `var(--r-${role}-ink)` }}><Icon n={R.icon} c="s" w="d" /></span></button>
               </div>
