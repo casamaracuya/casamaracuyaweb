@@ -91,10 +91,10 @@ export default function Comprobante() {
                 <table><thead><tr><th>{t.fecha}</th><th>{t.metodo}</th><th>{t.monto}</th></tr></thead>
                   <tbody>{d.pagos.map((x, i) => <tr key={i}><td>{short(x.fecha)}</td><td>{x.metodo}</td><td>{money(x.monto)}</td></tr>)}</tbody></table></section>}
 
-              <footer className="rc-foot">
+              <div className="rc-foot">
                 <p>{t.poli}</p><p>{t.fiscal}</p>
                 <p className="rc-contact">{EMAIL} · casa-maracuya.com</p>
-              </footer>
+              </div>
             </article>
           </>}
         </div>
