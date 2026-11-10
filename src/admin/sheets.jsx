@@ -4,6 +4,7 @@ import { TODAY, ROLES, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, NIVEL, can, FLOW, S
 import { findGuest } from "../lib/api.js";
 import { REVIEW_URL } from "../lib/contacto.js";
 import { OPCIONES } from "../site/ficha-data.js";
+import { BudgetSheet } from "./docs.jsx";
 
 const Err = ({ msg }) => msg ? <div className="err" role="alert">{msg}</div> : null;
 const KV = ({ k, v }) => <div className="row"><span className="k">{k}</span><span className="val">{v}</span></div>;
@@ -634,10 +635,18 @@ export function PersonSheet({ id }) {
 
 /* ---------- Perfil ---------- */
 export function ProfileSheet() {
-  const { me, role, setRole, signOut, closeSheet, openTour } = useMC();
+  const { me, role, setRole, signOut, closeSheet, openTour, act, renameMe } = useMC();
   const roles = me?.roles || [];
+  const [name, setName] = useState(me?.name || ""); const [err, setErr] = useState("");
+  const saveName = async e => { e.preventDefault(); setErr(""); const n = name.trim();
+    if (n.length < 2) return setErr("Escribe tu nombre y apellido.");
+    const er = await act(a => a.setMiNombre(n), "Nombre guardado"); if (er) setErr(er); else renameMe(n.replace(/s+/g, " ")); };
   return <>
     {me && <div className="res-hero"><span className="avatar l" style={{ background: "var(--accent-bg)", color: "var(--accent-ink)" }}>{initials(me.name)}</span><div><h3>{me.name}</h3><div className="st">{me.email}</div></div></div>}
+    {me && <form className="sec form" onSubmit={saveName}><div className="sec-h">Tu nombre</div><div className="group">
+      <div className="row"><label htmlFor="pfName" className="sr">Tu nombre</label><input id="pfName" className="field-in" style={{ textAlign: "left", color: "var(--ink)" }} value={name} onChange={e => setName(e.target.value)} autoComplete="name" placeholder="Nombre y apellido" />
+        {name.trim() !== me.name && <button type="submit" className="btn small press" style={{ width: "auto" }}>Guardar</button>}</div>
+    </div><Err msg={err} /><p className="sec-f">Así te ve el equipo en las tareas y en Equipo.</p></form>}
     {roles.length > 1 && <><p className="sec-f" style={{ padding: "14px 4px 0" }}>Tienes más de un rol. Elige con cuál quieres trabajar ahora.</p>
       <section className="sec"><div className="group inset-av">{roles.map(k => { const r = ROLES[k]; return (
         <button key={k} className="row press" onClick={() => { setRole(k); closeSheet(); }}><span className="avatar m" style={{ background: `var(--r-${k})`, color: `var(--r-${k}-ink)` }}><Icon n={r.icon} c="s" w="d" /></span><span className="grow"><span className="t">{r.name}</span><span className="st">{r.sub}</span></span>{k === role && <span style={{ color: "var(--accent-ink)" }}><Icon n="check" w="b" /></span>}</button>); })}</div></section></>}
@@ -649,7 +658,6 @@ export function ProfileSheet() {
   </>;
 }
 
-import { BudgetSheet } from "./docs.jsx";
 export const SHEETS = {
   budget: ["Presupuesto", BudgetSheet],
   res: ["Reserva", ResSheet], pay: ["Registrar pago", PaySheet], guest: ["Huésped", GuestSheet], newRes: ["Nueva reserva", NewResSheet],

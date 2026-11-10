@@ -104,17 +104,24 @@ export function Login() {
 
 /* ---------- Crear contraseña (invitación o recuperación) ---------- */
 export function SetPassword({ invite, email, onDone }) {
-  const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
+  const [name, setName] = useState(""); const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const long = pw.length >= 8, same = !!pw && pw === pw2;
   const submit = async e => { e.preventDefault(); setErr("");
+    if (invite && name.trim().length < 2) return setErr("Escribe tu nombre y apellido: así te ve el equipo en el panel.");
     if (!long) return setErr("La contraseña debe tener al menos 8 caracteres.");
     if (!same) return setErr("Las dos contraseñas no coinciden.");
     setBusy(true);
-    try { await api.updatePassword(pw); onDone(); }
+    try {
+      await api.updatePassword(pw);
+      // El nombre no detiene la entrada: si falla, se puede corregir luego en Perfil.
+      if (invite) { try { await api.setMiNombre(null, name); } catch { /* queda en los datos del usuario */ } }
+      onDone();
+    }
     catch (x) { setErr(/same|different/i.test(x.message) ? "Elige una contraseña distinta de la anterior." : x.message); setBusy(false); } };
   return <Door foot={false} title={invite ? "Te damos la bienvenida." : "Una contraseña nueva."}
-    lead={<>{invite ? "Crea la contraseña con la que vas a entrar al panel" : "Escríbela dos veces y entras directo al panel"}{email ? <> como <b>{email}</b></> : null}.</>}>
+    lead={<>{invite ? "Escribe tu nombre y crea la contraseña con la que vas a entrar al panel" : "Escríbela dos veces y entras directo al panel"}{email ? <> como <b>{email}</b></> : null}.</>}>
     <form className="door-form" onSubmit={submit} noValidate>
+      {invite && <Field id="npName" label="Tu nombre y apellido" value={name} onChange={setName} autoComplete="name" placeholder="Ej. Victoria Pérez" />}
       <Field id="npPw" label="Contraseña" type="password" value={pw} onChange={setPw} autoComplete="new-password" />
       <Field id="npPw2" label="Repítela" type="password" value={pw2} onChange={setPw2} autoComplete="new-password" invalid={!!pw2 && !same && pw2.length >= pw.length} />
       <ul className="door-checks" aria-label="Requisitos">

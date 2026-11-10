@@ -17,20 +17,73 @@ function useDocFonts() {
   }, []);
 }
 
-// La hoja a escala del ancho disponible. Avisa si el contenido no cabe en una página.
-function A4({ children, onFit }) {
-  const box = useRef(); const inner = useRef(); const [k, setK] = useState(0.5);
+// Una hoja a escala del ancho disponible.
+function A4({ children }) {
+  const box = useRef(); const [k, setK] = useState(0.5);
   useLayoutEffect(() => {
     const el = box.current; const f = () => setK(el.clientWidth / 794); f();
     const ro = new ResizeObserver(f); ro.observe(el); return () => ro.disconnect();
   }, []);
-  useEffect(() => {
-    if (!onFit) return;
-    const check = () => { const b = inner.current?.querySelector("[data-fit]"); if (b) onFit(b.scrollHeight <= b.clientHeight + 1); };
-    const t = setTimeout(check, 80); document.fonts?.ready.then(check);
-    return () => clearTimeout(t);
+  return <div className="a4-prev" ref={box} style={{ height: 1123 * k }}><div className="a4-in" style={{ transform: `scale(${k})` }} aria-hidden="true">{children}</div></div>;
+}
+
+/* ---------- Hojas: el contenido se reparte en tantas hojas como haga falta ----------
+   Un documento es una «hoja base» (shell: marco, encabezado y pie) más una lista de bloques.
+   Cada bloque: { key, el, gap (espacio arriba), keep (no quedarse solo al final de una hoja),
+   cont (encabezado que se repite si el bloque abre una hoja, ej. los títulos de la tabla) }.
+   Los bloques se miden fuera de la vista con las fuentes reales y se reparten. */
+function paginate(spec, m) {
+  const B = spec.blocks, pages = [[]]; let used = 0, over = false;
+  const cap = () => m.caps[pages.length === 1 ? 0 : 1];
+  const cost = (i, top) => (top && pages.length > 1 ? 0 : B[i].gap || 0) + m.hs[i];
+  B.forEach((b, i) => {
+    const top = pages.at(-1).length === 0;
+    let need = cost(i, top);
+    for (let j = i; B[j]?.keep && B[j + 1]; j++) need += cost(j + 1, false);
+    if (!top && used + need > cap()) { pages.push([]); used = b.cont ? m.cs[b.cont] || 0 : 0; }
+    used += cost(i, pages.at(-1).length === 0); pages.at(-1).push(i);
+    if (used > cap() + 1) over = true;
   });
-  return <div className="a4-prev" ref={box} style={{ height: 1123 * k }}><div className="a4-in" ref={inner} style={{ transform: `scale(${k})` }} aria-hidden="true">{children}</div></div>;
+  return { pages, over };
+}
+export function usePaged(spec) {
+  const ref = useRef(); const [m, setM] = useState(null);
+  const measure = () => {
+    const root = ref.current; if (!root) return;
+    const caps = [...root.querySelectorAll(".dz-ms [data-fit]")].map(x => x.clientHeight);
+    const hs = [...root.querySelectorAll(".dz-mb > [data-b]")].map(x => x.offsetHeight);
+    const cs = Object.fromEntries([...root.querySelectorAll(".dz-mb > [data-c]")].map(x => [x.dataset.c, x.offsetHeight]));
+    const sig = JSON.stringify([caps, hs, cs]);
+    setM(o => o && o.sig === sig ? o : { sig, caps, hs, cs });
+  };
+  useLayoutEffect(measure);
+  useEffect(() => {
+    const f = document.fonts; if (!f) return;
+    f.ready.then(measure); f.addEventListener?.("loadingdone", measure);
+    return () => f.removeEventListener?.("loadingdone", measure);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const B = spec.blocks, C = spec.conts || {};
+  const { pages, over } = m && m.hs.length === B.length ? paginate(spec, m) : { pages: [B.map((_, i) => i)], over: false };
+  const sheets = pages.map((idx, p) => spec.shell(p, pages.length, <>
+    {p > 0 && B[idx[0]]?.cont && C[B[idx[0]].cont]}
+    {idx.map((i, j) => <div key={B[i].key} className="dz-b" style={{ paddingTop: p > 0 && j === 0 ? 0 : B[i].gap || 0 }}>{B[i].el}</div>)}
+  </>));
+  const measureEl = <div className="dz-measure" ref={ref} aria-hidden="true">
+    <div className="dz-ms">{spec.shell(0, 1, null)}{spec.shell(1, 2, null)}</div>
+    <div className="dz dz-mb">{B.map(b => <div key={b.key} data-b="" className="dz-b">{b.el}</div>)}
+      {Object.entries(C).map(([k, el]) => <div key={`c-${k}`} data-c={k} className="dz-b">{el}</div>)}</div>
+  </div>;
+  return { sheets, measureEl, over };
+}
+// Vista previa (todas las hojas) + copia para imprimir + avisos.
+export function Sheets({ P, holder, overMsg }) {
+  return <>
+    {P.measureEl}
+    <div className="a4-stack">{P.sheets.map((s, i) => <A4 key={i}>{s}</A4>)}</div>
+    {P.sheets.length > 1 && <p className="sec-f">Son {P.sheets.length} hojas. Cada una lleva su marco y el número de hoja.</p>}
+    {P.over && <div className="err">{overMsg}</div>}
+    <PrintCopy holder={holder}>{P.sheets}</PrintCopy>
+  </>;
 }
 
 // Copia sin escala, fuera de la app: es la única que sale al imprimir.
@@ -68,41 +121,45 @@ function Horizon() {
     <path d={wave(314, 50, 4)} stroke={GREEN} strokeWidth="1.1" /><path d={wave(432, 50, 4)} stroke={GREEN} strokeWidth="1.1" />
   </svg>;
 }
-export function BudgetDoc({ b }) {
+const hoja = (p, total) => total > 1 ? ` · Hoja ${p + 1} de ${total}` : "";
+export function budgetSpec(b) {
   const both = b.paquetes.length > 1; const p0 = b.paquetes[0];
-  return <div className="dz">
-    <Frame /><Horizon />
-    <header className="dz-bhead">
+  const cols = { gridTemplateColumns: `minmax(0,1fr) repeat(${b.paquetes.length},150px)` };
+  const thead = <div className="dz-tr h" style={cols}><span className="dz-eyebrow">Noche</span>
+    {both ? b.paquetes.map(p => <span key={p} className="n"><span className="dz-eyebrow">Paquete</span><span className="pk">{p === "plena" ? <em>Plena</em> : "Esencial"}</span></span>)
+      : <span className="n dz-eyebrow">Tarifa</span>}</div>;
+  const last = b.rows.length - 1;
+  const blocks = [
+    { key: "who", gap: 64, el: <section className="dz-who">
+      <div><div className="dz-eyebrow">Preparado para</div><div className="name">{b.nombre || "—"}</div></div>
+      <div className="dz-boxes">{b.boxes.map(x => <div key={x.k}><div className="dz-eyebrow">{x.k}</div><b>{x.v}</b>{x.s && <small>{x.s}</small>}</div>)}</div>
+    </section> },
+    { key: "sec", gap: 34, keep: true, el: <div className="dz-sec"><h2>{both ? <>Paquetes <em>disponibles</em></> : <>Experiencia <em>{PLAN[p0].short}</em></>}</h2><span className="rule" /><span className="aside">{b.aside}</span></div> },
+    { key: "th", gap: 16, keep: true, el: thead },
+    ...b.rows.map((r, i) => ({ key: `r${i}`, cont: "th", keep: i === last, el: <div className={`dz-tr ${i === last ? "last" : ""}`} style={cols}><span>{r.label}</span>
+      {b.paquetes.map(p => r.vals[p] == null ? <span key={p} className="n empty">—</span> : <span key={p} className="n">$ {fmtN(r.vals[p])}</span>)}</div> })),
+    { key: "tot", el: <div className="dz-total"><span className="dz-eyebrow">Total · {b.noches} {b.noches === 1 ? "noche" : "noches"}</span>
+      <div className="nums">{b.paquetes.map(p => <span key={p}><b>{fmtN(b.totals[p])}</b><small>USD</small></span>)}</div></div> },
+    ...(b.notas.length ? [{ key: "nh", gap: 30, keep: true, el: <div className="dz-sec"><h2>Notas</h2><span className="rule" /></div> },
+      ...b.notas.map((n, i) => ({ key: `n${i}`, gap: i ? 9 : 12, el: <p className="dz-note">{n}</p> }))] : [])
+  ];
+  const shell = (p, total, children) => <div className="dz" key={p}>
+    <Frame />
+    {p === 0 ? <><Horizon /><header className="dz-bhead">
       <img src="/logo/logo-dorado.svg" alt="Maracuyá · Relaxing Getaway" />
       <div className="r"><div className="dz-eyebrow">Cotización de estadía</div><h1>Presu<em>puesto</em></h1><div className="issued">Emitido el {longDate(b.emitido)}</div></div>
-    </header>
-    <div className="dz-fill" data-fit>
-      <section className="dz-who">
-        <div><div className="dz-eyebrow">Preparado para</div><div className="name">{b.nombre || "—"}</div></div>
-        <div className="dz-boxes">{b.boxes.map(x => <div key={x.k}><div className="dz-eyebrow">{x.k}</div><b>{x.v}</b>{x.s && <small>{x.s}</small>}</div>)}</div>
-      </section>
-      <div className="dz-sec"><h2>{both ? <>Paquetes <em>disponibles</em></> : <>Experiencia <em>{PLAN[p0].short}</em></>}</h2><span className="rule" /><span className="aside">{b.aside}</span></div>
-      <table className="dz-tbl">
-        <thead><tr><th><span className="dz-eyebrow">Noche</span></th>
-          {both ? b.paquetes.map(p => <th key={p} className="n"><span className="dz-eyebrow">Paquete</span><span className="pk">{p === "plena" ? <em>Plena</em> : "Esencial"}</span></th>)
-            : <th className="n"><span className="dz-eyebrow">Tarifa</span></th>}</tr></thead>
-        <tbody>{b.rows.map((r, i) => <tr key={i}><td>{r.label}</td>{b.paquetes.map(p => r.vals[p] == null
-          ? <td key={p} className="n empty">—</td> : <td key={p} className="n">$ {fmtN(r.vals[p])}</td>)}</tr>)}</tbody>
-      </table>
-      <div className="dz-total"><span className="dz-eyebrow">Total · {b.noches} {b.noches === 1 ? "noche" : "noches"}</span>
-        <div className="nums">{b.paquetes.map(p => <span key={p}><b>{fmtN(b.totals[p])}</b><small>USD</small></span>)}</div></div>
-      {b.notas.length > 0 && <><div className="dz-sec dz-notes-h"><h2>Notas</h2><span className="rule" /></div>
-        <ul className="dz-notes">{b.notas.map((n, i) => <li key={i}>{n}</li>)}</ul></>}
-    </div>
-    <footer className="dz-foot"><div className="line"><span className="dz-seal"><img src="/logo/simbolo.svg" alt="" /></span></div><p>Casa Maracuyá · Junto al Faro de Adícora, Falcón</p></footer>
+    </header></> : <header className="dz-chead"><img src="/logo/logo-dorado.svg" alt="Maracuyá" /><div className="r"><div className="dz-eyebrow">Presupuesto · continuación</div><b>{b.nombre}</b></div></header>}
+    <div className="dz-fill" data-fit>{children}</div>
+    <footer className="dz-foot"><div className="line"><span className="dz-seal"><img src="/logo/simbolo.svg" alt="" /></span></div><p>Casa Maracuyá · Junto al Faro de Adícora, Falcón{hoja(p, total)}</p></footer>
   </div>;
+  return { shell, blocks, conts: { th: thead } };
 }
 
 // Tarifa sugerida para una noche: la de semana o fin de semana del plan (vista Tarifas).
 const rateFor = (S, night, plan) => toNum(S.rates[rateKey(plan, night)]);
 const PAQ = { esencial: ["esencial"], plena: ["plena"], ambos: ["esencial", "plena"] };
 
-function buildBudget(f, S) {
+export function buildBudget(f, S) {
   const fechas = f.modo === "fechas" && f.in && f.out && f.out > f.in;
   const n = fechas ? diff(f.in, f.out) : f.noches;
   const keys = Array.from({ length: Math.max(0, Math.min(n, 30)) }, (_, i) => fechas ? addDays(f.in, i) : String(i + 1));
@@ -145,10 +202,10 @@ export function BudgetSheet({ res }) {
     return draft || blank();
   });
   useEffect(() => { draft = f; }, [f]);
-  const [fits, setFits] = useState(true);
   const holder = useRef();
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
   const b = buildBudget(f, S);
+  const P = usePaged(budgetSpec(b));
   const setPrice = (p, k, v) => setF(x => ({ ...x, precios: { ...x.precios, [`${p}|${k}`]: v.replace(/[^\d.,]/g, "") } }));
   const setAll = (p, v) => setF(x => { const pr = { ...x.precios }; b.rows.forEach(r => { pr[`${p}|${r.key}`] = v.replace(/[^\d.,]/g, ""); }); return { ...x, precios: pr }; });
   const download = () => {
@@ -200,15 +257,13 @@ export function BudgetSheet({ res }) {
       <p className="sec-f">Una nota por línea. Se escriben solas con los datos de arriba hasta que las cambies.</p>
     </section>
     <section className="sec"><div className="sec-h">Así queda</div>
-      <A4 onFit={setFits}><BudgetDoc b={b} /></A4>
-      {!fits && <div className="err">No cabe en una hoja. Acorta las notas o la cantidad de noches.</div>}
+      <Sheets P={P} holder={holder} overMsg="Una nota es más larga que una hoja: divídela en varias líneas." />
       {b.falta && <div className="note"><Icon n="alert" c="s" w="f" /><span>Hay noches sin precio: salen con una raya.</span></div>}
     </section>
     <div className="btns">
       <button type="button" className="btn press" onClick={download}><Icon n="receipt" w="f" />Descargar PDF</button>
       <button type="button" className="btn plain press" onClick={() => { setF(blank()); toast("Presupuesto en blanco"); }}>Empezar uno nuevo</button>
     </div>
-    <PrintCopy holder={holder}><BudgetDoc b={b} /></PrintCopy>
   </div>;
 }
 
@@ -257,19 +312,22 @@ function Scene() {
 const unit = v => { const m = String(v || "").match(/^([\d.,]+)\s*([^\d\s].*)$/); return m ? <>{m[1]}<small> {m[2]}</small></> : v; };
 const Dish = ({ it, lead }) => <div><div className={`dz-dish ${lead ? "dz-lead" : ""}`}>{it.n}</div>{it.d && <div className="dz-desc">{it.d}</div>}</div>;
 
-function MenuSec({ s, n }) {
+// Bloques de una sección del menú: el título (que no se queda solo) y su contenido.
+// Los platos en dos columnas van por filas, para poder pasar de hoja entre una fila y otra.
+function menuSecBlocks(s, i) {
+  const n = ROMAN[i] || i + 1; const k = `s${i}`;
   const items = (s.items || []).filter(x => x.n || x.d);
-  const head = <div className="dz-sec"><h2><span className="num">{n}.</span>{amp(s.titulo)}</h2><span className="rule" />{s.nota && <span className="aside">{s.nota}</span>}</div>;
+  const head = { key: `${k}h`, gap: i ? 24 : 0, keep: true, el: <div className="dz-sec"><h2><span className="num">{n}.</span>{amp(s.titulo)}</h2><span className="rule" />{s.nota && <span className="aside">{s.nota}</span>}</div> };
   if (s.tipo === "elige") {
     const caja = (s.caja || []).filter(x => x.n || x.d);
-    return <section className="dz-msec">{head}<div className="dz-choose" style={caja.length ? undefined : { gridTemplateColumns: "1fr" }}>
-      <div>{s.etiqueta && <div className="dz-eyebrow">{s.etiqueta}</div>}<div className="opts">{items.map((it, i) => <Dish key={i} it={it} />)}</div></div>
-      {caja.length > 0 && <div className="dz-box">{s.cajaEtiqueta && <div className="dz-eyebrow">{s.cajaEtiqueta}</div>}<div className="grid">{caja.map((it, i) => <div key={i}><b>{it.n}</b>{it.d && <span>{it.d}</span>}</div>)}</div></div>}
-    </div></section>;
+    return [head, { key: `${k}b`, gap: 16, el: <div className="dz-choose" style={caja.length ? undefined : { gridTemplateColumns: "1fr" }}>
+      <div>{s.etiqueta && <div className="dz-eyebrow">{s.etiqueta}</div>}<div className="opts">{items.map((it, j) => <Dish key={j} it={it} />)}</div></div>
+      {caja.length > 0 && <div className="dz-box">{s.cajaEtiqueta && <div className="dz-eyebrow">{s.cajaEtiqueta}</div>}<div className="grid">{caja.map((it, j) => <div key={j}><b>{it.n}</b>{it.d && <span>{it.d}</span>}</div>)}</div></div>}
+    </div> }];
   }
   if (s.tipo === "destacado") {
     const t = s.tabla || {}; const filas = (t.filas || []).filter(f => f.n || f.a || f.b); const datos = (s.datos || []).filter(x => x.v || x.d);
-    return <section className="dz-msec">{head}<div className={`dz-feat ${filas.length ? "" : "solo"}`}>
+    return [head, { key: `${k}b`, gap: 14, el: <div className={`dz-feat ${filas.length ? "" : "solo"}`}>
       <div>
         {s.plato && <div className="dz-dish dz-lead" style={{ fontSize: 17 }}>{s.plato}</div>}
         {s.desc && <p className="dz-desc" style={{ marginTop: 10, fontSize: 12 }}>{s.desc}</p>}
@@ -277,18 +335,22 @@ function MenuSec({ s, n }) {
         {s.extra && <p className="dz-extra">{s.extra}</p>}
       </div>
       {filas.length > 0 && <div className="dz-nut"><span className="dz-eyebrow">{t.etiqueta}</span><table><thead><tr><th /><th>{t.c1}</th><th>{t.c2}</th></tr></thead>
-        <tbody>{filas.map((f, i) => <tr key={i}><td>{f.n}</td><td className="v">{f.marca ? <mark>{unit(f.a)}</mark> : unit(f.a)}</td><td className="v">{unit(f.b)}</td></tr>)}</tbody></table></div>}
-    </div></section>;
+        <tbody>{filas.map((f, j) => <tr key={j}><td>{f.n}</td><td className="v">{f.marca ? <mark>{unit(f.a)}</mark> : unit(f.a)}</td><td className="v">{unit(f.b)}</td></tr>)}</tbody></table></div>}
+    </div> }];
   }
-  return <section className="dz-msec">{head}<div className="dz-two">{items.map((it, i) => <Dish key={i} it={it} lead />)}</div></section>;
+  const rows = []; for (let j = 0; j < items.length; j += 2) rows.push(items.slice(j, j + 2));
+  return [head, ...rows.map((r, j) => ({ key: `${k}r${j}`, gap: j ? 14 : 16, el: <div className="dz-two">{r.map((it, x) => <Dish key={x} it={it} lead />)}</div> }))];
 }
-export function MenuDoc({ m }) {
-  return <div className="dz">
+export function menuSpec(m) {
+  const blocks = (m.secciones || []).flatMap(menuSecBlocks);
+  const shell = (p, total, children) => <div className="dz" key={p}>
     <Frame />
-    <header className="dz-mhead"><Scene /><div className="tt"><div className="dz-eyebrow">{m.eyebrow}</div><h1>{m.titulo} <em>{m.enfasis}</em></h1></div></header>
-    <div className="dz-fill" data-fit><div className="dz-mbody">{(m.secciones || []).map((s, i) => <MenuSec key={i} s={s} n={ROMAN[i] || i + 1} />)}</div></div>
-    <footer className="dz-foot dz-mfoot"><div className="line" /><p>{m.pie}</p></footer>
+    {p === 0 ? <header className="dz-mhead"><Scene /><div className="tt"><div className="dz-eyebrow">{m.eyebrow}</div><h1>{m.titulo} <em>{m.enfasis}</em></h1></div></header>
+      : <header className="dz-mcont"><div className="dz-eyebrow">{m.eyebrow}</div><h1>{m.titulo} <em>{m.enfasis}</em></h1></header>}
+    <div className="dz-fill" data-fit>{children}</div>
+    <footer className="dz-foot dz-mfoot"><div className="line" /><p>{m.pie}{hoja(p, total)}</p></footer>
   </div>;
+  return { shell, blocks };
 }
 
 /* ---------- Editor del menú (Cocina › Menú) ---------- */
@@ -355,10 +417,10 @@ export function MenuStudio() {
   const list = online ? S.cartas : [];
   const first = () => list[0] ? { id: list[0].id, name: list[0].name, data: list[0].data } : (readLocal() || { id: null, name: "Desayunos", data: clone(MENU_DESAYUNOS) });
   const [c, setC] = useState(first);
-  const [fits, setFits] = useState(true);
   const [sure, setSure] = useState(false);
   const holder = useRef(); const timer = useRef(); const chain = useRef(Promise.resolve()); const idRef = useRef(c.id);
   const m = c.data;
+  const P = usePaged(menuSpec(m));
 
   // Guarda solo, un momento después de dejar de escribir. Los guardados van en fila para no duplicar.
   const save = next => {
@@ -419,11 +481,9 @@ export function MenuStudio() {
     </div>
     <div className="prev-col">
       <div className="sec-h" style={{ marginTop: 6 }}>Así queda</div>
-      <A4 onFit={setFits}><MenuDoc m={m} /></A4>
-      {!fits && <div className="err">No cabe en una hoja: quita algún plato o acorta las descripciones.</div>}
+      <Sheets P={P} holder={holder} overMsg="Una sección es más larga que una hoja: divídela en dos secciones." />
       <div className="btns"><button type="button" className="btn press" onClick={download}><Icon n="receipt" w="f" />Descargar PDF</button></div>
       <p className="sec-f">En el teléfono: Descargar › Compartir › Guardar en Archivos o enviarlo por WhatsApp.</p>
     </div>
-    <PrintCopy holder={holder}><MenuDoc m={m} /></PrintCopy>
   </div>;
 }
