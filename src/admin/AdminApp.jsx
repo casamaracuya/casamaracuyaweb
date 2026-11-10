@@ -73,13 +73,13 @@ function Panel() {
   // Mientras carga, la misma pantalla de carga (sin reiniciar su animación) hasta que el panel aparece debajo.
   const label = me ? "Preparando tu día" : "Abriendo la casa";
   return <>
-    {ready && <Shell S={S} role={role} setRole={setRole} me={me} reload={reload} />}
+    {ready && <Shell S={S} role={role} setRole={setRole} me={me} setMe={setMe} reload={reload} />}
     {!ready && err ? <Splash key="splash" msg={err} />
       : veil !== "off" && <Splash key="splash" label={label} leaving={veil === "leaving"} />}
   </>;
 }
 
-function Shell({ S, role, setRole, me, reload }) {
+function Shell({ S, role, setRole, me, setMe, reload }) {
   const R = ROLES[role];
   const nav = useNavigate();
   const params = useParams();
@@ -114,6 +114,7 @@ function Shell({ S, role, setRole, me, reload }) {
   const plus = { tareas: "newTask", casa: can(role, "afuera") ? "block" : "" }[view];
   const ctx = { S, role, R, me, setRole, act, toast, openSheet, closeSheet, bandEl, canMove, canReceive, canMoney,
     openTour: () => { closeSheet(); setTour(true); },
+    renameMe: name => setMe(m => ({ ...m, name })),
     signOut: async () => { await api.signOut(); location.href = "/admin"; } };
   const V = VIEW_CMP[view];
   const sheetDef = sheet && SHEETS[sheet.type];

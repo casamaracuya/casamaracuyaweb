@@ -26,11 +26,19 @@ const real = {
   async resetPassword(email) { ok(await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/admin` })); },
   async updatePassword(password) { ok(await supabase.auth.updateUser({ password })); },
   async signOut() { await supabase.auth.signOut(); },
+  // Cada persona escribe su propio nombre (al aceptar la invitación o desde Perfil).
+  async setMiNombre(_S, name) {
+    const n = name.trim().replace(/s+/g, " ");
+    await supabase.auth.updateUser({ data: { nombre: n } });
+    ok(await supabase.rpc("fijar_mi_nombre", { p_nombre: n }));
+  },
   async me() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     const p = ok(await supabase.from("perfiles").select("*").eq("id", user.id).maybeSingle());
-    return { id: user.id, email: user.email, name: p?.nombre || user.email, roles: p?.roles || [] };
+    // Si el perfil todavía tiene el nombre sacado del correo, usa el que la persona escribió al entrar.
+    const auto = !p?.nombre || p.nombre === user.email.split("@")[0];
+    return { id: user.id, email: user.email, name: (auto && user.user_metadata?.nombre) || p?.nombre || user.email, roles: p?.roles || [] };
   },
   async load() {
     await supabase.rpc("liberar_vencidas");

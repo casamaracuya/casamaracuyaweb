@@ -35,7 +35,16 @@
 .dz-horizon{position:absolute; left:0; top:168px; width:794px; height:56px}
 
 .dz-fill{flex:1 1 auto; min-height:0; overflow:hidden}
-.dz-who{display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-top:64px}
+.dz-b{display:flow-root}
+.dz-measure{position:fixed; left:-20000px; top:0; width:794px; height:0; overflow:hidden; visibility:hidden; pointer-events:none}
+.dz.dz-mb{height:auto; display:block; overflow:visible}
+.dz-chead{flex:none; display:flex; justify-content:space-between; align-items:flex-end; padding:56px 0 14px; margin-bottom:26px; border-bottom:1px solid var(--dz-gold)}
+.dz-chead img{width:104px; height:auto; display:block}
+.dz-chead .r{text-align:right}
+.dz-chead b{display:block; font:400 17px/1.2 var(--dz-serif); margin-top:6px}
+.dz-mcont{flex:none; text-align:center; padding:58px 0 16px; margin-bottom:26px; border-bottom:1px solid var(--dz-gold)}
+.dz-mcont h1{font:300 30px/1 var(--dz-serif); margin:10px 0 0; letter-spacing:-.02em}
+.dz-who{display:flex; justify-content:space-between; align-items:flex-start; gap:24px}
 .dz-who .name{font:400 26px/1.15 var(--dz-serif); margin-top:8px; max-width:280px; overflow-wrap:anywhere}
 .dz-boxes{display:flex; border:1px dashed var(--dz-dash); border-radius:5px; flex:none}
 .dz-boxes > div{padding:12px 15px 11px; min-width:112px}
@@ -44,31 +53,27 @@
 .dz-boxes small{display:block; font-size:10px; color:var(--dz-ink2); margin-top:5px; white-space:nowrap}
 .dz-boxes .dz-eyebrow{font-size:8.5px; letter-spacing:.24em}
 
-.dz-sec{display:flex; align-items:center; gap:16px; margin-top:34px}
+.dz-sec{display:flex; align-items:center; gap:16px}
 .dz-sec h2{font:400 24px/1.1 var(--dz-serif); margin:0; white-space:nowrap}
 .dz-sec h2 em{font-weight:300}
 .dz-sec .rule{flex:1; border-top:1.2px solid var(--dz-green); opacity:.85}
 .dz-sec .aside{font:italic 300 11.5px/1 var(--dz-serif); color:var(--dz-ink2); white-space:nowrap}
 
-.dz-tbl{width:100%; border-collapse:collapse; margin-top:16px; font-size:12.5px}
-.dz-tbl th{font-weight:400; text-align:left; vertical-align:bottom; padding:0 0 10px}
-.dz-tbl th.n,.dz-tbl td.n{text-align:right}
-.dz-tbl th .pk{display:block; font:400 26px/1 var(--dz-serif); letter-spacing:-.01em; text-transform:none; margin-top:6px}
-.dz-tbl th .pk em{font-weight:300}
-.dz-tbl thead tr{border-bottom:1.3px solid var(--dz-ink)}
-.dz-tbl tbody td{padding:13px 0 13px; border-bottom:1px solid var(--dz-line)}
-.dz-tbl tbody tr:last-child td{border-bottom:1.3px solid var(--dz-ink)}
-.dz-tbl td.n{white-space:nowrap; width:150px}
-.dz-tbl td.empty{color:var(--dz-ink3)}
+.dz-tr{display:grid; align-items:center; padding:13px 0; border-bottom:1px solid var(--dz-line); font-size:12.5px}
+.dz-tr.h{align-items:end; padding:0 0 10px; border-bottom:1.3px solid var(--dz-ink)}
+.dz-tr.last{border-bottom:1.3px solid var(--dz-ink)}
+.dz-tr .n{text-align:right; white-space:nowrap}
+.dz-tr .n.empty{color:var(--dz-ink3)}
+.dz-tr .pk{display:block; font:400 26px/1 var(--dz-serif); letter-spacing:-.01em; margin-top:6px}
+.dz-tr .pk em{font-weight:300}
 .dz-total{display:flex; align-items:baseline; justify-content:space-between; padding:18px 0 22px; border-bottom:1px dotted var(--dz-dash)}
 .dz-total .nums{display:flex; gap:0}
 .dz-total .nums > span{width:150px; text-align:right; white-space:nowrap}
 .dz-total b{font:400 36px/1 var(--dz-serif); letter-spacing:-.02em}
 .dz-total small{font-size:11px; margin-left:6px}
 
-.dz-notes-h{margin-top:30px}
-.dz-notes{margin:12px 0 0; padding:0 0 0 18px; display:grid; gap:9px; font-size:12px}
-.dz-notes li::marker{color:var(--dz-ink)}
+.dz-note{position:relative; padding-left:18px; font-size:12px}
+.dz-note::before{content:""; position:absolute; left:5px; top:.62em; width:4px; height:4px; border-radius:50%; background:var(--dz-ink)}
 
 .dz-foot{flex:none; padding:16px 0 52px; text-align:center}
 .dz-foot .line{display:flex; align-items:center; gap:14px}
@@ -84,25 +89,21 @@
 .dz-mhead h1{font:300 54px/1 var(--dz-serif); margin:14px 0 0; letter-spacing:-.025em; font-variation-settings:"opsz" 144}
 .dz-mhead h1 em{font-weight:300}
 .dz-mhead.short{height:250px}
-.dz-mbody{display:grid; gap:0}
-.dz-msec + .dz-msec{margin-top:24px}
-.dz-msec .dz-sec{margin-top:0}
-.dz-msec .dz-sec h2{font-size:26px}
-.dz-msec .dz-sec h2 .num{font-style:italic; font-weight:300; color:var(--dz-green); margin-right:12px}
-.dz-msec .dz-sec .rule{flex:1}
+.dz-sec h2:has(.num){font-size:26px}
+.dz-sec h2 .num{font-style:italic; font-weight:300; color:var(--dz-green); margin-right:12px}
 .dz-dish{font:400 16px/1.2 var(--dz-serif)}
 .dz-desc{font-size:11.5px; color:var(--dz-ink2); margin-top:3px}
-.dz-choose{display:grid; grid-template-columns:1fr 1.15fr; gap:26px; margin-top:16px; align-items:start}
+.dz-choose{display:grid; grid-template-columns:1fr 1.15fr; gap:26px; align-items:start}
 .dz-choose .opts{display:grid; gap:12px; margin-top:12px}
 .dz-box{border:1px dashed var(--dz-dash); border-radius:6px; padding:16px 20px 16px}
 .dz-box .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 22px; margin-top:12px}
 .dz-box .grid b{display:block; font-size:12px; font-weight:500}
 .dz-box .grid span{display:block; font-size:11px; color:var(--dz-ink2); margin-top:2px}
-.dz-two{display:grid; grid-template-columns:1fr 1fr; gap:14px 38px; margin-top:16px}
+.dz-two{display:grid; grid-template-columns:1fr 1fr; gap:14px 38px}
 .dz-two.one{grid-template-columns:1fr}
 .dz-lead{display:flex; align-items:baseline; gap:10px}
 .dz-lead::after{content:""; flex:1; border-bottom:1px dotted var(--dz-dash); transform:translateY(-4px)}
-.dz-feat{display:grid; grid-template-columns:1fr 280px; gap:26px; margin-top:14px; align-items:start}
+.dz-feat{display:grid; grid-template-columns:1fr 280px; gap:26px; align-items:start}
 .dz-feat.solo{grid-template-columns:1fr}
 .dz-facts{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px}
 .dz-facts > div{border-top:1.2px solid var(--dz-gold-lt); padding-top:10px}
@@ -127,7 +128,7 @@
 /* Vista previa a escala en el panel */
 .a4-prev{position:relative; width:100%; border-radius:6px; box-shadow:0 18px 40px -22px rgba(46,46,36,.45), 0 0 0 1px rgba(46,46,36,.08); overflow:hidden; background:#F8FBF0}
 .a4-prev > .a4-in{position:absolute; left:0; top:0; transform-origin:0 0}
-.a4-warn{margin-top:10px}
+.a4-stack{display:grid; gap:16px}
 
 /* Impresión: solo la hoja, sin márgenes */
 .doc-print{display:none}
@@ -136,6 +137,8 @@
   html,body{background:#F8FBF0 !important; margin:0 !important; padding:0 !important}
   body.doc-printing > *:not(.doc-print){display:none !important}
   body.doc-printing .doc-print{display:block}
+  .doc-print .dz{break-after:page; page-break-after:always}
+  .doc-print .dz:last-child{break-after:auto; page-break-after:auto}
   .doc-print .dz{height:1122px}
 }
 
