@@ -1,0 +1,59 @@
+<!doctype html>
+<!--
+  Casa Maracuyá · Correo de «Olvidé mi contraseña» del panel (Supabase Auth › «Reset password»)
+  Dónde se pega: Supabase › Authentication › Emails › Templates › Reset password
+  Asunto:  Tu contraseña nueva para Maracuyá Control
+  Variables de Supabase: {{ .ConfirmationURL }} (enlace para crear la contraseña nueva), {{ .Email }}.
+  El enlace abre el panel en «Una contraseña nueva» (src/admin/Access.jsx, SetPassword).
+  Mismo estilo que invite.html y que el correo del comprobante.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tu contraseña nueva para Maracuyá Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#E8DCCD">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#E8DCCD"><tr><td align="center" style="padding:28px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:20px;overflow:hidden">
+
+  <tr><td style="padding:30px 32px 6px;text-align:center">
+    <div style="font:500 28px/1 'Cormorant Garamond',Georgia,'Times New Roman',serif;letter-spacing:.08em;color:#2E2E24">CASA MARACUYÁ</div>
+    <div style="font:700 10px/1 Manrope,'Segoe UI',Arial,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#C4A56C;margin-top:8px">Maracuyá Control · el panel de la casa</div>
+  </td></tr>
+
+  <tr><td style="padding:26px 32px 4px">
+    <p style="margin:0;font:500 30px/1.12 'Cormorant Garamond',Georgia,'Times New Roman',serif;color:#2E2E24">Una contraseña <em style="color:#778B63">nueva</em>, sin prisa.</p>
+    <p style="margin:14px 0 0;font:500 15px/1.65 Manrope,'Segoe UI',Arial,sans-serif;color:#3D3D2A">
+      Nos pediste cambiar la contraseña con la que entras a <b style="color:#2E2E24">Maracuyá Control</b> con el correo
+      <b style="color:#2E2E24">{{ .Email }}</b>. Toca el botón, escríbela dos veces y entras directo al panel.
+    </p>
+  </td></tr>
+
+  <tr><td align="center" style="padding:26px 32px 8px">
+    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:16px 30px;border-radius:999px;background:#C4A56C;color:#2E2E24;font:700 12px/1 Manrope,'Segoe UI',Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;text-decoration:none">Crear mi contraseña nueva</a>
+  </td></tr>
+
+  <tr><td style="padding:16px 32px 0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FFF4;border:1px solid #D4C7BE;border-radius:16px"><tr><td style="padding:16px 22px;font:500 14px/1.6 Manrope,'Segoe UI',Arial,sans-serif;color:#3D3D2A">
+      <b style="color:#2E2E24">¿No lo pediste tú?</b> Ignora este correo: tu contraseña sigue siendo la misma y nadie puede cambiarla sin este enlace.
+      Si te llegan varios sin haberlos pedido, avísale a Dirección.
+    </td></tr></table>
+  </td></tr>
+
+  <tr><td style="padding:18px 32px 26px;font:500 12px/1.6 Manrope,'Segoe UI',Arial,sans-serif;color:#5f604f">
+    El enlace es personal, sirve una sola vez y vence en poco tiempo. Si ya venció, pide otro desde
+    <a href="https://casa-maracuya.com/admin" style="color:#3D3D2A">casa-maracuya.com/admin</a> › «Olvidé mi contraseña».<br>
+    Si el botón no abre, copia este enlace en tu navegador:<br>
+    <a href="{{ .ConfirmationURL }}" style="color:#3D3D2A;word-break:break-all">{{ .ConfirmationURL }}</a>
+  </td></tr>
+
+  <tr><td style="padding:22px 32px;background:#2E352A;color:#E8DCCD">
+    <p style="margin:0;font:500 italic 20px/1.2 'Cormorant Garamond',Georgia,'Times New Roman',serif">Viento, mar y cero prisa.</p>
+    <p style="margin:8px 0 0;font:500 12px/1.6 Manrope,'Segoe UI',Arial,sans-serif;color:#B8B89C">Casa Maracuyá · Adícora, Falcón, Venezuela · casa-maracuya.com</p>
+  </td></tr>
+
+</table></td></tr></table>
+</body>
+</html>
