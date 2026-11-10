@@ -4,7 +4,10 @@ html,body{margin:0;padding:0}
 /* Layout: lujo descalzo. Fondo claro de casa de playa, fotos grandes y asimétricas,
    una sola forma propia (el canto rodado del símbolo) como ventana del video. */
 :root{
-  --ancho:1240px; /* ancho del contenido; crece en pantallas anchas (ver final del archivo) */
+  /* Margen a los lados: crece poco a poco con la pantalla (0 en el celular, máx. 72px),
+     sin saltos al cambiar el zoom. El contenido ocupa el resto del ancho. */
+  --orilla:clamp(0px,4vw - 20px,72px);
+  --ancho:calc(100vw - 2 * var(--orilla));
   /* Paleta oficial Maracuyá */
   --arena-adicora:#C4A56C; --arena-seca:#E8DCCD; --alga:#2E2E24; --aguacate:#B8B89C;
   --sol:#F9EC9E; --laguna:#E6EFEE; --raspao:#F9FFF4; --merey:#D4C7BE; --melon:#778B63;
@@ -149,6 +152,8 @@ section{padding-block:clamp(64px,9vw,128px)}
 .hero .sub{margin-top:clamp(14px,2.6vh,22px);max-width:44ch;color:var(--ink-soft);font-size:1.06rem}
 .hero .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:clamp(20px,3.6vh,32px)}
 .hero .facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:clamp(20px,3.8vh,36px);padding-top:clamp(14px,2.4vh,22px);position:relative;font-size:.86rem;color:var(--muted)}
+/* El título siempre en dos líneas en pantallas grandes, para que no se meta en el video */
+@media (min-width:821px){.hero h1 em{display:block}}
 /* La raya sobre los datos se desvanece hacia la derecha para no cruzar el video */
 .hero .facts::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--line) 0%,var(--line) 45%,transparent 92%)}
 .hero .facts b{color:var(--ink);font-weight:600}
@@ -584,10 +589,8 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
    Desde 1600px todo escala con la pantalla: la letra, los espacios y el ancho del
    contenido crecen juntos, como si la web se "agrandara" sola. Los videos no cambian. */
 @media (min-width:1600px){
-  :root{--ancho:min(96vw,2400px)}
   html{font-size:min(calc(16px + (100vw - 1600px) * .0065),23px)}
   .hero .sub{max-width:min(46ch,100%)}
-  .hero h1 em{display:block}
 }
 
 /* ===== Barra de desplazamiento =====
