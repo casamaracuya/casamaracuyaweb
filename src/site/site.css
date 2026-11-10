@@ -589,34 +589,26 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
 }
 
 /* ===== Barra de desplazamiento =====
-   Invisible mientras no se usa. Aparece al bajar por la página o al acercar el ratón al
-   borde derecho (shared.jsx pone la clase .sb-on en <html>). Riel casi transparente,
-   indicador dorado maracuyá y flechas finas. Solo con ratón: en el celular no cambia. */
+   La del navegador se oculta (siempre deja una franja a la derecha) y en su lugar flota
+   una propia (shared.jsx, useScrollbar): invisible mientras no se usa, aparece al bajar o
+   al acercar el ratón al borde derecho. Riel casi transparente, indicador dorado maracuyá
+   y flechas finas. Solo con ratón: en el celular queda la del teléfono. */
 @media (pointer:fine){
-  ::-webkit-scrollbar{width:12px;height:12px;background:transparent}
-  ::-webkit-scrollbar-track{background:transparent}
-  ::-webkit-scrollbar-thumb{background:transparent;border:3px solid transparent;border-radius:99px;background-clip:padding-box;min-height:48px}
-  ::-webkit-scrollbar-button{display:none;width:12px;height:14px;background:transparent no-repeat center/9px 9px}
-  ::-webkit-scrollbar-button:vertical:start:decrement,
-  ::-webkit-scrollbar-button:vertical:end:increment{display:block}
-  ::-webkit-scrollbar-corner{background:transparent}
-  html.sb-on::-webkit-scrollbar-track,
-  html.sb-on body::-webkit-scrollbar-track,
-  html.sb-on::-webkit-scrollbar-button,
-  html.sb-on body::-webkit-scrollbar-button{background-color:rgba(46,53,42,.05)}
-  html.sb-on::-webkit-scrollbar-thumb,
-  html.sb-on body::-webkit-scrollbar-thumb{background-color:rgba(226,184,64,.72)}
-  html.sb-on::-webkit-scrollbar-thumb:hover,
-  html.sb-on body::-webkit-scrollbar-thumb:hover{background-color:rgba(226,184,64,.95);border-width:2px}
-  html.sb-on::-webkit-scrollbar-thumb:active,
-  html.sb-on body::-webkit-scrollbar-thumb:active{background-color:#D9A92A}
-  html.sb-on::-webkit-scrollbar-button:vertical:start:decrement,
-  html.sb-on body::-webkit-scrollbar-button:vertical:start:decrement{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 6.2 5 3.8l2.5 2.4' fill='none' stroke='%23B8952F' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
-  html.sb-on::-webkit-scrollbar-button:vertical:end:increment,
-  html.sb-on body::-webkit-scrollbar-button:vertical:end:increment{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 3.8 5 6.2l2.5-2.4' fill='none' stroke='%23B8952F' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
-  :root[data-mode="dark"].sb-on::-webkit-scrollbar-track,:root[data-mode="dark"].sb-on body::-webkit-scrollbar-track{background:rgba(255,255,255,.05)}
+  html.sb-custom{scrollbar-width:none}
+  html.sb-custom::-webkit-scrollbar,html.sb-custom body::-webkit-scrollbar{display:none;width:0;height:0}
 }
-@supports not selector(::-webkit-scrollbar){
-  html{scrollbar-width:thin;scrollbar-color:transparent transparent}
-  html.sb-on{scrollbar-color:rgba(226,184,64,.8) transparent}
-}
+.sb{position:fixed;top:8px;right:3px;bottom:8px;z-index:200;width:12px;display:flex;flex-direction:column;align-items:center;gap:3px;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.sb.on{opacity:1;pointer-events:auto}
+.sb[hidden]{display:none}
+.sb-track{position:relative;flex:1;width:100%;border-radius:99px;background:rgba(46,53,42,.07)}
+:root[data-mode="dark"] .sb-track{background:rgba(255,255,255,.08)}
+.sb-thumb{position:absolute;top:0;left:2px;right:2px;border-radius:99px;background:rgba(226,184,64,.78);cursor:grab;transition:left .2s ease,right .2s ease,background-color .2s ease}
+.sb-thumb:hover,.sb.drag .sb-thumb{left:1px;right:1px;background:rgba(226,184,64,1)}
+.sb.drag .sb-thumb{cursor:grabbing}
+.sb button{width:12px;height:12px;padding:0;border:0;border-radius:50%;background:transparent no-repeat center/9px 9px;cursor:pointer;opacity:.8;transition:opacity .2s ease}
+.sb button:hover{opacity:1}
+.sb-up{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 6.2 5 3.8l2.5 2.4' fill='none' stroke='%23B8952F' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important}
+.sb-down{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 3.8 5 6.2l2.5-2.4' fill='none' stroke='%23B8952F' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important}
+@media (prefers-reduced-motion:reduce){.sb,.sb-thumb{transition:none}}
+/* La tira de fotos de «La Casa» solo se desliza de lado, con la misma barra dorada y fina */
+.strip{overflow-y:hidden;scrollbar-color:rgba(226,184,64,.75) transparent}

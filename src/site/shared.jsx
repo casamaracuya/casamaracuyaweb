@@ -24,33 +24,84 @@ export function useMode() {
   return [mode || "light", setMode];
 }
 
-// Barra de desplazamiento: se esconde sola y aparece al bajar por la página o al acercar
-// el ratón al borde derecho. El estilo está en site.css («Barra de desplazamiento»).
+// Barra de desplazamiento propia (solo con ratón). La del navegador se oculta porque
+// siempre ocupa una franja a la derecha; esta flota encima de la página, aparece al bajar
+// o al acercar el ratón al borde derecho, y se esconde sola. Estilo en site.css («.sb»).
 function useScrollbar() {
   useEffect(() => {
+    if (!matchMedia("(pointer: fine)").matches) return;
     const root = document.documentElement;
-    let timer;
+    const bar = document.createElement("div");
+    bar.className = "sb";
+    bar.setAttribute("aria-hidden", "true");
+    bar.innerHTML = '<button type="button" class="sb-up" tabindex="-1"></button><div class="sb-track"><div class="sb-thumb"></div></div><button type="button" class="sb-down" tabindex="-1"></button>';
+    document.body.appendChild(bar);
+    root.classList.add("sb-custom");
+    const track = bar.querySelector(".sb-track"), thumb = bar.querySelector(".sb-thumb");
+    let timer, drag = null, near = false;
+
+    const layout = () => {
+      const total = root.scrollHeight, view = innerHeight, th = track.clientHeight;
+      bar.hidden = total <= view + 1;
+      if (bar.hidden) return;
+      const size = Math.max(40, (th * view) / total);
+      thumb.style.height = size + "px";
+      thumb.style.transform = `translateY(${((th - size) * scrollY) / (total - view)}px)`;
+    };
     const hideLater = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => { if (!root.classList.contains("sb-cerca")) root.classList.remove("sb-on"); }, 1100);
+      timer = setTimeout(() => { if (!near && !drag && !bar.matches(":hover")) bar.classList.remove("on"); }, 1100);
     };
-    const show = () => { root.classList.add("sb-on"); hideLater(); };
+    const show = () => { bar.classList.add("on"); hideLater(); };
+    const to = y => scrollTo({ top: y, behavior: "instant" });
+
+    const onScroll = () => { layout(); show(); };
     const onMove = e => {
-      const cerca = innerWidth - e.clientX < 32;
-      if (cerca === root.classList.contains("sb-cerca")) return;
-      root.classList.toggle("sb-cerca", cerca);
-      if (cerca) root.classList.add("sb-on"); else hideLater();
+      const n = innerWidth - e.clientX < 28;
+      if (n === near) return;
+      near = n;
+      if (n) { layout(); bar.classList.add("on"); clearTimeout(timer); } else hideLater();
     };
-    const onLeave = () => { root.classList.remove("sb-cerca"); hideLater(); };
-    addEventListener("scroll", show, { passive: true });
+    const onLeave = () => { near = false; hideLater(); };
+    thumb.addEventListener("pointerdown", e => {
+      drag = { c0: e.clientY, y0: scrollY };
+      thumb.setPointerCapture(e.pointerId);
+      bar.classList.add("drag");
+      e.preventDefault();
+    });
+    thumb.addEventListener("pointermove", e => {
+      if (!drag) return;
+      const ratio = (root.scrollHeight - innerHeight) / (track.clientHeight - thumb.offsetHeight);
+      to(drag.y0 + (e.clientY - drag.c0) * ratio);
+    });
+    const endDrag = () => { if (!drag) return; drag = null; bar.classList.remove("drag"); hideLater(); };
+    thumb.addEventListener("pointerup", endDrag);
+    thumb.addEventListener("pointercancel", endDrag);
+    track.addEventListener("pointerdown", e => {
+      if (e.target !== track) return;
+      const arriba = e.clientY < thumb.getBoundingClientRect().top;
+      scrollBy({ top: (arriba ? -1 : 1) * innerHeight * 0.85, behavior: "smooth" });
+    });
+    bar.querySelector(".sb-up").addEventListener("click", () => scrollBy({ top: -160, behavior: "smooth" }));
+    bar.querySelector(".sb-down").addEventListener("click", () => scrollBy({ top: 160, behavior: "smooth" }));
+    bar.addEventListener("mouseleave", hideLater);
+
+    const ro = new ResizeObserver(layout);
+    ro.observe(document.body);
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", layout);
     addEventListener("mousemove", onMove, { passive: true });
     document.addEventListener("mouseleave", onLeave);
+    layout();
     return () => {
       clearTimeout(timer);
-      removeEventListener("scroll", show);
+      ro.disconnect();
+      removeEventListener("scroll", onScroll);
+      removeEventListener("resize", layout);
       removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseleave", onLeave);
-      root.classList.remove("sb-on", "sb-cerca");
+      root.classList.remove("sb-custom");
+      bar.remove();
     };
   }, []);
 }
