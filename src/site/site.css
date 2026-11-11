@@ -617,3 +617,36 @@ footer .legal{grid-column:1 / -1;border-top:1px solid #47503f;padding-top:22px;f
 @media (prefers-reduced-motion:reduce){.sb,.sb-thumb{transition:none}}
 /* La tira de fotos de «La Casa» solo se desliza de lado, con la misma barra dorada y fina */
 .strip{overflow-y:hidden;scrollbar-color:rgba(226,184,64,.75) transparent}
+
+/* ===== Pie de página ===== */
+footer{position:relative;overflow:hidden}
+footer::after{content:"";position:absolute;right:max(-60px,-4vw);bottom:-90px;width:clamp(240px,28vw,460px);aspect-ratio:149/206;background:var(--accent);opacity:.07;-webkit-mask:url(/logo/simbolo.svg) center/contain no-repeat;mask:url(/logo/simbolo.svg) center/contain no-repeat;pointer-events:none}
+footer .wrap{position:relative;z-index:1;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,.7fr) minmax(0,1fr);gap:clamp(28px,4vw,64px);align-items:start}
+footer .foot-cta{grid-column:2;grid-row:1;padding:clamp(20px,2.2vw,28px);border:1px solid rgba(196,165,108,.28);border-radius:22px;background:rgba(255,255,255,.035)}
+footer .foot-nav{grid-column:3;grid-row:1}
+footer .foot-contact{grid-column:4;grid-row:1}
+footer img.flogo{height:64px}
+footer .foot-cta .kicker{margin:0;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+footer .foot-cta .cta-t{margin:8px 0 18px;font-family:var(--f-display);font-size:clamp(1.35rem,1.1rem + .6vw,1.7rem);line-height:1.15;color:var(--on-deep)}
+footer .foot-cta .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;max-width:100%;white-space:nowrap;letter-spacing:.1em;color:var(--accent-ink)}
+footer .foot-cta .btn .ico{color:var(--accent-ink)}
+footer .foot-cta .note{margin:12px 0 0;font-size:.8rem;color:var(--aguacate)}
+footer .foot-contact a{display:inline-flex;align-items:flex-start;gap:10px}
+footer .ico{width:17px;height:17px;flex:none;margin-top:.15em;color:var(--accent)}
+footer .go{display:block;margin-top:2px;font-size:.78rem;letter-spacing:.04em;color:var(--accent)}
+footer .foot-contact a:hover,footer .foot-nav a:hover{text-decoration:none;color:var(--accent)}
+footer .legal{border-top-color:rgba(196,165,108,.22)}
+footer .legal .dot{color:var(--accent);margin:0 .35em}
+@media (max-width:1100px){
+  footer .wrap{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  footer .brandcol{grid-column:1;grid-row:1}
+  footer .foot-cta{grid-column:2;grid-row:1}
+  footer .foot-nav{grid-column:1;grid-row:2}
+  footer .foot-contact{grid-column:2;grid-row:2}
+}
+@media (max-width:600px){
+  footer .wrap{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  footer .brandcol,footer .foot-cta{grid-column:1 / -1;grid-row:auto}
+  footer .foot-nav,footer .foot-contact{grid-row:auto}
+  footer .foot-nav{grid-column:1}footer .foot-contact{grid-column:1 / -1}
+}

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { T } from "./i18n.js";
-import { WHATSAPP, EMAIL } from "../lib/contacto.js";
+import { WHATSAPP, EMAIL, MAPS_URL } from "../lib/contacto.js";
 import { saveLang, PATHS } from "./paths.js";
 
 export { EMAIL };
@@ -137,14 +137,36 @@ export function PageHeader({ lang, setLang, mode, setMode, t }) {
   );
 }
 
+// Íconos finos del pie (trazo dorado, heredan el color del texto)
+const Ico = ({ d, fill }) => (
+  <svg className="ico" viewBox="0 0 24 24" aria-hidden="true" fill={fill ? "currentColor" : "none"} stroke={fill ? "none" : "currentColor"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+);
+const IG = <Ico d={<><rect x="3.5" y="3.5" width="17" height="17" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r=".9" fill="currentColor" stroke="none" /></>} />;
+const WA = <Ico d={<><path d="M4.5 19.5l1.2-3.8A8 8 0 1 1 8.6 18.6z" /><path d="M9.2 8.6c.2-.5.5-.5.8-.5h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.2-.2.3 0 .6.5.9 1.2 1.6 2.2 2.1.3.1.4.1.6-.1l.6-.7c.2-.2.3-.2.6-.1l1.5.7c.3.1.4.2.4.4 0 .6-.3 1.4-1 1.7-.7.3-1.7.3-3.3-.4-1.9-.9-3.2-2.6-3.6-3.3-.5-.8-.8-1.8-.4-2.8z" fill="currentColor" stroke="none" /></>} />;
+const MAIL = <Ico d={<><rect x="3.5" y="5.5" width="17" height="13" rx="2.5" /><path d="M4.5 7l7.5 6 7.5-6" /></>} />;
+const PIN = <Ico d={<><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></>} />;
+const Dot = () => <span className="dot" aria-hidden="true">·</span>;
+
 export function PageFooter({ t, lang }) {
+  const home = PATHS.home[lang];
   return (
     <footer>
       <div className="wrap">
-        <div className="brandcol"><img className="flogo" src="/logo/logo-claro.svg" alt="Maracuyá Relaxing Getaway" width="146" height="58" /><p className="motto">{t("foot.motto")}</p></div>
-        <div><h4>{t("foot.explore")}</h4><ul><li><a href={PATHS.home[lang] + "#casa"}>{t("nav.casa")}</a></li><li><a href={PATHS.home[lang] + "#planes"}>{t("nav.planes")}</a></li><li><a href={PATHS.home[lang] + "#mesa"}>{t("nav.mesa")}</a></li><li><a href={PATHS.home[lang] + "#adicora"}>{t("nav.adicora")}</a></li><li><a href={PATHS.home[lang] + "#reservar"}>{t("cta.reservar")}</a></li></ul></div>
-        <div><h4>{t("foot.contact")}</h4><ul><li><a href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">Instagram</a></li><li><a href={WA_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a></li><li><a href={`mailto:${EMAIL}`}>{EMAIL}</a></li><li>{t("where.v1")}</li></ul></div>
-        <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá · Relaxing Getaway</span><span>{t("foot.made")} · <a href={PATHS.normas[lang]}>{t("foot.rules")}</a> · <a href={PATHS.privacy[lang]}>{t("foot.privacy")}</a></span></div>
+        <div className="brandcol"><img className="flogo" src="/logo/logo-dorado.svg" alt="Maracuyá Relaxing Getaway" width="161" height="64" /><p className="motto">{t("foot.motto")}</p></div>
+        <div className="foot-cta">
+          <p className="kicker">{t("foot.cta.k")}</p>
+          <p className="cta-t">{t("foot.cta.t")}</p>
+          <a className="btn btn-primary" href={WA_URL} target="_blank" rel="noopener noreferrer">{WA}{t("foot.cta.btn")}</a>
+          <p className="note">{t("foot.cta.note")}</p>
+        </div>
+        <div className="foot-nav"><h4>{t("foot.explore")}</h4><ul><li><a href={home + "#casa"}>{t("nav.casa")}</a></li><li><a href={home + "#planes"}>{t("nav.planes")}</a></li><li><a href={home + "#mesa"}>{t("nav.mesa")}</a></li><li><a href={home + "#adicora"}>{t("nav.adicora")}</a></li><li><a href={home + "#reservar"}>{t("cta.reservar")}</a></li></ul></div>
+        <div className="foot-contact"><h4>{t("foot.contact")}</h4><ul>
+          <li><a href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">{IG}@lacasamaracuya</a></li>
+          <li><a href={WA_URL} target="_blank" rel="noopener noreferrer">{WA}WhatsApp</a></li>
+          <li><a href={`mailto:${EMAIL}`}>{MAIL}{EMAIL}</a></li>
+          <li><a href={MAPS_URL} target="_blank" rel="noopener noreferrer">{PIN}<span>{t("where.v1")}<span className="go">{t("foot.maps")} →</span></span></a></li>
+        </ul></div>
+        <div className="legal"><span>© {new Date().getFullYear()} Casa Maracuyá <Dot /> Relaxing Getaway</span><span>{t("foot.made")} <Dot /> <a href={PATHS.normas[lang]}>{t("foot.rules")}</a> <Dot /> <a href={PATHS.privacy[lang]}>{t("foot.privacy")}</a></span></div>
       </div>
     </footer>
   );
