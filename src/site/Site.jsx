@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { PATHS, saveLang } from "./paths.js";
 import { useMode, PageFooter } from "./shared.jsx";
 
+const BROCHURE = "/brochure-casa-maracuya.pdf";
 const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 10); };
 const parseISO = s => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 const nightsBetween = (a, b) => { const A = parseISO(a), B = parseISO(b); return A && B ? Math.round((B - A) / 864e5) : null; };
@@ -22,6 +23,7 @@ export default function Site({ lang = "es" }) {
   const shownAt = useRef(0); const trap = useRef(null);
   useEffect(() => { setToday(todayISO()); shownAt.current = Date.now(); }, []);
   const [menu, setMenu] = useState(false);
+  const [faq, setFaq] = useState(0); // pregunta abierta (0 = ninguna)
   const [group, setGroup] = useState({ esencial: "1-6", plena: "1-6" });
   const [f, setF] = useState({ plan: "esencial", guests: "4", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" });
   const [error, setError] = useState(""); const [result, setResult] = useState(null); const [taken, setTaken] = useState(false); const [sending, setSending] = useState(false); const [copied, setCopied] = useState(false);
@@ -42,7 +44,7 @@ export default function Site({ lang = "es" }) {
       vids.forEach(v => io.observe(v)); offs.push(() => io.disconnect());
       const pet = root.current.querySelector("#petVideo"); let away = true;
       if (pet) { const po = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting && away) { away = false; pet.currentTime = 0; pet.play().catch(() => {}); } else if (!en.isIntersecting) { away = true; pet.pause(); } }), { threshold: .45 }); po.observe(pet); offs.push(() => po.disconnect()); }
-      const sel = [".head-row",".barefoot .text",".barefoot .big",".barefoot .details figure",".fullbleed .wrap",".strip figure",".room .main",".room .side > *",".welcome > *",".plan",".pet-media",".pet-copy",".table-grid > *",".quote",".chapter .media",".chapter .copy",".where .map",".where .wrap > div:last-child",".book .wrap > *"];
+      const sel = [".head-row",".barefoot .text",".barefoot .big",".barefoot .details figure",".fullbleed .wrap",".strip figure",".room .main",".room .side > *",".welcome > *",".plan",".pet-media",".pet-copy",".table-grid > *",".quote",".chapter .media",".chapter .copy",".inc",".seasons",".how",".dia-media",".dia-list li",".faq .wrap > *",".where .map",".where .wrap > div:last-child",".book .wrap > *"];
       const zoom = new Set($$(".barefoot .big, .room .main, .chapter .media, .table-grid > div"));
       const els = new Set(); sel.forEach(q => $$(q).forEach(e => els.add(e)));
       const ro = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add("in"); ro.unobserve(en.target); } }), { threshold: .12, rootMargin: "0px 0px -6% 0px" });
@@ -174,6 +176,16 @@ export default function Site({ lang = "es" }) {
           <div className="wrap night-only"><p className="eyebrow">{t("im.eyebrow")}</p><h2>{t("im.title")}</h2><p className="body">{t("im.body")}</p></div>
         </section>
 
+        <section id="incluye" className="incluye" aria-labelledby="t-incluye">
+          <div className="wrap">
+            <div className="head-row"><div><p className="eyebrow">{t("inc.eyebrow")}</p><h2 id="t-incluye">{t("inc.title")}</h2></div><div className="prose"><p>{t("inc.p")}</p></div></div>
+            <div className="inc-grid">
+              {[1, 2, 3, 4].map(i => <article key={i} className="inc"><span className="n">{String(i).padStart(2, "0")}</span><p className="kicker">{t(`inc.k${i}`)}</p><h3>{t(`inc.t${i}`)}</h3><p>{t(`inc.d${i}`)}</p></article>)}
+            </div>
+            <a className="btn btn-ghost inc-pdf" href={BROCHURE} download>{t("inc.pdf")}</a>
+          </div>
+        </section>
+
         <section id="casa" className="casa linen" aria-labelledby="t-casa">
           <div className="wrap">
             <div className="head-row"><div><p className="eyebrow">{t("casa.eyebrow")}</p><h2 id="t-casa">{t("casa.title")}</h2></div><div className="prose"><p>{t("casa.p")}</p></div></div>
@@ -206,6 +218,18 @@ export default function Site({ lang = "es" }) {
           <video autoPlay muted loop playsInline preload="metadata" poster="/videos/viento-belleza-horizontal-portada.webp"><source src="/videos/viento-belleza-horizontal.mp4" type="video/mp4" /></video>
         </section>
 
+        <section className="dia" id="un-dia" aria-labelledby="t-dia">
+          <div className="wrap">
+            <div className="dia-media"><img src="/fotos/atardecer-palmera.webp" alt="Atardecer desde el jardín, con una palmera y el mar al fondo" loading="lazy" width="1080" height="1432" /></div>
+            <div className="dia-copy">
+              <p className="eyebrow">{t("dia.eyebrow")}</p><h2 id="t-dia">{t("dia.title")}</h2>
+              <p className="dia-lede">{t("dia.p")}</p>
+              <ol className="dia-list">{[1, 2, 3, 4, 5, 6].map(i => <li key={i}><span className="when">{t(`dia.k${i}`)}</span><h3>{t(`dia.t${i}`)}</h3><p>{t(`dia.d${i}`)}</p></li>)}</ol>
+              <p className="fine">{t("dia.note")}</p>
+            </div>
+          </div>
+        </section>
+
         <section className="plans" id="planes" aria-labelledby="t-planes">
           <div className="wrap">
             <div className="head-row"><div><p className="eyebrow">{t("plans.eyebrow")}</p><h2 id="t-planes">{t("plans.title")}</h2></div><div className="prose"><p>{t("plans.p")}</p></div></div>
@@ -213,6 +237,7 @@ export default function Site({ lang = "es" }) {
               <Plan id="esencial" n="p1" img="/fotos/cafe-de-la-tia.webp" alt="Café de la mañana en la terraza" />
               <Plan id="plena" n="p2" img="/fotos/postre-maracuya.webp" alt="Postre de maracuyá en vaso" />
             </div>
+            <div className="seasons"><p {...html("plans.s1")} /><p {...html("plans.s2")} /></div>
           </div>
         </section>
 
@@ -245,6 +270,7 @@ export default function Site({ lang = "es" }) {
               <div className="c"><img src="/fotos/tequeno-queso.webp" alt="Tequeño recién hecho con queso" loading="lazy" /></div>
               <div className="d"><img src="/fotos/chef-sirviendo.webp" alt="Nuestra cocinera sirviendo el desayuno" loading="lazy" /></div>
             </div>
+            <div className="how"><h3>{t("mesa.h")}</h3><ol className="steps">{[1, 2, 3].map(i => <li key={i}>{t(`mesa.s${i}`)}</li>)}</ol></div>
             <div className="quote"><img src="/fotos/cafe-mesa.webp" alt="Taza de café en la terraza" loading="lazy" /><blockquote>{t("mesa.quote")}</blockquote></div>
           </div>
         </section>
@@ -278,6 +304,19 @@ export default function Site({ lang = "es" }) {
               <dl><dt>{t("where.d1")}</dt><dd>{t("where.v1")}</dd><dt>{t("where.d2")}</dt><dd>{t("where.v2")}</dd><dt>{t("where.d3")}</dt><dd>{t("where.v3")}</dd></dl>
               <div className="ctas"><a className="btn btn-primary" href={MAPS_URL} target="_blank" rel="noopener noreferrer">{t("where.maps")}</a><a className="btn btn-ghost" href="https://www.instagram.com/lacasamaracuya/" target="_blank" rel="noopener noreferrer">@lacasamaracuya</a></div>
             </div>
+          </div>
+        </section>
+
+        <section className="faq" id="preguntas" aria-labelledby="t-faq">
+          <div className="wrap">
+            <div><p className="eyebrow">{t("faq.eyebrow")}</p><h2 id="t-faq">{t("faq.title")}</h2></div>
+            <div className="faq-list">{Array.from({ length: 9 }, (_, i) => i + 1).map(i => {
+              const open = faq === i;
+              return <div key={i} className={`q${open ? " open" : ""}`}>
+                <h3><button type="button" id={`faq-q${i}`} aria-expanded={open} aria-controls={`faq-a${i}`} onClick={() => setFaq(open ? 0 : i)}>{t(`faq.q${i}`)}<span className="ico" aria-hidden="true" /></button></h3>
+                <div className="a" id={`faq-a${i}`} role="region" aria-labelledby={`faq-q${i}`} aria-hidden={!open}><div><p>{t(`faq.a${i}`)}</p></div></div>
+              </div>;
+            })}</div>
           </div>
         </section>
 

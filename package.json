@@ -8,7 +8,8 @@
     "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "vite preview",
     "fotos": "node scripts/fotos-webp.mjs",
-    "pdfs": "node scripts/pdfs.mjs"
+    "pdfs": "node scripts/pdfs.mjs",
+    "brochure": "node scripts/brochure.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",

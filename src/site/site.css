@@ -1,4 +1,8 @@
 html,body{margin:0;padding:0}
+/* Solo los dígitos 0-9 en Manrope, delante de Cormorant. Se declara también en cursiva para que
+   el navegador no incline los números de los títulos en itálica. */
+@font-face{font-family:"Cifras";font-style:normal;font-weight:400;font-display:swap;size-adjust:90%;unicode-range:U+0030-0039;src:url(https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2) format("woff2")}
+@font-face{font-family:"Cifras";font-style:italic;font-weight:400;font-display:swap;size-adjust:90%;unicode-range:U+0030-0039;src:url(https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2) format("woff2")}
 [hidden]{display:none!important}
 
 /* Layout: lujo descalzo. Fondo claro de casa de playa, fotos grandes y asimétricas,
@@ -24,7 +28,7 @@ html,body{margin:0;padding:0}
   --eyebrow:var(--verde-tabla); --badge-bg:var(--alga); --badge-fg:var(--sol);
   --logo-light:block; --logo-dark:none; --hero-em:var(--melon); color-scheme:light;
   /* Tipografía */
-  --f-display:"Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+  --f-display:"Cifras", "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
   --f-body:"Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
   --step--1:clamp(.78rem,.75rem + .1vw,.84rem);
   --step-0:clamp(1rem,.96rem + .2vw,1.08rem);
@@ -350,6 +354,9 @@ form.card{background:var(--surface);border-radius:28px;padding:clamp(22px,3.4vw,
 .field label,.field legend{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .field input,.field select,.field textarea{width:100%;min-height:48px;padding:.7em .9em;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:500 16px/1.4 var(--f-body)}
 .field textarea{min-height:96px;resize:vertical}
+.field input[type="date"]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;text-align:left}
+.field input[type="date"]::-webkit-date-and-time-value{text-align:left;margin:0}
+.field input[type="date"]::-webkit-datetime-edit{padding:0}
 .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
 fieldset.field{border:0;padding:0;margin:0}
 .choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -651,3 +658,70 @@ footer .legal .dot{color:var(--accent);margin:0 .35em}
   footer .foot-nav,footer .foot-contact{grid-row:auto}
   footer .foot-nav{grid-column:1}footer .foot-contact{grid-column:1 / -1}
 }
+
+/* Lo que incluye: la razón de la tarifa, antes de ver la casa */
+.incluye{background-color:var(--bg)}
+.inc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2vw,24px);margin-top:clamp(36px,5vw,64px)}
+.inc{position:relative;padding:clamp(22px,2.6vw,32px);border-radius:24px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.inc:nth-child(2){background:var(--deep);color:var(--on-deep);border-color:transparent}
+.inc .n{font-family:var(--f-body);font-weight:300;font-size:1.9rem;line-height:1;letter-spacing:.02em;color:var(--accent)}
+.inc .kicker{font-size:var(--step--1);text-transform:uppercase;letter-spacing:.16em;font-weight:700;color:var(--green)}
+.inc:nth-child(2) .kicker{color:var(--accent)}
+.inc h3{font-size:var(--step-1)}
+.inc p:last-child{color:var(--ink-soft);font-size:.95rem}
+.inc:nth-child(2) p:last-child{color:#d8d0c3}
+.inc-pdf{margin-top:clamp(28px,4vw,44px)}
+@media (max-width:1000px){.inc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.inc-grid{grid-template-columns:1fr}}
+
+/* Temporadas, debajo de los planes */
+.seasons{display:flex;flex-wrap:wrap;gap:10px 36px;margin-top:clamp(24px,3vw,36px);padding-top:20px;border-top:1px solid #4d5646;font-size:.95rem;color:#cfc6b8}
+.seasons b{color:var(--arena-seca)}
+
+/* Cómo funciona la mesa */
+.how{margin-top:clamp(40px,6vw,72px);display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:20px 48px;align-items:start}
+.how h3{font-size:var(--step-2)}
+.how .steps{margin:0}
+@media (max-width:820px){.how{grid-template-columns:1fr}}
+
+/* Preguntas frecuentes: una abierta a la vez, se despliega suave */
+.faq{background-color:var(--bg)}
+.faq .wrap{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(24px,5vw,72px);align-items:start}
+.faq h2{font-size:var(--step-3);margin-top:14px;max-width:14ch}
+.faq-list{border-top:1px solid var(--line)}
+.faq .q{border-bottom:1px solid var(--line)}
+.faq .q h3{margin:0;font:inherit}
+.faq .q button{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:60px;padding:16px 0;font-family:var(--f-display);font-size:var(--step-1);line-height:1.2;color:var(--ink);transition:color .3s ease}
+.faq .q button:hover{color:var(--green)}
+.faq .q button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.faq .ico{position:relative;flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);transition:background-color .4s ease,border-color .4s ease,transform .5s cubic-bezier(.3,1.4,.5,1)}
+.faq .ico::before,.faq .ico::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:1.5px;margin:-.75px 0 0 -6px;background:var(--accent);border-radius:2px;transition:transform .5s cubic-bezier(.3,1.4,.5,1),background-color .4s ease}
+.faq .ico::after{transform:rotate(90deg)}
+.faq .q.open .ico{background:var(--accent);border-color:var(--accent);transform:rotate(180deg)}
+.faq .q.open .ico::before,.faq .q.open .ico::after{background:var(--accent-ink)}
+.faq .q.open .ico::after{transform:rotate(0deg)}
+.faq .a{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s cubic-bezier(.2,.7,.2,1)}
+.faq .q.open .a{grid-template-rows:1fr}
+.faq .a>div{overflow:hidden;min-height:0}
+.faq .a p{padding:0 48px 20px 0;color:var(--ink-soft);max-width:62ch;opacity:0;transform:translateY(-6px);transition:opacity .35s ease,transform .45s cubic-bezier(.2,.7,.2,1)}
+.faq .q.open .a p{opacity:1;transform:none;transition-delay:.1s}
+@media (prefers-reduced-motion:reduce){.faq .a,.faq .a p,.faq .ico,.faq .ico::before,.faq .ico::after{transition:none}}
+@media (max-width:820px){.faq .wrap{grid-template-columns:1fr}.faq .a p{padding-right:0}}
+
+/* Un día en Casa Maracuyá: la foto se queda quieta mientras pasa el día */
+.dia{background-color:var(--surface)}
+.dia .wrap{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(28px,6vw,96px);align-items:start}
+.dia-media{position:sticky;top:96px}
+.dia-media img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:999px 999px 28px 28px}
+.dia h2{font-size:var(--step-3);margin-top:14px;max-width:16ch}
+.dia-lede{margin-top:20px;font-family:var(--f-display);font-style:italic;font-size:var(--step-1);line-height:1.35;color:var(--ink-soft);max-width:40ch}
+.dia-list{list-style:none;margin:clamp(28px,4vw,44px) 0 20px;padding:0;position:relative}
+.dia-list::before{content:"";position:absolute;left:6px;top:10px;bottom:10px;width:1px;background:linear-gradient(var(--sol),var(--accent) 55%,var(--deep))}
+.dia-list li{position:relative;padding:0 0 clamp(22px,3vw,30px) 36px}
+.dia-list li::before{content:"";position:absolute;left:0;top:6px;width:13px;height:13px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.dia-list li:last-child::before{background:var(--deep);border-color:var(--deep)}
+.dia-list .when{font-size:var(--step--1);text-transform:uppercase;letter-spacing:.16em;font-weight:700;color:var(--green)}
+.dia-list h3{font-size:var(--step-2);margin-top:4px}
+.dia-list p{margin-top:6px;color:var(--ink-soft);max-width:46ch}
+@media (max-width:820px){.dia .wrap{grid-template-columns:1fr}.dia-media{position:relative;top:0;width:min(78%,340px);justify-self:center}}
+:root[data-mode="dark"] :is(.incluye,.faq,.dia){background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.91  0 0 0 0 0.86  0 0 0 0 0.8  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
