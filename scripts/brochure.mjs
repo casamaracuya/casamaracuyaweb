@@ -88,7 +88,7 @@ b{font-weight:700}
 .cover .photo{position:absolute;inset:0}
 .cover .photo img{object-position:88% 50%}
 .cover .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(24,28,21,.55) 0%,rgba(24,28,21,0) 26%,rgba(24,28,21,0) 44%,rgba(24,28,21,.78) 66%,rgba(24,28,21,.96) 100%)}
-.cover .logo{position:absolute;top:9mm;left:8mm;width:34mm;filter:drop-shadow(0 1px 6px rgba(0,0,0,.35))}
+.cover .logo{position:absolute;top:9mm;left:8mm;width:34mm}
 .cover .seal{position:absolute;top:8mm;right:8mm;width:22mm;opacity:.95}
 .cover .txt{position:absolute;left:8mm;right:8mm;bottom:15mm}
 .cover .eyebrow{color:var(--sol)}
@@ -121,7 +121,7 @@ b{font-weight:700}
 .team i{font-style:normal;font-weight:300;font-size:13pt;line-height:1;color:var(--arena-adicora)}
 .team b{display:block;font-weight:600;color:#fff;font-size:9pt}
 .team span{font-size:8pt;color:var(--aguacate);line-height:1.35}
-.seven{position:absolute;right:6mm;top:58mm;width:23mm;height:23mm;border-radius:50%;background:var(--sol);color:var(--alga);display:grid;place-content:center;text-align:center;transform:rotate(-8deg);box-shadow:0 6px 16px -6px rgba(0,0,0,.5)}
+.seven{position:absolute;right:6mm;top:58mm;width:23mm;height:23mm;border-radius:50%;background:var(--sol);color:var(--alga);display:grid;place-content:center;text-align:center;transform:rotate(-8deg);outline:1.2mm solid var(--nocturna)}
 .seven b{font-size:21pt;line-height:.9;font-weight:300}
 .seven span{font-size:5.4pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:1mm}
 
