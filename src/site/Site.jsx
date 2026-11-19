@@ -44,7 +44,7 @@ export default function Site({ lang = "es" }) {
       vids.forEach(v => io.observe(v)); offs.push(() => io.disconnect());
       const pet = root.current.querySelector("#petVideo"); let away = true;
       if (pet) { const po = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting && away) { away = false; pet.currentTime = 0; pet.play().catch(() => {}); } else if (!en.isIntersecting) { away = true; pet.pause(); } }), { threshold: .45 }); po.observe(pet); offs.push(() => po.disconnect()); }
-      const sel = [".head-row",".barefoot .text",".barefoot .big",".barefoot .details figure",".fullbleed .wrap",".strip figure",".room .main",".room .side > *",".welcome > *",".plan",".pet-media",".pet-copy",".table-grid > *",".quote",".chapter .media",".chapter .copy",".inc",".seasons",".how",".dia-media",".dia-list li",".faq .wrap > *",".where .map",".where .wrap > div:last-child",".book .wrap > *"];
+      const sel = [".head-row",".barefoot .text",".barefoot .big",".barefoot .details figure",".fullbleed .wrap",".strip figure",".room .main",".room .side > *",".welcome > *",".plan",".pet-media",".pet-copy",".table-grid > *",".quote",".chapter .media",".chapter .copy",".inc",".seasons",".compare",".how",".dia-media",".dia-list li",".faq .wrap > *",".where .map",".where .wrap > div:last-child",".book .wrap > *"];
       const zoom = new Set($$(".barefoot .big, .room .main, .chapter .media, .table-grid > div"));
       const els = new Set(); sel.forEach(q => $$(q).forEach(e => els.add(e)));
       const ro = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add("in"); ro.unobserve(en.target); } }), { threshold: .12, rootMargin: "0px 0px -6% 0px" });
@@ -106,17 +106,22 @@ export default function Site({ lang = "es" }) {
   const waHref = result ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(result.text)}` : "#";
   const copyMsg = async () => { try { await navigator.clipboard.writeText(result.text); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* */ } };
 
+  // Mensaje de WhatsApp listo, con el plan y el tamaño del grupo que eligió en la tarjeta
+  const waPlan = id => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wa").replace("{plan}", t(id === "plena" ? "p2.title" : "p1.title")).replace("{grp}", t(group[id] === "6-12" ? "grp.large" : "grp.small")))}`;
   const Plan = ({ id, img, alt, n: k }) => (
     <article className="plan" data-plan={id}>
       <img src={img} alt={alt} loading="lazy" />
       <div className="body">
         <h3>{t(`${k}.title`)}</h3>
         <p className="includes">{t(`${k}.sub`)}</p>
-        <ul><li>{t(`${k}.l1`)}</li><li>{t(`${k}.l2`)}</li><li>{t(`${k}.l3`)}</li></ul>
+        <p className="ideal">{t(`${k}.ideal`)}</p>
+        <ul>{[1, 2, 3, 4].map(i => <li key={i}>{t(`${k}.l${i}`)}</li>)}</ul>
+        <p className="out">{t(`${k}.out`)}</p>
         <div className="seg" role="group" aria-label="Tamaño del grupo">
           {[["1-6", "grp.small"], ["6-12", "grp.large"]].map(([g, key]) => <button key={g} type="button" aria-pressed={group[id] === g} onClick={() => setGroup(x => ({ ...x, [id]: g }))}>{t(key)}</button>)}
         </div>
-        <div className="price"><span>{t("plans.rate")}</span><a className="btn btn-primary" href="#reservar" onClick={() => pick(id)}>{t("plans.book")}</a></div>
+        <p className="rate">{t("plans.rate")}</p>
+        <div className="price"><a className="btn btn-primary" href="#reservar" onClick={() => pick(id)}>{t("plans.book")}</a><a className="btn btn-ghost" href={waPlan(id)} target="_blank" rel="noopener noreferrer">{t("plans.ask")}</a></div>
       </div>
     </article>
   );
@@ -238,6 +243,15 @@ export default function Site({ lang = "es" }) {
               <Plan id="plena" n="p2" img="/fotos/postre-maracuya.webp" alt="Postre de maracuyá en vaso" />
             </div>
             <div className="seasons"><p {...html("plans.s1")} /><p {...html("plans.s2")} /></div>
+            <div className="compare">
+              <table>
+                <caption>{t("cmp.title")}</caption>
+                <thead><tr><th scope="col">{t("cmp.what")}</th><th scope="col">{t("p1.title")}</th><th scope="col">{t("p2.title")}</th></tr></thead>
+                <tbody>{[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => <tr key={i} className={i > 7 ? "diff" : ""}><th scope="row">{t(`cmp.r${i}`)}</th>
+                  {[i <= 7, true].map((on, j) => <td key={j}>{on ? <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label={t("cmp.yes")}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg> : <span className="dash" role="img" aria-label={t("cmp.no")}>—</span>}</td>)}</tr>)}</tbody>
+              </table>
+              <div className="help"><p>{t("cmp.help")}</p><a className="btn btn-primary" href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wahelp"))}`} target="_blank" rel="noopener noreferrer">{t("cmp.helpbtn")}</a></div>
+            </div>
           </div>
         </section>
 
@@ -310,7 +324,7 @@ export default function Site({ lang = "es" }) {
         <section className="faq" id="preguntas" aria-labelledby="t-faq">
           <div className="wrap">
             <div><p className="eyebrow">{t("faq.eyebrow")}</p><h2 id="t-faq">{t("faq.title")}</h2></div>
-            <div className="faq-list">{Array.from({ length: 9 }, (_, i) => i + 1).map(i => {
+            <div className="faq-list">{Array.from({ length: 10 }, (_, i) => i + 1).map(i => {
               const open = faq === i;
               return <div key={i} className={`q${open ? " open" : ""}`}>
                 <h3><button type="button" id={`faq-q${i}`} aria-expanded={open} aria-controls={`faq-a${i}`} onClick={() => setFaq(open ? 0 : i)}>{t(`faq.q${i}`)}<span className="ico" aria-hidden="true" /></button></h3>

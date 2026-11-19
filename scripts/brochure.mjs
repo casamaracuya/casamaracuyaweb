@@ -1,5 +1,5 @@
 // Brochure de Casa Maracuyá para enviar por WhatsApp junto con la cotización.
-// 7 páginas verticales (9:16) pensadas para leerse en el teléfono, con los colores y letras de la web.
+// 8 páginas verticales (9:16) pensadas para leerse en el teléfono, con los colores y letras de la web.
 // Uso: npm run brochure  →  public/brochure-casa-maracuya.pdf
 // Necesita internet para bajar las letras (Google Fonts) y Chrome o Edge instalado.
 import fs from "node:fs";
@@ -38,6 +38,19 @@ for (const n of FOTOS) {
   img[n] = pathToFileURL(out).href;
 }
 const logo = n => pathToFileURL(path.join(ROOT, "public", "logo", n)).href;
+
+// ---------- Precios por noche (solo en el PDF, nunca en la web) ----------
+// [1 a 6 huéspedes, 7 a 12 huéspedes]. null = sin precio todavía.
+const PRECIOS = {
+  moneda: "USD",
+  esencial: { midweek: [653, 1088], weekend: [870, 1450], alta: [null, null] },
+  plena: { midweek: [885, 1485], weekend: [1180, 1980], alta: [null, null] }
+};
+const fmt = v => v == null ? "Consultar" : `${PRECIOS.moneda === "USD" ? "$" : ""}${v}${PRECIOS.moneda === "USD" ? "" : " " + PRECIOS.moneda}`;
+const priceTable = () => { const E = PRECIOS.esencial, P = PRECIOS.plena;
+  const row = (k, name, when) => `<tr><th>${name}<small>${when}</small></th><td>${fmt(E[k][0])}</td><td>${fmt(E[k][1])}</td><td class="pl">${fmt(P[k][0])}</td><td class="pl">${fmt(P[k][1])}</td></tr>`;
+  return `<table class="prices"><thead><tr><th rowspan="2">Por noche</th><th colspan="2">Esencial</th><th colspan="2" class="pl">Plena</th></tr><tr><th>1 a 6</th><th>7 a 12</th><th class="pl">1 a 6</th><th class="pl">7 a 12</th></tr></thead><tbody>
+  ${row("midweek", "Midweek", "lun a mié")}${row("weekend", "Weekend", "jue a dom")}<tr class="alta"><th>Temp. alta<small>mín. 4 noches</small></th><td colspan="4">Tarifa según fechas · consúltanos</td></tr></tbody></table>`; };
 
 const CSS = `
 @font-face{font-family:"Cifras";font-style:normal;font-weight:400;size-adjust:90%;unicode-range:U+0030-0039;src:url(https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2) format("woff2")}
@@ -114,7 +127,7 @@ b{font-weight:700}
 
 /* 4 · La cocina */
 .p4{background:var(--merey)}
-.p4 .collage{flex:none;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:1.5mm;height:60mm;overflow:hidden}
+.p4 .collage{flex:none;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:1.5mm;height:80mm;overflow:hidden}
 .p4 .collage img{width:100%;height:100%;min-height:0;object-fit:cover;display:block}
 .p4 .collage img:first-child{grid-row:1 / span 2}
 .p4 .body{padding-top:5mm}
@@ -131,6 +144,39 @@ b{font-weight:700}
 .card p{font-size:7.8pt;line-height:1.38;margin-top:1.5mm;color:var(--verde-tabla)}
 .card.plena p{color:#d8d0c3}
 .bar{margin-top:3.5mm;font-size:7.8pt;line-height:1.4;color:var(--verde-tabla);padding-left:3mm;border-left:2px solid var(--arena-adicora)}
+
+/* Planes */
+.pp{background:var(--raspao)}
+.pp .body{padding-top:6.5mm}
+.pp h2{font-size:22pt}
+.both{display:flex;flex-wrap:wrap;gap:1.2mm;margin-top:3mm}
+.both span{padding:.7mm 2mm;border-radius:99px;background:var(--arena-seca);font-size:6.4pt;font-weight:600}
+.plan{margin-top:3mm;border-radius:4mm;padding:3.2mm 4mm;background:#fff;border:1px solid var(--merey)}
+.plan.plena{background:var(--verde-tabla);color:var(--arena-seca);border-color:transparent}
+.plan .top{display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
+.plan h3{font-size:14.5pt}
+.plan .tag{font-size:6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
+.plan.plena .tag{color:var(--arena-adicora)}
+.plan .ideal{font-family:var(--f-display);font-style:italic;font-size:9.6pt;line-height:1.25;margin-top:1mm;color:var(--verde-tabla)}
+.plan.plena .ideal{color:var(--arena-seca)}
+.plan ul{list-style:none;padding:0;margin:2mm 0 0;display:grid;gap:.8mm}
+.plan li{position:relative;padding-left:3.6mm;font-size:7.6pt;line-height:1.35}
+.plan li::before{content:"";position:absolute;left:0;top:.55em;width:1.5mm;height:1.5mm;border-radius:50%;background:var(--arena-adicora)}
+.plan li.no{color:#8a8b78}.plan li.no::before{background:transparent;border:1px solid #8a8b78;box-sizing:border-box}
+.plan.plena li{color:#e8dccd}
+.prices{width:100%;border-collapse:collapse;margin-top:1.5mm;font-size:7pt}
+.prices th,.prices td{padding:1mm .8mm;border-bottom:1px solid var(--merey);text-align:center}
+.prices thead th{font-size:5.6pt;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--melon);padding:1mm .8mm}
+.prices thead tr:first-child th{font-size:6.4pt;color:var(--alga);border-bottom:0;padding-bottom:0}
+.prices thead tr:first-child th.pl{color:var(--verde-tabla)}
+.prices .pl{background:rgba(61,61,42,.07)}
+.prices th:first-child,.prices tbody th{text-align:left}
+.prices tbody th{font-weight:600;font-size:7.4pt}
+.prices small{display:block;font-weight:400;font-size:5.8pt;color:#8a8b78}
+.prices td{font-size:8.6pt;font-weight:600;white-space:nowrap}
+.prices tr.alta td{font-size:7.2pt;font-weight:500;color:var(--verde-tabla);background:none}
+.pp .tt{margin-top:3mm;color:var(--arena-adicora)}
+.pp .fine{margin-top:2mm;font-size:6.6pt;color:#5f604f;line-height:1.4}
 
 /* 5 · La villa */
 .p5{background:var(--raspao)}
@@ -174,14 +220,17 @@ b{font-weight:700}
 .occ p{font-size:7.6pt;line-height:1.35;margin-top:1.2mm;color:var(--aguacate)}
 .season{margin-top:3mm;display:grid;gap:1.2mm;font-size:7.8pt;line-height:1.4;color:#d8d0c3}
 .season b{color:#fff;font-weight:600}
-.quote-cta{margin-top:3.5mm;padding:3mm 3.5mm;border-radius:3.5mm;background:var(--arena-adicora);color:var(--alga);font-size:8.2pt;line-height:1.4}
+.pay{display:flex;flex-wrap:wrap;align-items:center;gap:1.5mm;margin-top:3mm}
+.pay span{font-size:6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--aguacate);margin-right:1mm}
+.pay b{padding:.9mm 2.6mm;border-radius:99px;border:1px solid var(--arena-adicora);color:#fff;font-size:7.6pt;font-weight:600}
+.quote-cta{margin-top:3mm;padding:3mm 3.5mm;border-radius:3.5mm;background:var(--arena-adicora);color:var(--alga);font-size:8.2pt;line-height:1.4}
 .quote-cta b{font-family:var(--f-display);font-size:12pt;font-weight:600;display:block;line-height:1.1}
 .contact{margin-top:auto;margin-bottom:12mm;display:grid;grid-template-columns:auto 1fr;gap:1mm 3mm;font-size:7.8pt;padding-top:3mm;border-top:1px solid #47503f}
 .contact dt{color:var(--aguacate);font-size:6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;padding-top:.5mm}
 .contact dd{margin:0;color:#fff;font-weight:600}
 `;
 
-const folio = n => `<div class="folio"><span>Casa Maracuyá · Adícora</span><span><b>${String(n).padStart(2, "0")}</b> / 07</span></div>`;
+const folio = n => `<div class="folio"><span>Casa Maracuyá · Adícora</span><span><b>${String(n).padStart(2, "0")}</b> / 08</span></div>`;
 
 const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Casa Maracuyá · Brochure</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;600;700&display=block">
@@ -203,7 +252,7 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
       <div><b>7</b><span>Personas a tu servicio</span></div>
     </div>
   </div>
-  <div class="folio"><span>Adícora, Falcón — Venezuela</span><span><b>01</b> / 07</span></div>
+  <div class="folio"><span>Adícora, Falcón — Venezuela</span><span><b>01</b> / 08</span></div>
 </section>
 
 <!-- 2 · Filosofía -->
@@ -252,16 +301,36 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
       <li>Lo apruebas antes de llegar y nos cuentas alergias o gustos.</li>
       <li>Durante tu estadía eliges, día a día, qué te provoca para mañana.</li>
     </ol>
-    <div class="cards">
-      <div class="card"><p class="eyebrow">Experiencia</p><h3>Esencial</h3><p>Desayuno de autor cada mañana, frente al mar, preparado por nuestra chef.</p></div>
-      <div class="card plena"><p class="eyebrow">Experiencia</p><h3>Plena</h3><p>Desayuno, almuerzo (o cava gourmet para la playa) y cena en tiempos: abrebocas o sopa, plato fuerte y postre.</p></div>
-    </div>
-    <p class="bar">Ambas incluyen café, té y jugos naturales. <b>¿Traes tus bebidas?</b> Nuestro equipo las enfría, te prepara los tragos y te los sirve. La cocina es de uso exclusivo del equipo: así tú solo te sientas a la mesa.</p>
+    <p class="bar">Siempre café, té y jugos naturales. <b>¿Traes tus bebidas?</b> Nuestro equipo las enfría, te prepara los tragos y te los sirve. La cocina es de uso exclusivo del equipo: así tú solo te sientas a la mesa.</p>
   </div>
   ${folio(4)}
 </section>
 
-<!-- 5 · La villa -->
+<!-- 5 · Los planes -->
+<section class="pg pp">
+  <div class="body">
+    <p class="eyebrow">Elige tu experiencia</p>
+    <h2>Dos formas de vivir <em>la casa.</em></h2>
+    <p class="lead">La casa y el equipo son siempre tuyos. Lo que eliges es cuánto cocina nuestra chef para ti.</p>
+    <div class="both"><span>Casa completa y 3 habitaciones</span><span>Equipo de 7</span><span>Bienvenida con historia</span><span>Concierge</span><span>Café, té y jugos</span><span>Servicio de tus bebidas</span></div>
+    <div class="plan">
+      <div class="top"><h3>Experiencia Esencial</h3><span class="tag">Desayuno incluido</span></div>
+      <p class="ideal">Para despertar con la mesa servida y salir a explorar Adícora y la península.</p>
+      <ul><li>Desayuno de autor cada mañana, preparado por nuestra chef</li><li class="no">Sin almuerzo ni cena: la cocina es de uso exclusivo del equipo</li></ul>
+    </div>
+    <div class="plan plena">
+      <div class="top"><h3>Experiencia Plena</h3><span class="tag">Todas las comidas</span></div>
+      <p class="ideal">Para desconectarte de verdad: niños, grupos grandes o kiters que vuelven con hambre.</p>
+      <ul><li>Desayuno de autor cada mañana</li><li>Almuerzo en casa o cava gourmet para la playa</li><li>Cena en tiempos: abrebocas o sopa, plato fuerte y postre</li></ul>
+    </div>
+    <p class="eyebrow tt">Tarifas por noche · por grupo</p>
+    ${priceTable()}
+    <p class="fine">Precios en dólares (USD) por noche, para todo el grupo, no por persona. Temporada regular desde 1 noche.</p>
+  </div>
+  ${folio(5)}
+</section>
+
+<!-- 6 · La villa -->
 <section class="pg p5">
   <div class="duo"><img src="${img["hab-maracuya"]}" alt=""><img src="${img["hab-del-valle"]}" alt=""></div>
   <div class="body">
@@ -278,10 +347,10 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
     </div>
     <dl class="hours"><div><dt>Check-in</dt><dd>desde las 3:00 PM</dd></div><div><dt>Check-out</dt><dd>hasta las 11:00 AM</dd></div></dl>
   </div>
-  ${folio(5)}
+  ${folio(6)}
 </section>
 
-<!-- 6 · Viento y mar -->
+<!-- 7 · Viento y mar -->
 <section class="pg p6">
   <div class="photo"><img src="${img["atardecer-kite"]}" alt=""></div>
   <div class="body">
@@ -294,24 +363,25 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
       <div><i>Si vienes a desconectarte</i><p>Piscina, muelle, atardeceres frente al faro y nadie apurándote.</p></div>
     </div>
   </div>
-  ${folio(6)}
+  ${folio(7)}
 </section>
 
-<!-- 7 · Cierre -->
+<!-- 8 · Cierre -->
 <section class="pg p7 dark">
   <div class="photo"><img src="${img["noche-piscina"]}" alt=""></div>
   <div class="body">
     <p class="eyebrow">Reservas</p>
     <h2>Diseña tu estadía en <em>Casa Maracuyá.</em></h2>
     <div class="occ">
-      <div><p class="eyebrow">Plan íntimo</p><h3>1 a 6 huéspedes</h3><p>Las 3 habitaciones a tu disposición.</p></div>
-      <div><p class="eyebrow">Full house</p><h3>7 a 12 huéspedes</h3><p>La casa completa para familias y grupos grandes.</p></div>
+      <div><p class="eyebrow">Plan íntimo</p><h3>1 a 6 huéspedes</h3></div>
+      <div><p class="eyebrow">Full house</p><h3>7 a 12 huéspedes</h3></div>
     </div>
     <div class="season">
       <p><b>Siempre la casa entera, solo para tu grupo.</b> Tarifa fija por grupo, no por persona.</p>
-      <p><b>Temporada regular:</b> desde 1 noche. Tarifa midweek (lunes a miércoles), la más conveniente, y weekend (jueves a domingo).</p>
+      <p><b>Temporada regular:</b> desde 1 noche. Midweek (lunes a miércoles), la más conveniente, y weekend (jueves a domingo). Precios en la página 5.</p>
       <p><b>Temporada alta:</b> estadía mínima de 4 noches.</p>
     </div>
+    <div class="pay"><span>Métodos de pago</span><b>Zelle</b><b>Efectivo</b><b>USDT</b></div>
     <div class="quote-cta"><b>Tu cotización viene con este brochure.</b>La preparamos para tus fechas, tu grupo y la experiencia que elijas.</div>
     <dl class="contact">
       <dt>WhatsApp</dt><dd>${WA_TXT}</dd>
@@ -320,7 +390,7 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
       <dt>Correo</dt><dd>${EMAIL}</dd>
     </dl>
   </div>
-  <div class="folio"><span>Viento, mar y cero prisa.</span><span><b>07</b> / 07</span></div>
+  <div class="folio"><span>Viento, mar y cero prisa.</span><span><b>08</b> / 08</span></div>
 </section>
 </body></html>`;
 
