@@ -204,6 +204,27 @@ function AuditSec({ r }) {
 
 /* ---------- Detalle de reserva ---------- */
 const TEMPLATES = [
+  ["Bienvenida completa", `¡Hola {n}! 👋 Qué gusto saludarte. Bienvenido a *Casa Maracuyá*, tu villa privada junto al Faro de Adícora 🌊
+
+Más que una casa de playa, es hospitalidad boutique: llegas como turista y te vas conociendo el alma de este lugar.
+
+✨ *Lo que hace única tu estadía*
+• *La casa completa, solo para tu grupo*, con sus 3 habitaciones, vengan 2 o 12.
+• *Un equipo de 7 personas a tu servicio:* chef privada, ayudante de cocina, dos anfitrionas, limpieza, mantenimiento y concierge.
+• *Bienvenida con historia:* una historiadora del pueblo les cuenta, en 5 minutos, los secretos de Adícora, del faro y de la casa 🏛️
+• *Tú no cocinas ni lavas un plato.* La cocina es solo de nuestro equipo.
+
+🍽️ *Experiencias*
+• *Esencial:* desayuno de autor cada mañana.
+• *Plena:* desayuno, almuerzo (o cava para la playa) y cena en tiempos.
+Siempre café, té y jugos. ¿Traen sus bebidas? Se las servimos y les preparamos los tragos 🍸
+
+🏡 *Tarifa fija por grupo, no por persona:* 1 a 6 personas o 7 a 12.
+Piscina, muelle frente al mar, planta eléctrica, A/A, agua caliente, Wi-Fi y un concierge kitesurfista 🪁
+
+📎 Aquí puedes ver la presentación completa: https://casa-maracuya.com/brochure-casa-maracuya.pdf
+
+Ya tengo tus fechas ({f}). En un momento te envío la cotización 📅`],
   ["Saludo", "¡Hola {n}! Gracias por escribirle a Casa Maracuyá. Tenemos tus fechas ({f}). Te cuento la tarifa y lo que incluye el plan en un momento."],
   ["Disponible", "¡Buenas noticias, {n}! Las fechas {f} están libres. Si quieres, te las apartamos 24 horas mientras haces el anticipo."],
   ["Sin cupo", "Hola {n}, qué pena: las fechas {f} ya están tomadas. ¿Te sirve otra fecha cercana?"]
@@ -254,7 +275,7 @@ export function ResSheet({ id }) {
     </div></section>
     {r.notes && <section className="sec"><div className="sec-h">Lo que nos contó</div><div className="group"><div className="row"><span className="grow" style={{ whiteSpace: "normal" }}>{r.notes}</span></div></div></section>}
     {canMove && ["nueva","conversacion"].includes(r.state) && <section className="sec"><div className="sec-h">Respuestas preparadas</div><div className="group">{TEMPLATES.map(([t, x]) => { const txt = x.replace("{n}", first).replace("{f}", fr); return (
-      <div key={t} className="row" style={{ alignItems: "flex-start" }}><span className="grow"><span className="t">{t}</span><span className="st" style={{ whiteSpace: "normal" }}>{txt}</span></span><button className="btn small plain press" onClick={() => copy(txt, toast)}>Copiar</button></div>); })}</div><p className="sec-f">Copia la respuesta y pégala en WhatsApp Business.</p></section>}
+      <div key={t} className="row" style={{ alignItems: "flex-start" }}><span className="grow"><span className="t">{t}</span><span className="st" style={{ whiteSpace: "pre-line", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{txt}</span></span><button className="btn small plain press" onClick={() => copy(txt, toast)}>Copiar</button></div>); })}</div><p className="sec-f">Copia la respuesta y pégala en WhatsApp Business.</p></section>}
   </>;
 }
 
