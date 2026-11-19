@@ -219,7 +219,7 @@ Más que una casa de playa, es hospitalidad boutique: llegas como turista y te v
 • *Plena:* desayuno, almuerzo (o cava para la playa) y cena en tiempos.
 Siempre café, té y jugos. ¿Traen sus bebidas? Se las servimos y les preparamos los tragos 🍸
 
-🏡 *Tarifa fija por grupo, no por persona:* 1 a 6 personas o 7 a 12.
+🏡 *Tarifa fija por grupo, no por persona:* 1 a 6 personas o 6 a 12.
 Piscina, muelle frente al mar, planta eléctrica, A/A, agua caliente, Wi-Fi y un concierge kitesurfista 🪁
 
 📎 Aquí puedes ver la presentación completa: https://casa-maracuya.com/brochure-casa-maracuya.pdf

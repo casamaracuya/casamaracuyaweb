@@ -40,7 +40,7 @@ for (const n of FOTOS) {
 const logo = n => pathToFileURL(path.join(ROOT, "public", "logo", n)).href;
 
 // ---------- Precios por noche (solo en el PDF, nunca en la web) ----------
-// [1 a 6 huéspedes, 7 a 12 huéspedes]. null = sin precio todavía.
+// [1 a 6 huéspedes, 6 a 12 huéspedes]. null = sin precio todavía.
 const PRECIOS = {
   moneda: "USD",
   esencial: { midweek: [653, 1088], weekend: [870, 1450], alta: [null, null] },
@@ -49,7 +49,7 @@ const PRECIOS = {
 const fmt = v => v == null ? "Consultar" : `${PRECIOS.moneda === "USD" ? "$" : ""}${v}${PRECIOS.moneda === "USD" ? "" : " " + PRECIOS.moneda}`;
 const priceTable = () => { const E = PRECIOS.esencial, P = PRECIOS.plena;
   const row = (k, name, when) => `<tr><th>${name}<small>${when}</small></th><td>${fmt(E[k][0])}</td><td>${fmt(E[k][1])}</td><td class="pl">${fmt(P[k][0])}</td><td class="pl">${fmt(P[k][1])}</td></tr>`;
-  return `<table class="prices"><thead><tr><th rowspan="2">Por noche</th><th colspan="2">Esencial</th><th colspan="2" class="pl">Plena</th></tr><tr><th>1 a 6</th><th>7 a 12</th><th class="pl">1 a 6</th><th class="pl">7 a 12</th></tr></thead><tbody>
+  return `<table class="prices"><thead><tr><th rowspan="2">Por noche</th><th colspan="2">Esencial</th><th colspan="2" class="pl">Plena</th></tr><tr><th>1 a 6</th><th>6 a 12</th><th class="pl">1 a 6</th><th class="pl">6 a 12</th></tr></thead><tbody>
   ${row("midweek", "Midweek", "lun a mié")}${row("weekend", "Weekend", "jue a dom")}<tr class="alta"><th>Temp. alta<small>mín. 4 noches</small></th><td colspan="4">Tarifa según fechas · consúltanos</td></tr></tbody></table>`; };
 
 const CSS = `
@@ -374,7 +374,7 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
     <h2>Diseña tu estadía en <em>Casa Maracuyá.</em></h2>
     <div class="occ">
       <div><p class="eyebrow">Plan íntimo</p><h3>1 a 6 huéspedes</h3></div>
-      <div><p class="eyebrow">Full house</p><h3>7 a 12 huéspedes</h3></div>
+      <div><p class="eyebrow">Full house</p><h3>6 a 12 huéspedes</h3></div>
     </div>
     <div class="season">
       <p><b>Siempre la casa entera, solo para tu grupo.</b> Tarifa fija por grupo, no por persona.</p>
