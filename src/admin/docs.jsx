@@ -47,14 +47,17 @@ function paginate(spec, m) {
   return { pages, over };
 }
 export function usePaged(spec) {
-  const ref = useRef(); const [m, setM] = useState(null);
+  const ref = useRef(); const last = useRef(""); const [m, setM] = useState(null);
+  // Mide después de cada dibujo, pero solo actualiza si alguna medida cambió. Pedir la
+  // actualización con las mismas medidas hacía que React volviera a dibujar sin parar.
   const measure = () => {
     const root = ref.current; if (!root) return;
     const caps = [...root.querySelectorAll(".dz-ms [data-fit]")].map(x => x.clientHeight);
     const hs = [...root.querySelectorAll(".dz-mb > [data-b]")].map(x => x.offsetHeight);
     const cs = Object.fromEntries([...root.querySelectorAll(".dz-mb > [data-c]")].map(x => [x.dataset.c, x.offsetHeight]));
     const sig = JSON.stringify([caps, hs, cs]);
-    setM(o => o && o.sig === sig ? o : { sig, caps, hs, cs });
+    if (sig === last.current) return;
+    last.current = sig; setM({ sig, caps, hs, cs });
   };
   useLayoutEffect(measure);
   useEffect(() => {
