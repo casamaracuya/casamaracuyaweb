@@ -368,7 +368,7 @@ page("old pp", `
     <p class="eyebrow tt">Tarifas por noche · casa completa</p>
     ${priceTable()}
     <p class="ej"><b>Ejemplo:</b> ${EJ.n} personas un fin de semana en la Experiencia Esencial: ${usd(EJ.b)} + ${EJ.extra} × ${usd(EJ.x)} = <b>${usd(EJ.total)} por noche</b>.</p>
-    <p class="fine">Precios en dólares (USD) por noche. Máximo ${PRECIOS.max} huéspedes. <b>Niños de 0 a 3 años:</b> cortesía (máx. 2 por reserva, compartiendo cama con sus padres; no suman como huésped adicional). Desde los 4 años cuentan como huésped regular.</p>
+    <p class="fine">Precios en dólares (USD) por noche. Máximo ${PRECIOS.max} huéspedes; los niños de 0 a 3 años no cuentan (detalles en «Bueno saberlo»).</p>
   </div>`);
 
 // Temporada alta
