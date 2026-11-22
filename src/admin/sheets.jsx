@@ -661,7 +661,7 @@ export function ProfileSheet() {
   const [name, setName] = useState(me?.name || ""); const [err, setErr] = useState("");
   const saveName = async e => { e.preventDefault(); setErr(""); const n = name.trim();
     if (n.length < 2) return setErr("Escribe tu nombre y apellido.");
-    const er = await act(a => a.setMiNombre(n), "Nombre guardado"); if (er) setErr(er); else renameMe(n.replace(/s+/g, " ")); };
+    const er = await act(a => a.setMiNombre(n), "Nombre guardado"); if (er) setErr(er); else renameMe(n.replace(/\s+/g, " ")); };
   return <>
     {me && <div className="res-hero"><span className="avatar l" style={{ background: "var(--accent-bg)", color: "var(--accent-ink)" }}>{initials(me.name)}</span><div><h3>{me.name}</h3><div className="st">{me.email}</div></div></div>}
     {me && <form className="sec form" onSubmit={saveName}><div className="sec-h">Tu nombre</div><div className="group">

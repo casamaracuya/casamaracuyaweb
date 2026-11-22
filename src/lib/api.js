@@ -18,6 +18,36 @@ export const findGuest = (S, phone) => {
   return hit ? hit[0] : null;
 };
 
+// Columnas que el equipo lee directo. El teléfono, el correo, las cédulas y el comprobante
+// no están aquí: los entrega datos_personales() solo a quien le toca (migración 0015).
+// Si agregas una columna a estas tablas, súmala aquí y en el «grant select» de la migración.
+const COLS = {
+  huespedes: "id,nombre,ciudad,alergias,gustos,mascota,celebra,kite,visitas,creado,cumple,no_le_gusta,notas",
+  acompanantes: "id,huesped_id,nombre,relacion,cumple,alergias,notas,creado,edad",
+  reservas: "id,codigo,huesped_id,plan,personas,mascota,llegada,salida,estado,canal,idioma,total,pagado,notas,vence_en,creado," +
+    "hora_llegada,adultos,ninos,vehiculos,bebidas,requerimientos,motivo,mascota_nombre,mascota_raza,ficha_firma,ficha_firmada,ficha_por,ficha_en," +
+    "concepto,comprobante_enviado"
+};
+async function privateData() {
+  const { data, error } = await supabase.rpc("datos_personales");
+  if (!error) return data || { huespedes: [], acompanantes: [], reservas: [] };
+  // Mientras no se haya corrido la migración 0015, la función no existe: se leen como antes.
+  const [h, a, r] = await Promise.all([
+    supabase.from("huespedes").select("id,telefono,tel_norm,email,documento"),
+    supabase.from("acompanantes").select("id,documento"),
+    supabase.from("reservas").select("id,ocupantes,comprobante_token,comprobante_correo")
+  ]);
+  return { huespedes: h.data || [], acompanantes: a.data || [], reservas: r.data || [] };
+}
+async function mergePrivate(S) {
+  const p = await privateData();
+  (p.huespedes || []).forEach(x => { const g = S.guests[x.id]; if (g) Object.assign(g, { phone: x.telefono || "", telNorm: x.tel_norm || "", email: x.email || "", doc: x.documento || "" }); });
+  const docs = {}; (p.acompanantes || []).forEach(x => { docs[x.id] = x.documento || ""; });
+  Object.values(S.guests).forEach(g => g.companions.forEach(c => { c.doc = docs[c.id] || ""; }));
+  const rs = {}; (p.reservas || []).forEach(x => { rs[x.id] = x; });
+  S.reservas.forEach(r => { const x = rs[r.id]; if (!x) return; r.ficha.people = x.ocupantes || []; r.receiptToken = x.comprobante_token || null; r.receiptTo = x.comprobante_correo || ""; });
+}
+
 /* ===================== Supabase ===================== */
 const real = {
   async session() { const { data } = await supabase.auth.getSession(); return data.session; },
@@ -28,7 +58,7 @@ const real = {
   async signOut() { await supabase.auth.signOut(); },
   // Cada persona escribe su propio nombre (al aceptar la invitación o desde Perfil).
   async setMiNombre(_S, name) {
-    const n = name.trim().replace(/s+/g, " ");
+    const n = name.trim().replace(/\s+/g, " ");
     await supabase.auth.updateUser({ data: { nombre: n } });
     ok(await supabase.rpc("fijar_mi_nombre", { p_nombre: n }));
   },
@@ -42,7 +72,7 @@ const real = {
   },
   async load() {
     await supabase.rpc("liberar_vencidas");
-    const q = t => supabase.from(t).select("*");
+    const q = t => supabase.from(t).select(COLS[t] || "*");
     const [hu, ac, re, ta, ha, ex, bl, pa, co, me, tf, pr, pe] = await Promise.all([
       q("huespedes"), q("acompanantes").order("creado"), q("reservas"), q("tareas").order("creado"), q("habitaciones").order("orden"), q("exteriores").order("orden"),
       q("bloqueos").order("desde"), q("pagos"), q("compras").order("creado", { ascending: false }),
@@ -55,14 +85,14 @@ const real = {
     const S = {
       guests: {}, reservas: [], tasks: [], rooms: [], outside: [], blocks: [], payments: [], shopping: [], menus: {}, rates: {}, promos: [], team: [], audits: [], cartas: null
     };
-    (hu.data || []).forEach(g => S.guests[g.id] = { name: g.nombre, city: g.ciudad, phone: g.telefono, telNorm: g.tel_norm || "", email: g.email || "", doc: g.documento || "", birthday: g.cumple,
+    (hu.data || []).forEach(g => S.guests[g.id] = { name: g.nombre, city: g.ciudad, phone: "", telNorm: "", email: "", doc: "", birthday: g.cumple,
       allergies: g.alergias || [], likes: g.gustos || [], dislikes: g.no_le_gusta || [], notes: g.notas || "", pet: g.mascota, visits: g.visitas, kite: g.kite, celebra: g.celebra, companions: [] });
-    (ac.data || []).forEach(a => S.guests[a.huesped_id]?.companions.push({ id: a.id, name: a.nombre, rel: a.relacion, birthday: a.cumple, allergies: a.alergias, notes: a.notas, doc: a.documento || "", age: a.edad }));
+    (ac.data || []).forEach(a => S.guests[a.huesped_id]?.companions.push({ id: a.id, name: a.nombre, rel: a.relacion, birthday: a.cumple, allergies: a.alergias, notes: a.notas, doc: "", age: a.edad }));
     S.reservas = (re.data || []).map(r => ({ id: r.id, code: r.codigo, g: r.huesped_id, plan: r.plan, people: r.personas, pet: r.mascota, in: r.llegada, out: r.salida, state: r.estado, channel: r.canal, lang: r.idioma || "es", created: ms(r.creado), hold: ms(r.vence_en), notes: r.notas,
       // Ficha de registro: la llena el huésped en papel y el equipo la pasa al panel.
-      total: +r.total || 0, concept: r.concepto || "", receiptToken: r.comprobante_token, receiptSent: ms(r.comprobante_enviado), receiptTo: r.comprobante_correo || "",
+      total: +r.total || 0, concept: r.concepto || "", receiptToken: null, receiptSent: ms(r.comprobante_enviado), receiptTo: "",
       ficha: { filled: !!r.ficha_en, at: ms(r.ficha_en), by: r.ficha_por, signed: ms(r.ficha_firmada), firma: r.ficha_firma || "", arrival: r.hora_llegada || "", adults: r.adultos, kids: r.ninos,
-        vehicles: r.vehiculos || [], drinks: r.bebidas || "", needs: r.requerimientos || "", reason: r.motivo || "", petName: r.mascota_nombre || "", petBreed: r.mascota_raza || "", people: r.ocupantes || [] } }));
+        vehicles: r.vehiculos || [], drinks: r.bebidas || "", needs: r.requerimientos || "", reason: r.motivo || "", petName: r.mascota_nombre || "", petBreed: r.mascota_raza || "", people: [] } }));
     S.tasks = (ta.data || []).map(t => ({ id: t.id, area: t.area, title: t.titulo, res: t.reserva_id, due: t.para, time: t.hora, done: t.hecha, damage: t.dano, photoPath: t.foto_url,
       who: t.asignada_a, doing: !!t.en_proceso && !t.hecha, doneBy: t.hecha_por, doneAt: ms(t.hecha_en) }));
     const withPhoto = S.tasks.filter(t => t.photoPath);
@@ -83,6 +113,7 @@ const real = {
     S.team = (pe.data || []).map(p => ({ id: p.id, name: p.nombre, roles: p.roles || [], phone: p.telefono || "" }));
     S.audits = (au.data || []).map(a => ({ id: a.id, res: a.reserva_id, area: a.ambito, level: a.nivel, note: a.nota, at: ms(a.creado) }));
     if (!ca.error) S.cartas = (ca.data || []).map(c => ({ id: c.id, name: c.nombre, data: c.datos || {}, updated: ms(c.actualizado) }));
+    await mergePrivate(S);
     return S;
   },
   subscribe(onChange) {
