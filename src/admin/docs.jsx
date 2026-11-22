@@ -320,6 +320,19 @@ function menuSecBlocks(s, i) {
   const head = { key: `${k}h`, gap: i ? 24 : 0, keep: true, el: <div className="dz-sec"><h2><span className="num">{n}.</span>{amp(s.titulo)}</h2><span className="rule" />{s.nota && <span className="aside">{s.nota}</span>}</div> };
   if (s.tipo === "elige") {
     const caja = (s.caja || []).filter(x => x.n || x.d);
+    // Si la lista y el recuadro quedan muy desparejos en altura, lado a lado deja un hueco
+    // grande debajo del más corto. Entonces van los platos en dos columnas y el recuadro
+    // a lo ancho debajo. La altura se estima en líneas de texto.
+    const lines = (t, per) => Math.ceil((t || "").length / per);
+    const left = items.reduce((h, it) => h + 1.5 + lines(it.d, 52), 1);
+    let right = 1.2; for (let j = 0; j < caja.length; j += 2) right += 1.3 + Math.max(...caja.slice(j, j + 2).map(x => lines(x.d, 26))) * .9;
+    if (caja.length && Math.max(left, right) > Math.min(left, right) * 1.4 + 2) {
+      const rows = []; for (let j = 0; j < items.length; j += 2) rows.push(items.slice(j, j + 2));
+      return [head,
+        ...(s.etiqueta ? [{ key: `${k}e`, gap: 16, keep: true, el: <div className="dz-eyebrow">{s.etiqueta}</div> }] : []),
+        ...rows.map((r, j) => ({ key: `${k}r${j}`, gap: j || s.etiqueta ? 12 : 16, el: <div className="dz-two">{r.map((it, x) => <Dish key={x} it={it} />)}</div> })),
+        { key: `${k}c`, gap: 18, el: <div className="dz-box wide">{s.cajaEtiqueta && <div className="dz-eyebrow">{s.cajaEtiqueta}</div>}<div className="grid">{caja.map((it, j) => <div key={j}><b>{it.n}</b>{it.d && <span>{it.d}</span>}</div>)}</div></div> }];
+    }
     return [head, { key: `${k}b`, gap: 16, el: <div className="dz-choose" style={caja.length ? undefined : { gridTemplateColumns: "1fr" }}>
       <div>{s.etiqueta && <div className="dz-eyebrow">{s.etiqueta}</div>}<div className="opts">{items.map((it, j) => <Dish key={j} it={it} />)}</div></div>
       {caja.length > 0 && <div className="dz-box">{s.cajaEtiqueta && <div className="dz-eyebrow">{s.cajaEtiqueta}</div>}<div className="grid">{caja.map((it, j) => <div key={j}><b>{it.n}</b>{it.d && <span>{it.d}</span>}</div>)}</div></div>}

@@ -99,6 +99,7 @@
 .dz-box .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 22px; margin-top:12px}
 .dz-box .grid b{display:block; font-size:12px; font-weight:500}
 .dz-box .grid span{display:block; font-size:11px; color:var(--dz-ink2); margin-top:2px}
+.dz-box.wide .grid{grid-template-columns:repeat(3,1fr)}
 .dz-two{display:grid; grid-template-columns:1fr 1fr; gap:14px 38px}
 .dz-two.one{grid-template-columns:1fr}
 .dz-lead{display:flex; align-items:baseline; gap:10px}
