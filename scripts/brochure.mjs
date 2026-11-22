@@ -48,6 +48,12 @@ const PRECIOS = {
   plena: { weekend: [920, 120], midweek: [680, 100] }
 };
 const usd = v => "$" + v;
+const cell = ([b, x]) => `<b>${usd(b)}</b><small>hasta ${PRECIOS.base} personas</small><span>+${usd(x)} <small>por persona adicional</small></span>`;
+const priceTable = () => { const E = PRECIOS.esencial, P = PRECIOS.plena;
+  return `<table class="prices"><thead><tr><th>Por noche</th><th>Esencial</th><th class="pl">Plena</th></tr></thead><tbody>
+  <tr><th>Weekend<small>jueves a domingo</small></th><td>${cell(E.weekend)}</td><td class="pl">${cell(P.weekend)}</td></tr>
+  <tr><th>Midweek<small>lunes a miércoles</small></th><td>${cell(E.midweek)}</td><td class="pl">${cell(P.midweek)}</td></tr>
+  <tr class="alta"><th>Temporada alta<small>mínimo ${MIN_ALTA} noches</small></th><td colspan="2">Todas las noches a precio <b>weekend</b>: el midweek no aplica.</td></tr></tbody></table>`; };
 const EJ = (() => { const [b, x] = PRECIOS.esencial.weekend, n = 8, extra = n - PRECIOS.base; return { n, extra, b, x, total: b + extra * x }; })();
 
 // Temporada alta: el año con calendario cargado más próximo (o ALTA_AÑO=2028 npm run brochure).
@@ -139,47 +145,6 @@ b{font-weight:700}
 .pair dt{font-size:6.6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
 .pair dd{margin:1mm 0 0;font-family:var(--f-display);font-size:14pt}
 
-/* Tarjetas */
-.cards{display:grid;gap:4mm;margin-top:6mm}
-.card{padding:5mm 5.5mm;border-radius:4mm;background:#fff;border:1px solid var(--merey)}
-.card.deep{background:var(--verde-tabla);color:var(--arena-seca);border-color:transparent}
-.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
-.card h3{font-size:16pt}
-.card .tag{font-size:6.2pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
-.card.deep .tag{color:var(--arena-adicora)}
-.card .ideal{margin-top:1.5mm;font-family:var(--f-display);font-style:italic;font-size:11pt;line-height:1.3;color:var(--verde-tabla)}
-.card.deep .ideal{color:var(--arena-seca)}
-.card ul{list-style:none;padding:0;margin:3mm 0 0;display:grid;gap:1.6mm}
-.card li{position:relative;padding-left:4.5mm;font-size:9.2pt;line-height:1.45}
-.card li::before{content:"";position:absolute;left:0;top:.55em;width:1.8mm;height:1.8mm;border-radius:50%;background:var(--arena-adicora)}
-.card.deep li{color:#e8dccd}
-.card li.no{color:#8a8b78}.card li.no::before{background:transparent;border:1px solid #8a8b78}
-
-/* Tarifas */
-.rate{margin-top:4mm;border-radius:4mm;overflow:hidden;border:1px solid var(--merey);background:#fff}
-.rate .hd{display:flex;justify-content:space-between;align-items:baseline;padding:3mm 5mm;background:var(--arena-seca)}
-.rate .hd h3{font-size:14pt}
-.rate .hd span{font-size:8pt;color:var(--verde-tabla)}
-.rate .cols{display:grid;grid-template-columns:1fr 1fr}
-.rate .cols > div{padding:3.2mm 5mm}
-.rate .cols > div + div{border-left:1px solid var(--merey)}
-.rate .pl{font-size:6.6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
-.rate .big{display:block;margin-top:1mm;font-size:22pt;font-weight:300;line-height:1.05}
-.rate .big small{font-size:8pt;font-weight:400;color:#8a8b78;margin-left:1mm}
-.rate .plus{display:block;margin-top:1.6mm;font-size:9pt;font-weight:600;color:var(--verde-tabla)}
-.rate .plus small{display:block;font-weight:400;font-size:7.6pt;color:#8a8b78}
-.how{margin-top:5mm;margin-bottom:2mm;padding:4.5mm 5mm;border-radius:4mm;background:var(--arena-seca)}
-.how .q{font-family:var(--f-display);font-size:15pt;line-height:1.1}
-.how .t{margin-top:1.2mm;font-size:9pt;line-height:1.45;color:var(--verde-tabla)}
-.how .eq{display:flex;align-items:stretch;gap:1.6mm;margin-top:4mm}
-.how .eq > div{flex:1;padding:2.6mm 2mm;border-radius:3mm;background:#fff;text-align:center}
-.how .eq > i{align-self:center;font-style:normal;font-size:12pt;font-weight:300;color:var(--melon)}
-.how .eq b{display:block;font-size:12pt;font-weight:600;line-height:1.1;white-space:nowrap}
-.how .eq small{display:block;margin-top:1mm;font-size:6.6pt;line-height:1.25;color:#8a8b78}
-.how .eq .tot{background:var(--verde-tabla);color:#fff}
-.how .eq .tot small{color:var(--aguacate)}
-.how .ex{margin-top:3mm;font-size:7.6pt;color:#8a8b78;text-align:center}
-
 /* Temporada alta */
 .alta .rule{margin-top:5mm;padding:4mm 5mm;border-radius:4mm;background:var(--sol);color:var(--alga);font-size:10pt;line-height:1.5}
 .alta .rule b{font-weight:700}
@@ -243,6 +208,39 @@ b{font-weight:700}
 .two div{padding:3.5mm;border-radius:3.5mm;background:rgba(255,255,255,.7)}
 .two i{font-family:var(--f-display);font-style:italic;font-size:11pt;color:var(--melon);display:block;line-height:1.1}
 .two p{font-size:7.8pt;line-height:1.4;margin-top:1.5mm;color:var(--verde-tabla)}
+
+/* Planes y tarifas (diseño anterior) */
+.pp{background:var(--raspao)}
+.pp .body{padding-top:6.5mm}
+.pp .body h2{font-size:22pt}
+.plan{margin-top:2.6mm;border-radius:4mm;padding:3.2mm 4mm;background:#fff;border:1px solid var(--merey)}
+.plan.plena{background:var(--verde-tabla);color:var(--arena-seca);border-color:transparent}
+.plan .top{display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
+.plan h3{font-size:14.5pt}
+.plan .tag{font-size:6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
+.plan.plena .tag{color:var(--arena-adicora)}
+.plan .ideal{font-family:var(--f-display);font-style:italic;font-size:9.6pt;line-height:1.25;margin-top:1mm;color:var(--verde-tabla)}
+.plan.plena .ideal{color:var(--arena-seca)}
+.plan ul{list-style:none;padding:0;margin:2mm 0 0;display:grid;gap:.8mm}
+.plan li{position:relative;padding-left:3.6mm;font-size:7.6pt;line-height:1.35}
+.plan li::before{content:"";position:absolute;left:0;top:.55em;width:1.5mm;height:1.5mm;border-radius:50%;background:var(--arena-adicora)}
+.plan li.no{color:#8a8b78}.plan li.no::before{background:transparent;border:1px solid #8a8b78;box-sizing:border-box}
+.plan.plena li{color:#e8dccd}
+.prices{width:100%;border-collapse:collapse;margin-top:1.5mm;font-size:7pt}
+.prices th,.prices td{padding:1.6mm 1.5mm;border-bottom:1px solid var(--merey);text-align:left;vertical-align:top}
+.prices thead th{font-size:6pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--melon);padding:1mm 1.5mm}
+.prices .pl{background:rgba(61,61,42,.07)}
+.prices tbody th{font-weight:600;font-size:8pt;width:27%}
+.prices small{display:block;font-weight:400;font-size:5.9pt;color:#8a8b78;line-height:1.3}
+.prices td b{display:block;font-size:12pt;font-weight:600;line-height:1.1}
+.prices td span{display:block;margin-top:1mm;font-size:8.4pt;font-weight:600;color:var(--verde-tabla)}
+.prices td span small{display:inline;font-size:5.9pt}
+.prices tr.alta td{font-size:7.4pt;color:var(--verde-tabla);background:none;vertical-align:middle}
+.prices tr.alta td b{display:inline;font-size:inherit}
+.pp .tt{margin-top:3mm;color:var(--arena-adicora)}
+.pp .ej{margin-top:2mm;padding:2mm 2.6mm;border-radius:2.5mm;background:var(--arena-seca);font-size:7.2pt;line-height:1.4}
+.pp .fine{margin-top:1.8mm;font-size:6.5pt;color:#5f604f;line-height:1.4}
+.pp .fine b{color:var(--alga)}
 
 /* Cierre */
 .cta{padding:5mm 5.5mm;border-radius:4mm;background:var(--arena-adicora);color:var(--alga)}
@@ -352,52 +350,25 @@ page("old o6", `
     </div>
   </div>`);
 
-// Experiencias
-page("linen", `
-  <div class="photo" style="height:36mm"><img src="${img["comedor-exterior"]}" alt="" style="object-position:50% 60%"></div>
-  <div class="body" style="background-color:var(--raspao)">
+// Planes y tarifas (diseño anterior)
+page("old pp", `
+  <div class="body">
     <p class="eyebrow">Elige tu experiencia</p>
     <h2>Dos formas de vivir <em>la casa.</em></h2>
-    <p class="lead">La casa y el equipo siempre son tuyos. Tú eliges cuánto cocina la chef.</p>
-    <div class="cards">
-      <div class="card">
-        <div class="top"><h3>Esencial</h3><span class="tag">Desayuno</span></div>
-        <p class="ideal">Para salir a explorar Adícora y la península.</p>
-        <ul><li>Desayunos gourmet diarios</li><li class="no">Sin almuerzo ni cena</li></ul>
-      </div>
-      <div class="card deep">
-        <div class="top"><h3>Plena</h3><span class="tag">Todas las comidas</span></div>
-        <p class="ideal">Para no pensar en nada, de la mañana a la noche.</p>
-        <ul><li>Desayunos gourmet diarios</li><li>Almuerzos y cenas a la carta, con postre artesanal</li><li>Tequeños y cava de playa con hidratación y frutas</li></ul>
-      </div>
+    <div class="plan">
+      <div class="top"><h3>Experiencia Esencial</h3><span class="tag">Desayuno incluido</span></div>
+      <p class="ideal">Para despertar con la mesa servida y salir a explorar Adícora y la península.</p>
+      <ul><li>Desayunos gourmet diarios, preparados por la chef</li><li class="no">Sin almuerzo ni cena: la cocina es de uso exclusivo del equipo</li></ul>
     </div>
-  </div>`);
-
-// Tarifas
-const rate = (k, name, when) => { const E = PRECIOS.esencial[k], P = PRECIOS.plena[k]; return `
-    <div class="rate">
-      <div class="hd"><h3>${name}</h3><span>${when}</span></div>
-      <div class="cols">
-        <div><span class="pl">Esencial</span><b class="big">${usd(E[0])}</b><span class="plus">+${usd(E[1])}<small>por persona adicional</small></span></div>
-        <div><span class="pl">Plena</span><b class="big">${usd(P[0])}</b><span class="plus">+${usd(P[1])}<small>por persona adicional</small></span></div>
-      </div>
-    </div>`; };
-page("", `
-  <div class="body" style="background:var(--raspao);padding-top:12mm">
-    <p class="eyebrow" style="margin-top:-3mm">Tarifas por noche · USD</p>
-    <h2>Un precio base <em>para hasta ${PRECIOS.base}.</em></h2>
-    ${rate("weekend", "Weekend", "jueves a domingo")}
-    ${rate("midweek", "Midweek", "lunes a miércoles")}
-    <div class="how push">
-      <p class="q">¿Son más de ${PRECIOS.base}?</p>
-      <p class="t">Desde la 7.ª persona se suma la persona adicional, hasta ${PRECIOS.max}.</p>
-      <div class="eq">
-        <div><b>${usd(EJ.b)}</b><small>base, hasta ${PRECIOS.base}</small></div><i>+</i>
-        <div><b>${EJ.extra} × ${usd(EJ.x)}</b><small>${EJ.extra} adicionales</small></div><i>=</i>
-        <div class="tot"><b>${usd(EJ.total)}</b><small>por noche</small></div>
-      </div>
-      <p class="ex">Ejemplo: ${EJ.n} personas, weekend, Experiencia Esencial.</p>
+    <div class="plan plena">
+      <div class="top"><h3>Experiencia Plena</h3><span class="tag">Todas las comidas</span></div>
+      <p class="ideal">Para desconectarte de verdad: niños, grupos grandes o kiters que vuelven con hambre.</p>
+      <ul><li>Desayunos gourmet diarios, preparados por la chef</li><li>Almuerzos y cenas a la carta, con postre artesanal</li><li>Servicio de tequeños y cava de playa reforzada con hidratación y frutas</li></ul>
     </div>
+    <p class="eyebrow tt">Tarifas por noche · casa completa</p>
+    ${priceTable()}
+    <p class="ej"><b>Ejemplo:</b> ${EJ.n} personas un fin de semana en la Experiencia Esencial: ${usd(EJ.b)} + ${EJ.extra} × ${usd(EJ.x)} = <b>${usd(EJ.total)} por noche</b>.</p>
+    <p class="fine">Precios en dólares (USD) por noche. Máximo ${PRECIOS.max} huéspedes. <b>Niños de 0 a 3 años:</b> cortesía (máx. 2 por reserva, compartiendo cama con sus padres; no suman como huésped adicional). Desde los 4 años cuentan como huésped regular.</p>
   </div>`);
 
 // Temporada alta
