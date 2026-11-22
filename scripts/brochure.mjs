@@ -260,8 +260,8 @@ function build(L, P) {
   const dm = iso => { const [, m, d] = iso.split("-").map(Number); return [d, MES[m - 1]]; };
   const rango = ([a, b]) => { const [d1, m1] = dm(a), [d2, m2] = dm(b);
     return L === "en" ? (m1 === m2 ? `${m1} ${d1}–${d2}` : `${m1} ${d1} – ${m2} ${d2}`) : (m1 === m2 ? `${d1}–${d2} ${m1}` : `${d1} ${m1} – ${d2} ${m2}`); };
-  const ALTA_EN = { "Carnaval": "Carnival", "San José y Semana Santa": "St. Joseph's Day & Holy Week", "19 de abril": "April 19 holiday", "1 de mayo": "Labor Day",
-    "Batalla de Carabobo": "Battle of Carabobo", "5 de julio": "Independence Day", "Vacaciones escolares": "School holidays", "12 de octubre": "October 12 holiday" };
+  const ALTA_EN = { "Carnaval": "Carnival", "San José y Semana Santa": "St. Joseph's Day & Holy Week", "Inicio del proceso de Independencia de Venezuela": "Start of Venezuela's independence", "Día del Trabajador": "Labor Day",
+    "Batalla de Carabobo": "Battle of Carabobo", "Día de la Independencia": "Independence Day", "Vacaciones escolares": "School holidays", "Día de la Resistencia Indígena": "Indigenous Resistance Day" };
 
   const pages = [];
   const page = (cls, inner) => pages.push({ cls, inner });

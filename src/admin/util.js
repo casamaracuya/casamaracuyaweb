@@ -135,9 +135,9 @@ export const SEASON_DESC = {
 // las dos fechas: la noche de cada día marcado es temporada alta. Para un año que no esté aquí
 // se calculan Carnaval, Semana Santa y las vacaciones escolares; conviene cargar su calendario.
 export const HIGH = {
-  2027: [["2027-02-04", "2027-02-10", "Carnaval"], ["2027-03-19", "2027-03-28", "San José y Semana Santa"], ["2027-04-16", "2027-04-19", "19 de abril"],
-    ["2027-04-29", "2027-05-02", "1 de mayo"], ["2027-06-24", "2027-06-27", "Batalla de Carabobo"], ["2027-07-02", "2027-07-05", "5 de julio"],
-    ["2027-07-15", "2027-09-11", "Vacaciones escolares"], ["2027-10-08", "2027-10-12", "12 de octubre"]]
+  2027: [["2027-02-04", "2027-02-10", "Carnaval"], ["2027-03-19", "2027-03-28", "San José y Semana Santa"], ["2027-04-16", "2027-04-19", "Inicio del proceso de Independencia de Venezuela"],
+    ["2027-04-29", "2027-05-02", "Día del Trabajador"], ["2027-06-24", "2027-06-27", "Batalla de Carabobo"], ["2027-07-02", "2027-07-05", "Día de la Independencia"],
+    ["2027-07-15", "2027-09-11", "Vacaciones escolares"], ["2027-10-08", "2027-10-12", "Día de la Resistencia Indígena"]]
 };
 export const MIN_ALTA = 4; // noches mínimas en temporada alta
 export const BASE_GUESTS = 6; // el precio base cubre hasta 6 personas; desde la 7.ª se cobra persona adicional
