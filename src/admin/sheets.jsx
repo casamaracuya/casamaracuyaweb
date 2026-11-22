@@ -215,14 +215,14 @@ Más que una casa de playa, es hospitalidad boutique: llegas como turista y te v
 • *Tú no cocinas ni lavas un plato.* La cocina es solo de nuestro equipo.
 
 🍽️ *Experiencias*
-• *Esencial:* desayuno de autor cada mañana.
-• *Plena:* desayuno, almuerzo (o cava para la playa) y cena en tiempos.
+• *Esencial:* desayunos gourmet diarios preparados por la chef.
+• *Plena:* además, almuerzos y cenas a la carta, postre artesanal, tequeños y cava de playa con hidratación y frutas.
 Siempre café, té y jugos. ¿Traen sus bebidas? Se las servimos y les preparamos los tragos 🍸
 
-🏡 *Tarifa fija por grupo, no por persona:* 1 a 6 personas o 6 a 12.
+🏡 *Tarifa por noche, por la casa completa:* un precio base hasta 6 personas y un monto por cada persona adicional, hasta 12. Niños de 0 a 3 años, cortesía 👶
 Piscina, muelle frente al mar, planta eléctrica, A/A, agua caliente, Wi-Fi y un concierge kitesurfista 🪁
 
-📎 Aquí puedes ver la presentación completa: https://casa-maracuya.com/brochure-casa-maracuya.pdf
+📎 Aquí puedes ver la presentación completa: https://casa-maracuya.com/casa-maracuya.pdf
 
 Ya tengo tus fechas ({f}). En un momento te envío la cotización 📅`],
   ["Saludo", "¡Hola {n}! Gracias por escribirle a Casa Maracuyá. Tenemos tus fechas ({f}). Te cuento la tarifa y lo que incluye el plan en un momento."],

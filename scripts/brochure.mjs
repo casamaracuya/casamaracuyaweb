@@ -1,6 +1,6 @@
 // Brochure de Casa Maracuyá para enviar por WhatsApp junto con la cotización.
 // 8 páginas verticales (9:16) pensadas para leerse en el teléfono, con los colores y letras de la web.
-// Uso: npm run brochure  →  public/brochure-casa-maracuya.pdf
+// Uso: npm run brochure  →  public/casa-maracuya.pdf
 // Necesita internet para bajar las letras (Google Fonts) y Chrome o Edge instalado.
 import fs from "node:fs";
 import os from "node:os";
@@ -10,7 +10,7 @@ import { pathToFileURL } from "node:url";
 import sharp from "sharp";
 
 const ROOT = path.resolve(".");
-const OUT = path.join(ROOT, "public", "brochure-casa-maracuya.pdf");
+const OUT = path.join(ROOT, "public", "casa-maracuya.pdf");
 const src = fs.readFileSync("src/lib/contacto.js", "utf8");
 const EMAIL = src.match(/EMAIL = "([^"]+)"/)[1];
 const WA = (process.env.VITE_WHATSAPP || src.match(/\|\| "(\d+)"/)[1]).replace(/\D/g, "");
@@ -40,17 +40,21 @@ for (const n of FOTOS) {
 const logo = n => pathToFileURL(path.join(ROOT, "public", "logo", n)).href;
 
 // ---------- Precios por noche (solo en el PDF, nunca en la web) ----------
-// [1 a 6 huéspedes, 6 a 12 huéspedes]. null = sin precio todavía.
+// [precio base hasta BASE personas, cada persona adicional]. Máximo MAX huéspedes.
 const PRECIOS = {
-  moneda: "USD",
-  esencial: { midweek: [653, 1088], weekend: [870, 1450], alta: [null, null] },
-  plena: { midweek: [885, 1485], weekend: [1180, 1980], alta: [null, null] }
+  base: 6, max: 12,
+  esencial: { weekend: [720, 80], midweek: [520, 60] },
+  plena: { weekend: [920, 120], midweek: [680, 100] }
 };
-const fmt = v => v == null ? "Consultar" : `${PRECIOS.moneda === "USD" ? "$" : ""}${v}${PRECIOS.moneda === "USD" ? "" : " " + PRECIOS.moneda}`;
+const usd = v => "$" + v;
+const cell = ([b, x]) => `<b>${usd(b)}</b><small>hasta ${PRECIOS.base} personas</small><span>+${usd(x)} <small>por persona adicional</small></span>`;
 const priceTable = () => { const E = PRECIOS.esencial, P = PRECIOS.plena;
-  const row = (k, name, when) => `<tr><th>${name}<small>${when}</small></th><td>${fmt(E[k][0])}</td><td>${fmt(E[k][1])}</td><td class="pl">${fmt(P[k][0])}</td><td class="pl">${fmt(P[k][1])}</td></tr>`;
-  return `<table class="prices"><thead><tr><th rowspan="2">Por noche</th><th colspan="2">Esencial</th><th colspan="2" class="pl">Plena</th></tr><tr><th>1 a 6</th><th>6 a 12</th><th class="pl">1 a 6</th><th class="pl">6 a 12</th></tr></thead><tbody>
-  ${row("midweek", "Midweek", "lun a mié")}${row("weekend", "Weekend", "jue a dom")}<tr class="alta"><th>Temp. alta<small>mín. 4 noches</small></th><td colspan="4">Tarifa según fechas · consúltanos</td></tr></tbody></table>`; };
+  return `<table class="prices"><thead><tr><th>Por noche</th><th>Esencial</th><th class="pl">Plena</th></tr></thead><tbody>
+  <tr><th>Weekend<small>jueves a domingo</small></th><td>${cell(E.weekend)}</td><td class="pl">${cell(P.weekend)}</td></tr>
+  <tr><th>Midweek<small>lunes a miércoles</small></th><td>${cell(E.midweek)}</td><td class="pl">${cell(P.midweek)}</td></tr>
+  <tr class="alta"><th>Temporada alta<small>mínimo 4 noches</small></th><td colspan="2">Todas las noches a precio <b>weekend</b>: el midweek no aplica.</td></tr></tbody></table>`; };
+// Ejemplo con los números de arriba: 8 personas, fin de semana, Esencial
+const EJ = (() => { const [b, x] = PRECIOS.esencial.weekend, n = 8, extra = n - PRECIOS.base; return `<b>Ejemplo:</b> ${n} personas un fin de semana en la Experiencia Esencial: ${usd(b)} + ${extra} × ${usd(x)} = <b>${usd(b + extra * x)} por noche</b>.`; })();
 
 const CSS = `
 @font-face{font-family:"Cifras";font-style:normal;font-weight:400;size-adjust:90%;unicode-range:U+0030-0039;src:url(https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2) format("woff2")}
@@ -151,7 +155,7 @@ b{font-weight:700}
 .pp h2{font-size:22pt}
 .both{display:flex;flex-wrap:wrap;gap:1.2mm;margin-top:3mm}
 .both span{padding:.7mm 2mm;border-radius:99px;background:var(--arena-seca);font-size:6.4pt;font-weight:600}
-.plan{margin-top:3mm;border-radius:4mm;padding:3.2mm 4mm;background:#fff;border:1px solid var(--merey)}
+.plan{margin-top:2.6mm;border-radius:4mm;padding:3.2mm 4mm;background:#fff;border:1px solid var(--merey)}
 .plan.plena{background:var(--verde-tabla);color:var(--arena-seca);border-color:transparent}
 .plan .top{display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
 .plan h3{font-size:14.5pt}
@@ -165,18 +169,20 @@ b{font-weight:700}
 .plan li.no{color:#8a8b78}.plan li.no::before{background:transparent;border:1px solid #8a8b78;box-sizing:border-box}
 .plan.plena li{color:#e8dccd}
 .prices{width:100%;border-collapse:collapse;margin-top:1.5mm;font-size:7pt}
-.prices th,.prices td{padding:1mm .8mm;border-bottom:1px solid var(--merey);text-align:center}
-.prices thead th{font-size:5.6pt;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--melon);padding:1mm .8mm}
-.prices thead tr:first-child th{font-size:6.4pt;color:var(--alga);border-bottom:0;padding-bottom:0}
-.prices thead tr:first-child th.pl{color:var(--verde-tabla)}
+.prices th,.prices td{padding:1.6mm 1.5mm;border-bottom:1px solid var(--merey);text-align:left;vertical-align:top}
+.prices thead th{font-size:6pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--melon);padding:1mm 1.5mm}
 .prices .pl{background:rgba(61,61,42,.07)}
-.prices th:first-child,.prices tbody th{text-align:left}
-.prices tbody th{font-weight:600;font-size:7.4pt}
-.prices small{display:block;font-weight:400;font-size:5.8pt;color:#8a8b78}
-.prices td{font-size:8.6pt;font-weight:600;white-space:nowrap}
-.prices tr.alta td{font-size:7.2pt;font-weight:500;color:var(--verde-tabla);background:none}
+.prices tbody th{font-weight:600;font-size:8pt;width:27%}
+.prices small{display:block;font-weight:400;font-size:5.9pt;color:#8a8b78;line-height:1.3}
+.prices td b{display:block;font-size:12pt;font-weight:600;line-height:1.1}
+.prices td span{display:block;margin-top:1mm;font-size:8.4pt;font-weight:600;color:var(--verde-tabla)}
+.prices td span small{display:inline;font-size:5.9pt}
+.prices tr.alta td{font-size:7.4pt;color:var(--verde-tabla);background:none;vertical-align:middle}
+.prices tr.alta td b{display:inline;font-size:inherit}
 .pp .tt{margin-top:3mm;color:var(--arena-adicora)}
-.pp .fine{margin-top:2mm;font-size:6.6pt;color:#5f604f;line-height:1.4}
+.pp .ej{margin-top:2mm;padding:2mm 2.6mm;border-radius:2.5mm;background:var(--arena-seca);font-size:7.2pt;line-height:1.4}
+.pp .fine{margin-top:1.8mm;font-size:6.5pt;color:#5f604f;line-height:1.4}
+.pp .fine b{color:var(--alga)}
 
 /* 5 · La villa */
 .p5{background:var(--raspao)}
@@ -232,7 +238,7 @@ b{font-weight:700}
 
 const folio = n => `<div class="folio"><span>Casa Maracuyá · Adícora</span><span><b>${String(n).padStart(2, "0")}</b> / 08</span></div>`;
 
-const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Casa Maracuyá · Brochure</title>
+const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Casa Maracuyá</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;600;700&display=block">
 <style>${CSS}</style></head><body>
 
@@ -311,21 +317,20 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
   <div class="body">
     <p class="eyebrow">Elige tu experiencia</p>
     <h2>Dos formas de vivir <em>la casa.</em></h2>
-    <p class="lead">La casa y el equipo son siempre tuyos. Lo que eliges es cuánto cocina nuestra chef para ti.</p>
-    <div class="both"><span>Casa completa y 3 habitaciones</span><span>Equipo de 7</span><span>Bienvenida con historia</span><span>Concierge</span><span>Café, té y jugos</span><span>Servicio de tus bebidas</span></div>
     <div class="plan">
       <div class="top"><h3>Experiencia Esencial</h3><span class="tag">Desayuno incluido</span></div>
       <p class="ideal">Para despertar con la mesa servida y salir a explorar Adícora y la península.</p>
-      <ul><li>Desayuno de autor cada mañana, preparado por nuestra chef</li><li class="no">Sin almuerzo ni cena: la cocina es de uso exclusivo del equipo</li></ul>
+      <ul><li>Desayunos gourmet diarios, preparados por la chef</li><li class="no">Sin almuerzo ni cena: la cocina es de uso exclusivo del equipo</li></ul>
     </div>
     <div class="plan plena">
       <div class="top"><h3>Experiencia Plena</h3><span class="tag">Todas las comidas</span></div>
       <p class="ideal">Para desconectarte de verdad: niños, grupos grandes o kiters que vuelven con hambre.</p>
-      <ul><li>Desayuno de autor cada mañana</li><li>Almuerzo en casa o cava gourmet para la playa</li><li>Cena en tiempos: abrebocas o sopa, plato fuerte y postre</li></ul>
+      <ul><li>Desayunos gourmet diarios, preparados por la chef</li><li>Almuerzos y cenas a la carta, con postre artesanal</li><li>Servicio de tequeños y cava de playa reforzada con hidratación y frutas</li></ul>
     </div>
-    <p class="eyebrow tt">Tarifas por noche · por grupo</p>
+    <p class="eyebrow tt">Tarifas por noche · casa completa</p>
     ${priceTable()}
-    <p class="fine">Precios en dólares (USD) por noche, para todo el grupo, no por persona. Temporada regular desde 1 noche.</p>
+    <p class="ej">${EJ}</p>
+    <p class="fine">Precios en dólares (USD) por noche. Máximo ${PRECIOS.max} huéspedes. <b>Niños de 0 a 3 años:</b> cortesía (máx. 2 por reserva, compartiendo cama con sus padres; no suman como huésped adicional). Desde los 4 años cuentan como huésped regular.</p>
   </div>
   ${folio(5)}
 </section>
@@ -373,13 +378,13 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
     <p class="eyebrow">Reservas</p>
     <h2>Diseña tu estadía en <em>Casa Maracuyá.</em></h2>
     <div class="occ">
-      <div><p class="eyebrow">Plan íntimo</p><h3>1 a 6 huéspedes</h3></div>
-      <div><p class="eyebrow">Full house</p><h3>6 a 12 huéspedes</h3></div>
+      <div><p class="eyebrow">Precio base</p><h3>Hasta 6 huéspedes</h3></div>
+      <div><p class="eyebrow">Persona adicional</p><h3>De la 7.ª a la 12.ª</h3></div>
     </div>
     <div class="season">
-      <p><b>Siempre la casa entera, solo para tu grupo.</b> Tarifa fija por grupo, no por persona.</p>
-      <p><b>Temporada regular:</b> desde 1 noche. Midweek (lunes a miércoles), la más conveniente, y weekend (jueves a domingo). Precios en la página 5.</p>
-      <p><b>Temporada alta:</b> estadía mínima de 4 noches.</p>
+      <p><b>Exclusividad total:</b> la villa completa es solo para tu grupo, sin compartir áreas comunes con terceros.</p>
+      <p><b>Temporada regular:</b> desde 1 noche. Weekend (jueves a domingo) y midweek (lunes a miércoles), la más conveniente. Precios en la página 5.</p>
+      <p><b>Temporada alta:</b> estadía mínima de 4 noches y todas las noches a precio weekend.</p>
     </div>
     <div class="pay"><span>Métodos de pago</span><b>Zelle</b><b>Efectivo</b><b>USDT</b></div>
     <div class="quote-cta"><b>Tu cotización viene con este brochure.</b>La preparamos para tus fechas, tu grupo y la experiencia que elijas.</div>
@@ -401,5 +406,5 @@ execFileSync(browser, [
   "--run-all-compositor-stages-before-draw", "--virtual-time-budget=15000",
   `--user-data-dir=${path.join(tmp, "perfil")}`, `--print-to-pdf=${OUT}`, pathToFileURL(file).href
 ], { stdio: "ignore" });
-console.log(`✓ brochure → public/brochure-casa-maracuya.pdf (${(fs.statSync(OUT).size / 1024).toFixed(0)} kB)`);
+console.log(`✓ brochure → public/casa-maracuya.pdf (${(fs.statSync(OUT).size / 1024).toFixed(0)} kB)`);
 if (process.env.PDFS_KEEP) console.log("HTML en", tmp); else fs.rmSync(tmp, { recursive: true, force: true });

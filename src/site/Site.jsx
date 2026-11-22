@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { PATHS, saveLang } from "./paths.js";
 import { useMode, PageFooter } from "./shared.jsx";
 
-const BROCHURE = "/brochure-casa-maracuya.pdf";
+const BROCHURE = "/casa-maracuya.pdf";
 const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 10); };
 const parseISO = s => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 const nightsBetween = (a, b) => { const A = parseISO(a), B = parseISO(b); return A && B ? Math.round((B - A) / 864e5) : null; };
@@ -324,7 +324,7 @@ export default function Site({ lang = "es" }) {
         <section className="faq" id="preguntas" aria-labelledby="t-faq">
           <div className="wrap">
             <div><p className="eyebrow">{t("faq.eyebrow")}</p><h2 id="t-faq">{t("faq.title")}</h2></div>
-            <div className="faq-list">{Array.from({ length: 10 }, (_, i) => i + 1).map(i => {
+            <div className="faq-list">{Array.from({ length: 11 }, (_, i) => i + 1).map(i => {
               const open = faq === i;
               return <div key={i} className={`q${open ? " open" : ""}`}>
                 <h3><button type="button" id={`faq-q${i}`} aria-expanded={open} aria-controls={`faq-a${i}`} onClick={() => setFaq(open ? 0 : i)}>{t(`faq.q${i}`)}<span className="ico" aria-hidden="true" /></button></h3>
