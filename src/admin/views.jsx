@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MenuStudio } from "./docs.jsx";
 import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks } from "./ui.jsx";
-import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
+import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
 const L = ({ to, children, className }) => <Link className={className} to={`/admin/${to}`}>{children}</Link>;
@@ -233,11 +233,17 @@ function RateInput({ k }) {
 export function Tarifas() {
   const { S, act } = useMC();
   const [promo, setPromo] = useState("");
+  // Muestra el año en curso, o el próximo si ese ya tiene su calendario cargado y el actual no.
+  const y0 = parse(TODAY).getFullYear(), hy = HIGH[y0 + 1] && !HIGH[y0] ? y0 + 1 : y0;
   return <>
     <Head title="Tarifas" lead="Precio por noche de la casa completa. Se guarda solo al escribir y el presupuesto lo usa." />
-    {["esencial","plena"].map(p => <section key={p} className="sec"><div className="sec-h">{PLAN[p].name}</div><div className="group form">{Object.entries(RATE_KIND).map(([k, l]) =>
-      <div key={k} className="row"><label className="k" htmlFor={`rate-${p}-${k}`}>{l}</label><span style={{ color: "var(--ink3)" }}>$</span><RateInput k={`${p}-${k}`} /></div>)}</div></section>)}
-    <p className="sec-f" style={{ marginTop: 10 }}>Fin de semana: noches de viernes, sábado y domingo, feriados y sus vísperas. En temporada alta ({SEASON_DESC.alta.toLowerCase().replace(/\.$/, "")}) no aplica el precio de semana: todas las noches van a precio de fin de semana.</p>
+    {["esencial","plena"].map(p => <section key={p} className="sec"><div className="sec-h">{PLAN[p].name}</div><div className="group form">{Object.entries(RATE_KIND).flatMap(([k, l]) => [
+      <div key={k} className="row"><label className="k" htmlFor={`rate-${p}-${k}`}>{l}<small style={{ display: "block", color: "var(--ink3)", fontWeight: 600, fontSize: 12 }}>Precio base, hasta {BASE_GUESTS} personas</small></label><span style={{ color: "var(--ink3)" }}>$</span><RateInput k={`${p}-${k}`} /></div>,
+      <div key={`${k}-x`} className="row"><label className="k" htmlFor={`rate-${p}-${k}-extra`} style={{ paddingLeft: 14 }}>Persona adicional<small style={{ display: "block", color: "var(--ink3)", fontWeight: 600, fontSize: 12 }}>Desde la {BASE_GUESTS + 1}.ª, hasta 12</small></label><span style={{ color: "var(--ink3)" }}>+$</span><RateInput k={`${p}-${k}-extra`} /></div>])}</div></section>)}
+    <p className="sec-f" style={{ marginTop: 10 }}>Weekend: {SEASON_DESC.media.toLowerCase()} Midweek: {SEASON_DESC.baja.toLowerCase()} En temporada alta el midweek no aplica: todas las noches van a precio weekend, con un mínimo de {MIN_ALTA} noches. Los niños de 0 a 3 años no cuentan como huésped.</p>
+    <section className="sec"><div className="sec-h">Temporada alta {hy}</div><div className="group">
+      {highRanges(hy).map(([a, b, name], i) => <div key={a} className="row"><span className="grow"><span className="t">{name || ["Carnaval", "Semana Santa", "Vacaciones escolares"][i] || "Temporada alta"}</span><span className="st">{frange(a, b)}{HIGH[hy] ? "" : " · fecha calculada"}</span></span></div>)}
+    </div><p className="sec-f">Cada noche de estas fechas va a precio weekend. Para cambiarlas o cargar otro año, se editan en el código del panel (HIGH en util.js).</p></section>
     <section className="sec"><div className="sec-h">Promociones</div><div className="group">{S.promos.length ? S.promos.map(p =>
       <div key={p.id} className="row"><span className="grow"><span className="t" style={{ whiteSpace: "normal", fontWeight: 600 }}>{p.name}</span></span><Switch id={`promo-${p.id}`} checked={p.on} label={p.name} onChange={v => act(a => a.setPromo(p.id, v), v ? "Promoción activa en la web" : "Promoción pausada")} /></div>) : <Empty icon="tarifas">Todavía no hay promociones.</Empty>}
       <form className="row" onSubmit={e => { e.preventDefault(); if (promo.trim()) { act(a => a.addPromo(promo.trim()), "Promoción creada. Actívala cuando quieras"); setPromo(""); } }}><span className="ico"><Icon n="plus" c="s" /></span><label htmlFor="promoIn" className="sr">Nueva promoción</label><input id="promoIn" className="field-in" style={{ textAlign: "left", color: "var(--ink)" }} placeholder="Nueva promoción. Ej.: entre semana, 10% menos" value={promo} onChange={e => setPromo(e.target.value)} autoComplete="off" /></form></div>

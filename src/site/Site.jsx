@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { PATHS, saveLang } from "./paths.js";
 import { useMode, PageFooter } from "./shared.jsx";
 
-const BROCHURE = "/casa-maracuya.pdf";
 const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 10); };
 const parseISO = s => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 const nightsBetween = (a, b) => { const A = parseISO(a), B = parseISO(b); return A && B ? Math.round((B - A) / 864e5) : null; };
@@ -187,7 +186,6 @@ export default function Site({ lang = "es" }) {
             <div className="inc-grid">
               {[1, 2, 3, 4].map(i => <article key={i} className="inc"><span className="n">{String(i).padStart(2, "0")}</span><p className="kicker">{t(`inc.k${i}`)}</p><h3>{t(`inc.t${i}`)}</h3><p>{t(`inc.d${i}`)}</p></article>)}
             </div>
-            <a className="btn btn-ghost inc-pdf" href={BROCHURE} download>{t("inc.pdf")}</a>
           </div>
         </section>
 

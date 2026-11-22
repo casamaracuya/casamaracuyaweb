@@ -121,14 +121,26 @@ export function conflict(S, r, from = r.in, to = r.out) {
   return null;
 }
 
-// Temporadas. Alta: Carnaval, Semana Santa, julio, agosto y diciembre (Carnaval y Semana Santa se calculan con la Pascua).
-// Media: noches de viernes y sábado, y noches de feriado o víspera de feriado. Baja: el resto.
-export const SEASONS = { alta: "Temporada alta", media: "Temporada media", baja: "Temporada baja" };
+// Temporadas (por la NOCHE que empieza en cada fecha).
+//   Alta: las fechas del calendario de la casa (HIGH). Todas las noches a precio weekend, mínimo 4 noches.
+//   Media (weekend): noches de jueves, viernes, sábado y domingo, y feriados.
+//   Baja (midweek): noches de lunes, martes y miércoles.
+export const SEASONS = { alta: "Temporada alta", media: "Weekend", baja: "Midweek" };
 export const SEASON_DESC = {
-  alta: "Carnaval, Semana Santa, julio, agosto y diciembre.",
-  media: "Viernes, sábados, feriados y sus vísperas.",
-  baja: "Domingo a jueves, el resto del año."
+  alta: "Carnaval, Semana Santa, puentes de feriado y vacaciones escolares (del 15 de julio al 11 de septiembre).",
+  media: "Noches de jueves a domingo, y feriados.",
+  baja: "Noches de lunes a miércoles."
 };
+// Temporada alta de cada año, tal como la marca el calendario de la casa. Cada rango incluye
+// las dos fechas: la noche de cada día marcado es temporada alta. Para un año que no esté aquí
+// se calculan Carnaval, Semana Santa y las vacaciones escolares; conviene cargar su calendario.
+export const HIGH = {
+  2027: [["2027-02-04", "2027-02-10", "Carnaval"], ["2027-03-19", "2027-03-28", "San José y Semana Santa"], ["2027-04-16", "2027-04-19", "19 de abril"],
+    ["2027-04-29", "2027-05-02", "1 de mayo"], ["2027-06-24", "2027-06-27", "Batalla de Carabobo"], ["2027-07-02", "2027-07-05", "5 de julio"],
+    ["2027-07-15", "2027-09-11", "Vacaciones escolares"], ["2027-10-08", "2027-10-12", "12 de octubre"]]
+};
+export const MIN_ALTA = 4; // noches mínimas en temporada alta
+export const BASE_GUESTS = 6; // el precio base cubre hasta 6 personas; desde la 7.ª se cobra persona adicional
 function easter(y) {
   const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
   const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
@@ -140,22 +152,25 @@ function highDates(y) {
   if (HOLY[y]) return HOLY[y];
   const e = easter(y);
   const fixed = ["01-01", "04-19", "05-01", "06-24", "07-05", "07-24", "10-12", "12-24", "12-25", "12-31"].map(x => `${y}-${x}`);
-  return (HOLY[y] = { carnaval: [addDays(e, -51), addDays(e, -46)], santa: [addDays(e, -7), addDays(e, 1)], fixed: new Set(fixed) });
+  // Sin calendario cargado: Carnaval (jueves a miércoles de ceniza), Semana Santa (viernes antes
+  // del Domingo de Ramos a Domingo de Resurrección) y vacaciones escolares.
+  const ranges = HIGH[y] || [[addDays(e, -52), addDays(e, -46)], [addDays(e, -9), e], [`${y}-07-15`, `${y}-09-11`]];
+  return (HOLY[y] = { ranges, fixed: new Set(fixed) });
 }
+export const highRanges = y => highDates(y).ranges;
 // Temporada de la NOCHE que empieza en la fecha s.
 export function season(s) {
-  const d = parse(s), y = d.getFullYear(), mo = d.getMonth(); const H = highDates(y);
-  if (mo === 6 || mo === 7 || mo === 11) return "alta";
-  if ((s >= H.carnaval[0] && s < H.carnaval[1]) || (s >= H.santa[0] && s < H.santa[1])) return "alta";
+  const d = parse(s), H = highDates(d.getFullYear());
+  if (H.ranges.some(([a, b]) => s >= a && s <= b)) return "alta";
   const dow = d.getDay();
-  if (dow === 5 || dow === 6 || H.fixed.has(s) || H.fixed.has(addDays(s, 1))) return "media";
+  if (dow === 0 || dow >= 4 || H.fixed.has(s)) return "media";
   return "baja";
 }
-// Tarifas: cada plan tiene precio de semana y de fin de semana (por noche, casa completa).
-// Fin de semana: noches de viernes, sábado y domingo, y feriados con sus vísperas.
-// En temporada alta no hay precio de semana: todas las noches van a precio de fin de semana.
-export const RATE_KIND = { semana: "Días de semana", finde: "Fines de semana" };
-export const rateKind = s => { const k = season(s); return k === "alta" || k === "media" || parse(s).getDay() === 0 ? "finde" : "semana"; };
+// Tarifas por noche de la casa completa: cada plan tiene precio weekend y midweek, con un precio
+// base hasta 6 personas y un monto por persona adicional (claves «plan-finde» y «plan-finde-extra»).
+// En temporada alta el midweek no aplica: todas las noches van a precio weekend.
+export const RATE_KIND = { finde: "Weekend (jueves a domingo)", semana: "Midweek (lunes a miércoles)" };
+export const rateKind = s => season(s) === "baja" ? "semana" : "finde";
 export const rateKey = (plan, s) => `${plan}-${rateKind(s)}`;
 // Cada noche de una reserva: [fecha, reserva].
 export const nightsList = r => { const out = []; for (let s = r.in; s < r.out; s = addDays(s, 1)) out.push(s); return out; };

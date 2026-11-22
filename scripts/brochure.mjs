@@ -8,6 +8,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import sharp from "sharp";
+import { HIGH, MIN_ALTA } from "../src/admin/util.js";
 
 const ROOT = path.resolve(".");
 const OUT = path.join(ROOT, "public", "casa-maracuya.pdf");
@@ -37,6 +38,12 @@ for (const n of FOTOS) {
   await sharp(path.join(ROOT, "public", "fotos", `${n}.jpg`)).resize({ width: 900, withoutEnlargement: true }).jpeg({ quality: 72, mozjpeg: true }).toFile(out);
   img[n] = pathToFileURL(out).href;
 }
+// Temporada alta: el año con calendario cargado más próximo (o ALTA_AÑO=2028 npm run brochure).
+const MESC = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const ALTA_Y = +(process.env.ALTA_AÑO || Object.keys(HIGH).map(Number).filter(y => y >= new Date().getFullYear()).sort()[0] || 0);
+const dm = iso => { const [, m, d] = iso.split("-").map(Number); return [d, MESC[m - 1]]; };
+const rango = ([a, b]) => { const [d1, m1] = dm(a), [d2, m2] = dm(b); return m1 === m2 ? `${d1}–${d2} ${m1}` : `${d1} ${m1}–${d2} ${m2}`; };
+const ALTA = (HIGH[ALTA_Y] || []).map(x => `<span><b>${rango(x)}</b> ${x[2]}</span>`).join("");
 const logo = n => pathToFileURL(path.join(ROOT, "public", "logo", n)).href;
 
 // ---------- Precios por noche (solo en el PDF, nunca en la web) ----------
@@ -212,7 +219,7 @@ b{font-weight:700}
 
 /* 7 · Cierre */
 .p7{background:var(--nocturna);color:var(--arena-seca)}
-.p7 .photo{height:56mm}
+.p7 .photo{height:50mm}
 .p7 .photo img{object-position:50% 70%}
 .p7 .photo::after{content:"";position:absolute;inset:auto 0 0;height:18mm;background:linear-gradient(180deg,rgba(46,53,42,0),var(--nocturna))}
 .p7 .body{padding-top:4mm}
@@ -226,6 +233,8 @@ b{font-weight:700}
 .occ p{font-size:7.6pt;line-height:1.35;margin-top:1.2mm;color:var(--aguacate)}
 .season{margin-top:3mm;display:grid;gap:1.2mm;font-size:7.8pt;line-height:1.4;color:#d8d0c3}
 .season b{color:#fff;font-weight:600}
+.alta-list{display:grid;grid-template-columns:1fr 1fr;gap:.6mm 3mm;margin-top:.6mm;font-size:6.9pt;color:var(--aguacate);line-height:1.3}
+.alta-list b{color:#fff;font-weight:600}
 .pay{display:flex;flex-wrap:wrap;align-items:center;gap:1.5mm;margin-top:3mm}
 .pay span{font-size:6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--aguacate);margin-right:1mm}
 .pay b{padding:.9mm 2.6mm;border-radius:99px;border:1px solid var(--arena-adicora);color:#fff;font-size:7.6pt;font-weight:600}
@@ -377,14 +386,12 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
   <div class="body">
     <p class="eyebrow">Reservas</p>
     <h2>Diseña tu estadía en <em>Casa Maracuyá.</em></h2>
-    <div class="occ">
-      <div><p class="eyebrow">Precio base</p><h3>Hasta 6 huéspedes</h3></div>
-      <div><p class="eyebrow">Persona adicional</p><h3>De la 7.ª a la 12.ª</h3></div>
-    </div>
     <div class="season">
       <p><b>Exclusividad total:</b> la villa completa es solo para tu grupo, sin compartir áreas comunes con terceros.</p>
+      <p><b>Precio base hasta 6 huéspedes</b> y persona adicional de la 7.ª a la 12.ª.</p>
       <p><b>Temporada regular:</b> desde 1 noche. Weekend (jueves a domingo) y midweek (lunes a miércoles), la más conveniente. Precios en la página 5.</p>
-      <p><b>Temporada alta:</b> estadía mínima de 4 noches y todas las noches a precio weekend.</p>
+      <p><b>Temporada alta${ALTA_Y ? " " + ALTA_Y : ""}:</b> estadía mínima de ${MIN_ALTA} noches y todas a precio weekend.</p>
+      ${ALTA ? `<div class="alta-list">${ALTA}</div>` : ""}
     </div>
     <div class="pay"><span>Métodos de pago</span><b>Zelle</b><b>Efectivo</b><b>USDT</b></div>
     <div class="quote-cta"><b>Tu cotización viene con este brochure.</b>La preparamos para tus fechas, tu grupo y la experiencia que elijas.</div>

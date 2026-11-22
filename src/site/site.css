@@ -670,7 +670,6 @@ footer .legal .dot{color:var(--accent);margin:0 .35em}
 .inc h3{font-size:var(--step-1)}
 .inc p:last-child{color:var(--ink-soft);font-size:.95rem}
 .inc:nth-child(2) p:last-child{color:#d8d0c3}
-.inc-pdf{margin-top:clamp(28px,4vw,44px)}
 @media (max-width:1000px){.inc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.inc-grid{grid-template-columns:1fr}}
 

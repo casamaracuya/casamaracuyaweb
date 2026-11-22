@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./docs.css";
 import { useMC, Icon, Seg } from "./ui.jsx";
-import { TODAY, MES, MESL, DIA, DIAL, PLAN, parse, addDays, diff, season, rateKind, rateKey, can } from "./util.js";
+import { TODAY, MES, MESL, DIA, DIAL, PLAN, parse, addDays, diff, season, rateKind, rateKey, can, BASE_GUESTS, MIN_ALTA } from "./util.js";
 
 // Hojas imprimibles del panel: el menú de Cocina y el presupuesto de Dirección.
 // Siguen las plantillas aprobadas (A4, marco doble, sol en el horizonte).
@@ -155,8 +155,12 @@ export function budgetSpec(b) {
   return { shell, blocks, conts: { th: thead } };
 }
 
-// Tarifa sugerida para una noche: la de semana o fin de semana del plan (vista Tarifas).
-const rateFor = (S, night, plan) => toNum(S.rates[rateKey(plan, night)]);
+// Tarifa sugerida para una noche (vista Tarifas): el precio base weekend o midweek del plan,
+// más la persona adicional por cada huésped después del 6.º. Sin precio base, no sugiere nada.
+const rateFor = (S, night, plan, personas = 0) => {
+  const k = rateKey(plan, night), base = toNum(S.rates[k]); if (base == null) return null;
+  return base + Math.max(0, personas - BASE_GUESTS) * (toNum(S.rates[`${k}-extra`]) || 0);
+};
 const PAQ = { esencial: ["esencial"], plena: ["plena"], ambos: ["esencial", "plena"] };
 
 export function buildBudget(f, S) {
@@ -164,11 +168,11 @@ export function buildBudget(f, S) {
   const n = fechas ? diff(f.in, f.out) : f.noches;
   const keys = Array.from({ length: Math.max(0, Math.min(n, 30)) }, (_, i) => fechas ? addDays(f.in, i) : String(i + 1));
   const paquetes = PAQ[f.paq];
-  const sug = (p, k) => fechas ? rateFor(S, k, p) : null;
+  const sug = (p, k) => fechas ? rateFor(S, k, p, f.personas) : null;
   const val = (p, k) => { const o = f.precios[`${p}|${k}`]; return o !== undefined ? toNum(o) : sug(p, k); };
   const rows = keys.map(k => { const d = fechas && parse(k); return { key: k,
     label: fechas ? `${cap(DIAL[d.getDay()])} ${d.getDate()} de ${MESL[d.getMonth()]}` : `Noche ${k}`,
-    sub: fechas ? (season(k) === "alta" ? "Temporada alta · precio de fin de semana" : rateKind(k) === "finde" ? "Fin de semana" : "Día de semana") : "",
+    sub: fechas ? (season(k) === "alta" ? "Temporada alta · precio weekend" : rateKind(k) === "finde" ? "Weekend" : "Midweek") : "",
     vals: Object.fromEntries(paquetes.map(p => [p, val(p, k)])), sug: Object.fromEntries(paquetes.map(p => [p, sug(p, k)])) }; });
   const totals = Object.fromEntries(paquetes.map(p => [p, rows.reduce((s, r) => s + (r.vals[p] || 0), 0)]));
   const A = fechas && parse(f.in), B = fechas && parse(f.out);
@@ -182,6 +186,9 @@ export function buildBudget(f, S) {
     paquetes.length > 1 ? `Tarifas por noche${grupo || " de cada paquete"}, expresadas en dólares estadounidenses.` : `Tarifa por noche de la Experiencia ${PLAN[paquetes[0]].short}${grupo}, expresada en dólares estadounidenses.`,
     fechas ? `Estadía de ${noches}: check-in el ${DIAL[A.getDay()]} ${A.getDate()} de ${MESL[A.getMonth()]} a las 3:00 pm y check-out el ${DIAL[B.getDay()]} ${B.getDate()} de ${MESL[B.getMonth()]} de ${B.getFullYear()} a las 11:00 am.`
       : `Estadía de ${noches} con check-in a las 3:00 pm y check-out a las 11:00 am.`,
+    ...(f.personas > BASE_GUESTS ? [`Incluye el precio base hasta ${BASE_GUESTS} personas y ${f.personas - BASE_GUESTS} ${f.personas - BASE_GUESTS === 1 ? "persona adicional" : "personas adicionales"}.`] : []),
+    ...(fechas && keys.some(k => season(k) === "alta") ? [`Temporada alta: estadía mínima de ${MIN_ALTA} noches, todas a precio weekend.`] : []),
+    "Niños de 0 a 3 años: cortesía (máximo 2 por reserva, compartiendo cama con sus padres).",
     "La reserva se confirma con el pago acordado."
   ];
   const notas = f.notas == null ? auto : f.notas.split("\n").map(s => s.trim()).filter(Boolean);
@@ -230,7 +237,7 @@ export function BudgetSheet({ res }) {
           <div className="row"><label className="k" htmlFor="bdIn">Llegada</label><input type="date" id="bdIn" className="field-in" value={f.in} onChange={e => set("in", e.target.value)} /></div>
           <div className="row"><label className="k" htmlFor="bdOut">Salida</label><input type="date" id="bdOut" className="field-in" value={f.out} min={f.in} onChange={e => set("out", e.target.value)} /></div>
         </> : <div className="row"><span className="k">Noches</span>{stepper("noches", 1, 30, "Noches")}</div>}
-        <div className="row"><span className="k">Huéspedes<small style={{ display: "block", color: "var(--ink3)", fontWeight: 600, fontSize: 12 }}>{f.personas ? "Sale en el presupuesto" : "No se muestra"}</small></span>{stepper("personas", 0, 12, "Huéspedes", v => v || "—")}</div>
+        <div className="row"><span className="k">Huéspedes<small style={{ display: "block", color: "var(--ink3)", fontWeight: 600, fontSize: 12 }}>{f.personas ? (f.personas > BASE_GUESTS ? `${f.personas - BASE_GUESTS} adicional${f.personas - BASE_GUESTS === 1 ? "" : "es"} · sin contar niños de 0 a 3` : "Sin contar niños de 0 a 3 años") : "Pon cuántos para sumar adicionales"}</small></span>{stepper("personas", 0, 12, "Huéspedes", v => v || "—")}</div>
       </div>
       {f.modo === "fechas" && f.out <= f.in && <div className="err">La salida tiene que ser después de la llegada.</div>}
     </section>
