@@ -156,20 +156,29 @@ b{font-weight:700}
 .card li.no{color:#8a8b78}.card li.no::before{background:transparent;border:1px solid #8a8b78}
 
 /* Tarifas */
-.rate{margin-top:5mm;border-radius:4mm;overflow:hidden;border:1px solid var(--merey);background:#fff}
+.rate{margin-top:4mm;border-radius:4mm;overflow:hidden;border:1px solid var(--merey);background:#fff}
 .rate .hd{display:flex;justify-content:space-between;align-items:baseline;padding:3mm 5mm;background:var(--arena-seca)}
 .rate .hd h3{font-size:14pt}
 .rate .hd span{font-size:8pt;color:var(--verde-tabla)}
 .rate .cols{display:grid;grid-template-columns:1fr 1fr}
-.rate .cols > div{padding:4mm 5mm}
+.rate .cols > div{padding:3.2mm 5mm}
 .rate .cols > div + div{border-left:1px solid var(--merey)}
 .rate .pl{font-size:6.6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
 .rate .big{display:block;margin-top:1mm;font-size:22pt;font-weight:300;line-height:1.05}
 .rate .big small{font-size:8pt;font-weight:400;color:#8a8b78;margin-left:1mm}
 .rate .plus{display:block;margin-top:1.6mm;font-size:9pt;font-weight:600;color:var(--verde-tabla)}
 .rate .plus small{display:block;font-weight:400;font-size:7.6pt;color:#8a8b78}
-.how{margin-top:5mm;padding:4.5mm 5mm;border-radius:4mm;background:var(--arena-seca);font-size:9.2pt;line-height:1.55}
-.how .sum{display:block;margin-top:2mm;font-size:11pt}
+.how{margin-top:5mm;margin-bottom:2mm;padding:4.5mm 5mm;border-radius:4mm;background:var(--arena-seca)}
+.how .q{font-family:var(--f-display);font-size:15pt;line-height:1.1}
+.how .t{margin-top:1.2mm;font-size:9pt;line-height:1.45;color:var(--verde-tabla)}
+.how .eq{display:flex;align-items:stretch;gap:1.6mm;margin-top:4mm}
+.how .eq > div{flex:1;padding:2.6mm 2mm;border-radius:3mm;background:#fff;text-align:center}
+.how .eq > i{align-self:center;font-style:normal;font-size:12pt;font-weight:300;color:var(--melon)}
+.how .eq b{display:block;font-size:12pt;font-weight:600;line-height:1.1;white-space:nowrap}
+.how .eq small{display:block;margin-top:1mm;font-size:6.6pt;line-height:1.25;color:#8a8b78}
+.how .eq .tot{background:var(--verde-tabla);color:#fff}
+.how .eq .tot small{color:var(--aguacate)}
+.how .ex{margin-top:3mm;font-size:7.6pt;color:#8a8b78;text-align:center}
 
 /* Temporada alta */
 .alta .rule{margin-top:5mm;padding:4mm 5mm;border-radius:4mm;background:var(--sol);color:var(--alga);font-size:10pt;line-height:1.5}
@@ -186,6 +195,54 @@ b{font-weight:700}
 .facts3 p{margin-top:1.2mm;font-size:9.4pt;line-height:1.55;color:var(--verde-tabla)}
 .facts3 .chips{margin-top:2.5mm}
 .facts3 .chips span{background:#fff}
+
+/* Páginas con el diseño anterior: filosofía, equipo, casa y viento */
+.old{font-size:9.4pt;line-height:1.5}
+.old .body{padding:7mm 8mm 0}
+.old .body h2{font-size:23pt;margin-top:2.5mm}
+.old .eyebrow{font-size:6.6pt;color:var(--verde-tabla)}
+.old.dark .eyebrow{color:var(--arena-adicora)}
+.old .lead{margin-top:3.5mm;font-size:9.4pt;line-height:1.5}
+.old .lead+.lead{margin-top:2mm}
+.o2{background:var(--arena-seca)}
+.o2 .photo{height:62mm}
+.o2 .photo img{object-position:50% 60%}
+.gift{margin-top:auto;margin-bottom:12mm;padding:4.5mm 5mm;border:1px solid var(--arena-adicora);border-radius:4mm;background:rgba(249,255,244,.55)}
+.gift .eyebrow{color:var(--arena-adicora)}
+.gift p{margin-top:1.5mm;font-size:8.8pt;color:var(--verde-tabla)}
+.gift h3{font-size:14pt;margin-top:1mm}
+.o3 .photo{height:70mm}
+.o3 .photo img{object-position:50% 30%}
+.team{margin-top:4mm;display:grid}
+.team div{display:grid;grid-template-columns:9mm 1fr;gap:2.5mm;padding:2.1mm 0;border-top:1px solid #47503f}
+.team div:last-child{border-bottom:1px solid #47503f}
+.team i{font-style:normal;font-weight:300;font-size:13pt;line-height:1;color:var(--arena-adicora)}
+.team b{display:block;font-weight:600;color:#fff;font-size:9pt}
+.team span{font-size:8pt;color:var(--aguacate);line-height:1.35}
+.seven{position:absolute;right:6mm;top:58mm;width:23mm;height:23mm;border-radius:50%;background:var(--sol);color:var(--alga);display:grid;place-content:center;text-align:center;transform:rotate(-8deg);outline:1.2mm solid var(--nocturna)}
+.seven b{font-size:21pt;line-height:.9;font-weight:300}
+.seven span{font-size:5.4pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:1mm}
+.o5{background:var(--raspao)}
+.o5 .duo{flex:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5mm;height:64mm;overflow:hidden}
+.o5 .duo img{width:100%;height:100%;object-fit:cover;display:block}
+.rooms{margin-top:4mm;display:grid}
+.rooms div{display:flex;justify-content:space-between;align-items:baseline;gap:3mm;padding:2.2mm 0;border-top:1px solid var(--merey)}
+.rooms div:last-child{border-bottom:1px solid var(--merey)}
+.rooms h3{font-size:12.5pt}
+.rooms span{font-size:8pt;color:var(--verde-tabla);text-align:right}
+.o5 .note{margin-top:2mm;font-size:7.6pt;color:#5f604f}
+.o5 .chips{gap:1.6mm;margin-top:4mm}
+.o5 .chips span{padding:1.3mm 2.6mm;font-size:7.6pt}
+.hours{margin-top:auto;margin-bottom:13mm;display:grid;grid-template-columns:1fr 1fr;gap:3mm;padding-top:3mm;border-top:1px solid var(--merey)}
+.hours dt{font-size:6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
+.hours dd{margin:.5mm 0 0;font-family:var(--f-display);font-size:13pt}
+.o6{background:var(--laguna)}
+.o6 .photo{height:76mm}
+.o6 .photo img{object-position:40% 50%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-top:auto;margin-bottom:13mm}
+.two div{padding:3.5mm;border-radius:3.5mm;background:rgba(255,255,255,.7)}
+.two i{font-family:var(--f-display);font-style:italic;font-size:11pt;color:var(--melon);display:block;line-height:1.1}
+.two p{font-size:7.8pt;line-height:1.4;margin-top:1.5mm;color:var(--verde-tabla)}
 
 /* Cierre */
 .cta{padding:5mm 5.5mm;border-radius:4mm;background:var(--arena-adicora);color:var(--alga)}
@@ -218,31 +275,33 @@ page("cover dark", `
   </div>`);
 
 // Filosofía
-page("linen", `
-  <div class="photo" style="height:78mm"><img src="${img["muelle-atardecer"]}" alt="" style="object-position:50% 60%"></div>
-  <div class="body" style="background:var(--arena-seca)">
+page("old o2 linen", `
+  <div class="photo"><img src="${img["muelle-atardecer"]}" alt=""></div>
+  <div class="body">
     <p class="eyebrow">Nuestra filosofía · Edutainment</p>
-    <h2>Llegas como turista, <em>te vas siendo parte de la historia.</em></h2>
-    <p class="lead">Descansas mientras descubres el alma del lugar. Y la casa es solo para tu grupo: nunca la compartes con extraños.</p>
-    <div class="box push">
+    <h2>Llegas como turista, <em>te vas siendo parte de nuestra historia.</em></h2>
+    <p class="lead">Casa Maracuyá es hospitalidad boutique con un propósito: que descanses mientras descubres el alma del lugar. Lo llamamos <i>edutainment</i>: el lujo que no solo se siente, también se aprende.</p>
+    <p class="lead">Aquí la privacidad es total. Nunca compartes espacios con extraños: la casa completa y todo nuestro equipo son solo para tu grupo.</p>
+    <div class="gift">
       <p class="eyebrow">Privilegio de bienvenida</p>
       <h3>La historia de Adícora, contada en casa</h3>
-      <p>Una historiadora del pueblo te cuenta, en 5 minutos, los secretos de Adícora, del faro y de la casa.</p>
+      <p>Como cortesía de la casa, una historiadora local te visita para contarte, en una charla íntima de 5 minutos, los secretos de Adícora, la mística del faro vecino y la historia de nuestra casa.</p>
     </div>
   </div>`);
 
 // El equipo
-page("dark", `
-  <div class="photo" style="height:58mm"><img src="${img["chef-sirviendo"]}" alt="" style="object-position:50% 30%"></div>
+page("old o3 dark", `
+  <div class="photo"><img src="${img["chef-sirviendo"]}" alt=""></div>
+  <div class="seven"><b>7</b><span>a tu<br>servicio</span></div>
   <div class="body">
     <p class="eyebrow">El lujo de ser atendido</p>
-    <h2>Tu única tarea <em>es disfrutar.</em></h2>
-    <p class="lead">No cocinas, no recoges, no planificas. Siete personas se ocupan de todo.</p>
-    <div class="rows">
-      <div><span class="n">2</span><p class="who"><b>Chef privada y ayudante</b><small>Cocina gourmet cada día</small></p></div>
-      <div><span class="n">2</span><p class="who"><b>Anfitrionas</b><small>En la piscina, el muelle y la mesa</small></p></div>
-      <div><span class="n">2</span><p class="who"><b>Limpieza y mantenimiento</b><small>Todo impecable, todo funcionando</small></p></div>
-      <div><span class="n">1</span><p class="who"><b>Concierge</b><small>Turismo, kite y paseos</small></p></div>
+    <h2>Tu única responsabilidad <em>es disfrutar.</em></h2>
+    <p class="lead">El verdadero lujo es olvidarte de todo. Aquí no cocinas, no recoges y no planificas: siete personas se ocupan de cada detalle mientras tú solo disfrutas.</p>
+    <div class="team">
+      <div><i>2</i><p><b>Chef privada y ayudante de cocina</b><span>Cocina gourmet cada día, a la medida de tu grupo.</span></p></div>
+      <div><i>2</i><p><b>Anfitrionas y mesoneras</b><span>Te atienden en la piscina, el muelle y la mesa.</span></p></div>
+      <div><i>2</i><p><b>Limpieza y mantenimiento</b><span>La casa impecable y todo funcionando, todo el tiempo.</span></p></div>
+      <div><i>1</i><p><b>Concierge</b><span>Tu anfitrión y guía local para turismo y deportes.</span></p></div>
     </div>
   </div>`);
 
@@ -262,29 +321,35 @@ page("", `
   </div>`);
 
 // La casa
-page("", `
-  <div class="photo" style="height:62mm;display:grid;grid-template-columns:1fr 1fr;gap:1.5mm"><img src="${img["hab-maracuya"]}" alt=""><img src="${img["hab-del-valle"]}" alt=""></div>
-  <div class="body" style="background:var(--raspao)">
-    <p class="eyebrow">La casa</p>
-    <h2>Confort para <em>descansar.</em></h2>
-    <div class="rows">
-      <div><h3>Habitación principal</h3><span>1 queen + sofá cama</span></div>
-      <div><h3>Dos habitaciones</h3><span>2 queen cada una</span></div>
+page("old o5", `
+  <div class="duo"><img src="${img["hab-maracuya"]}" alt=""><img src="${img["hab-del-valle"]}" alt=""></div>
+  <div class="body">
+    <p class="eyebrow">La casa y sus espacios</p>
+    <h2>Confort pensado para <em>el descanso.</em></h2>
+    <div class="rooms">
+      <div><h3>Habitación principal</h3><span>1 cama queen + sofá cama</span></div>
+      <div><h3>Dos habitaciones dobles</h3><span>2 camas queen cada una</span></div>
     </div>
+    <p class="note">Hasta 4 personas por habitación · capacidad máxima de la casa: 12 huéspedes.</p>
     <div class="chips">
-      <span class="hi">Piscina privada</span><span class="hi">Muelle</span><span class="hi">Junto al faro</span>
-      <span>Planta eléctrica</span><span>Aire acondicionado</span><span>Wi-Fi</span><span>Pet friendly</span>
+      <span class="hi">Piscina privada</span><span class="hi">Muelle frente al mar</span><span class="hi">Al lado del faro</span>
+      <span>Planta eléctrica</span><span>Aire acondicionado</span><span>Agua caliente</span><span>Wi-Fi</span><span>Estacionamiento</span><span>Pet friendly</span>
     </div>
-    <dl class="pair push"><div><dt>Check-in</dt><dd>desde 3:00 PM</dd></div><div><dt>Check-out</dt><dd>hasta 11:00 AM</dd></div></dl>
+    <dl class="hours"><div><dt>Check-in</dt><dd>desde las 3:00 PM</dd></div><div><dt>Check-out</dt><dd>hasta las 11:00 AM</dd></div></dl>
   </div>`);
 
 // Viento y mar
-page("", `
-  <div class="photo" style="height:104mm"><img src="${img["atardecer-kite"]}" alt="" style="object-position:40% 50%"></div>
-  <div class="body" style="background:var(--laguna)">
-    <p class="eyebrow">Viento y mar</p>
-    <h2>Adrenalina o calma: <em>tú decides.</em></h2>
-    <p class="lead">Adícora es uno de los mejores spots de viento del Caribe. Nuestro concierge es kitesurfista: te orienta, te da coaching y te conecta con las escuelas de la zona.</p>
+page("old o6", `
+  <div class="photo"><img src="${img["atardecer-kite"]}" alt=""></div>
+  <div class="body">
+    <p class="eyebrow">Aventura, viento y mar</p>
+    <h2>Adrenalina o calma: <em>tú marcas el ritmo.</em></h2>
+    <p class="lead">Adícora es uno de los mejores spots de viento del Caribe. Desde la terraza ves las cometas en el agua.</p>
+    <p class="lead">Nuestro concierge es kitesurfista: te orienta y te da coaching, te conecta con las escuelas de kite de la zona y organiza paseos por la península de Paraguaná.</p>
+    <div class="two">
+      <div><i>Si vienes a volar</i><p>Información del viento, coaching y clases con escuelas aliadas. Al volver, te espera la mesa servida.</p></div>
+      <div><i>Si vienes a desconectarte</i><p>Piscina, muelle, atardeceres frente al faro y nadie apurándote.</p></div>
+    </div>
   </div>`);
 
 // Experiencias
@@ -319,12 +384,20 @@ const rate = (k, name, when) => { const E = PRECIOS.esencial[k], P = PRECIOS.ple
     </div>`; };
 page("", `
   <div class="body" style="background:var(--raspao);padding-top:12mm">
-    <p class="eyebrow">Tarifas por noche · USD</p>
+    <p class="eyebrow" style="margin-top:-3mm">Tarifas por noche · USD</p>
     <h2>Un precio base <em>para hasta ${PRECIOS.base}.</em></h2>
     ${rate("weekend", "Weekend", "jueves a domingo")}
     ${rate("midweek", "Midweek", "lunes a miércoles")}
-    <div class="how push">Desde la 7.ª persona se suma la persona adicional, hasta ${PRECIOS.max}.
-      <span class="sum">${EJ.n} personas, weekend, Esencial: <b>${usd(EJ.b)} + ${EJ.extra} × ${usd(EJ.x)} = ${usd(EJ.total)}</b></span></div>
+    <div class="how push">
+      <p class="q">¿Son más de ${PRECIOS.base}?</p>
+      <p class="t">Desde la 7.ª persona se suma la persona adicional, hasta ${PRECIOS.max}.</p>
+      <div class="eq">
+        <div><b>${usd(EJ.b)}</b><small>base, hasta ${PRECIOS.base}</small></div><i>+</i>
+        <div><b>${EJ.extra} × ${usd(EJ.x)}</b><small>${EJ.extra} adicionales</small></div><i>=</i>
+        <div class="tot"><b>${usd(EJ.total)}</b><small>por noche</small></div>
+      </div>
+      <p class="ex">Ejemplo: ${EJ.n} personas, weekend, Experiencia Esencial.</p>
+    </div>
   </div>`);
 
 // Temporada alta
