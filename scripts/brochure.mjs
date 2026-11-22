@@ -207,22 +207,19 @@ b{font-weight:700}
 .pp .body{padding-top:6.5mm}
 .pp .body h2{font-size:22pt}
 .plan{margin-top:2.6mm;border-radius:4mm;padding:3.2mm 4mm;background:#fff;border:1px solid var(--merey)}
-.plan.plena{background:var(--verde-tabla);color:var(--arena-seca);border-color:transparent}
+.plan.plena{}
 .plan .top{display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
 .plan h3{font-size:14.5pt}
 .plan .tag{font-size:6pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--melon)}
-.plan.plena .tag{color:var(--arena-adicora)}
 .plan .ideal{font-family:var(--f-display);font-style:italic;font-size:9.6pt;line-height:1.25;margin-top:1mm;color:var(--verde-tabla)}
-.plan.plena .ideal{color:var(--arena-seca)}
 .plan ul{list-style:none;padding:0;margin:2mm 0 0;display:grid;gap:.8mm}
 .plan li{position:relative;padding-left:3.6mm;font-size:7.6pt;line-height:1.35}
 .plan li::before{content:"";position:absolute;left:0;top:.55em;width:1.5mm;height:1.5mm;border-radius:50%;background:var(--arena-adicora)}
 .plan li.no{color:#8a8b78}.plan li.no::before{background:transparent;border:1px solid #8a8b78;box-sizing:border-box}
-.plan.plena li{color:#e8dccd}
 .prices{width:100%;border-collapse:collapse;margin-top:1.5mm;font-size:7pt}
 .prices th,.prices td{padding:1.6mm 1.5mm;border-bottom:1px solid var(--merey);text-align:left;vertical-align:top}
 .prices thead th{font-size:6pt;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--melon);padding:1mm 1.5mm}
-.prices .pl{background:rgba(61,61,42,.07)}
+.prices .pl{}
 .prices tbody th{font-weight:600;font-size:8pt;width:27%}
 .prices small{display:block;font-weight:400;font-size:5.9pt;color:#8a8b78;line-height:1.3}
 .prices td b{display:block;font-size:12pt;font-weight:600;line-height:1.1}
