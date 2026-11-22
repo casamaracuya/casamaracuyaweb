@@ -48,9 +48,10 @@ const PRECIOS = {
   plena: { weekend: [920, 120], midweek: [680, 100] }
 };
 // Los mismos precios con un aumento en %, redondeados al dólar.
-const conAumento = pct => { const up = v => Math.round(v * (1 + pct / 100));
-  const k = o => Object.fromEntries(Object.entries(o).map(([n, [b, x]]) => [n, [up(b), up(x)]]));
-  return { ...PRECIOS, esencial: k(PRECIOS.esencial), plena: k(PRECIOS.plena) }; };
+// «extra» fija a mano la persona adicional de una versión: { esencial: { weekend: 138 }, ... }.
+const conAumento = (pct, extra = {}) => { const up = v => Math.round(v * (1 + pct / 100));
+  const k = (plan, o) => Object.fromEntries(Object.entries(o).map(([n, [b, x]]) => [n, [up(b), extra[plan]?.[n] ?? up(x)]]));
+  return { ...PRECIOS, esencial: k("esencial", PRECIOS.esencial), plena: k("plena", PRECIOS.plena) }; };
 // Temporada alta: el año con calendario cargado más próximo (o ALTA_AÑO=2028 npm run brochure).
 const ALTA_Y = +(process.env.ALTA_AÑO || Object.keys(HIGH).map(Number).filter(y => y >= new Date().getFullYear()).sort()[0] || 0);
 
@@ -442,11 +443,11 @@ ${pages.map((p, i) => `<section class="pg ${p.cls}">${p.inner}
 const VERSIONES = [
   { lang: "es", pct: 0, out: "public/casa-maracuya.pdf" },
   { lang: "en", pct: 0, out: "public/casa-maracuya-en.pdf" },
-  { lang: "es", pct: 15, out: "pdf/casa-maracuya-15.pdf" },
-  { lang: "en", pct: 15, out: "pdf/casa-maracuya-en-15.pdf" }
+  { lang: "es", pct: 15, extra: { esencial: { weekend: 138, midweek: 100 }, plena: { weekend: 176, midweek: 130 } }, out: "pdf/casa-maracuya-15.pdf" },
+  { lang: "en", pct: 15, extra: { esencial: { weekend: 138, midweek: 100 }, plena: { weekend: 176, midweek: 130 } }, out: "pdf/casa-maracuya-en-15.pdf" }
 ];
 for (const v of VERSIONES) {
-  const P = conAumento(v.pct);
+  const P = conAumento(v.pct, v.extra);
   const { html, N } = build(v.lang, P);
   const out = path.join(ROOT, v.out); fs.mkdirSync(path.dirname(out), { recursive: true });
   const file = path.join(tmp, `${path.basename(v.out, ".pdf")}.html`);
