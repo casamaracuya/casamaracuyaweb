@@ -1,6 +1,7 @@
 // Brochure de Casa Maracuyá para enviar por WhatsApp junto con la cotización.
 // Páginas verticales (9:16) para leer en el teléfono: una idea por página, poco texto y letra grande.
-// Uso: npm run brochure  →  public/casa-maracuya.pdf
+// Uso: npm run brochure  →  public/casa-maracuya.pdf (español), public/casa-maracuya-en.pdf (inglés)
+// y las versiones con aumento en pdf/ (no se publican). Ver VERSIONES al final.
 // Necesita internet para bajar las letras (Google Fonts) y Chrome o Edge instalado.
 import fs from "node:fs";
 import os from "node:os";
@@ -11,7 +12,6 @@ import sharp from "sharp";
 import { HIGH, MIN_ALTA } from "../src/admin/util.js";
 
 const ROOT = path.resolve(".");
-const OUT = path.join(ROOT, "public", "casa-maracuya.pdf");
 const src = fs.readFileSync("src/lib/contacto.js", "utf8");
 const EMAIL = src.match(/EMAIL = "([^"]+)"/)[1];
 const WA = (process.env.VITE_WHATSAPP || src.match(/\|\| "(\d+)"/)[1]).replace(/\D/g, "");
@@ -41,26 +41,18 @@ for (const n of FOTOS) {
 const logo = n => pathToFileURL(path.join(ROOT, "public", "logo", n)).href;
 
 // ---------- Precios por noche (solo en el PDF, nunca en la web) ----------
-// [precio base hasta BASE personas, cada persona adicional]. Máximo MAX huéspedes.
+// [precio base hasta 6 personas, cada persona adicional]. Máximo 12 huéspedes.
 const PRECIOS = {
   base: 6, max: 12,
   esencial: { weekend: [720, 80], midweek: [520, 60] },
   plena: { weekend: [920, 120], midweek: [680, 100] }
 };
-const usd = v => "$" + v;
-const cell = ([b, x]) => `<b>${usd(b)}</b><small>hasta ${PRECIOS.base} personas</small><span>+${usd(x)} <small>por persona adicional</small></span>`;
-const priceTable = () => { const E = PRECIOS.esencial, P = PRECIOS.plena;
-  return `<table class="prices"><thead><tr><th>Por noche</th><th>Esencial</th><th class="pl">Plena</th></tr></thead><tbody>
-  <tr><th>Weekend<small>jueves a domingo</small></th><td>${cell(E.weekend)}</td><td class="pl">${cell(P.weekend)}</td></tr>
-  <tr><th>Midweek<small>lunes a miércoles</small></th><td>${cell(E.midweek)}</td><td class="pl">${cell(P.midweek)}</td></tr>
-  <tr class="alta"><th>Temporada alta<small>mínimo ${MIN_ALTA} noches</small></th><td colspan="2">Todas las noches a precio <b>weekend</b>: el midweek no aplica.</td></tr></tbody></table>`; };
-const EJ = (() => { const [b, x] = PRECIOS.esencial.weekend, n = 8, extra = n - PRECIOS.base; return { n, extra, b, x, total: b + extra * x }; })();
-
+// Los mismos precios con un aumento en %, redondeados al dólar.
+const conAumento = pct => { const up = v => Math.round(v * (1 + pct / 100));
+  const k = o => Object.fromEntries(Object.entries(o).map(([n, [b, x]]) => [n, [up(b), up(x)]]));
+  return { ...PRECIOS, esencial: k(PRECIOS.esencial), plena: k(PRECIOS.plena) }; };
 // Temporada alta: el año con calendario cargado más próximo (o ALTA_AÑO=2028 npm run brochure).
-const MESC = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const ALTA_Y = +(process.env.ALTA_AÑO || Object.keys(HIGH).map(Number).filter(y => y >= new Date().getFullYear()).sort()[0] || 0);
-const dm = iso => { const [, m, d] = iso.split("-").map(Number); return [d, MESC[m - 1]]; };
-const rango = ([a, b]) => { const [d1, m1] = dm(a), [d2, m2] = dm(b); return m1 === m2 ? `${d1}–${d2} ${m1}` : `${d1} ${m1} – ${d2} ${m2}`; };
 
 const CSS = `
 @font-face{font-family:"Cifras";font-style:normal;font-weight:400;size-adjust:90%;unicode-range:U+0030-0039;src:url(https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSg.woff2) format("woff2")}
@@ -252,178 +244,218 @@ b{font-weight:700}
 `;
 
 // ---------- Páginas ----------
-const pages = [];
-const page = (cls, inner) => pages.push({ cls, inner });
+// Cada texto va en español y en inglés: tx("español", "english").
+function build(L, P) {
+  const tx = (es, en) => (L === "en" ? en : es);
+  const usd = v => "$" + v;
+  const cell = ([b, x]) => `<b>${usd(b)}</b><small>${tx(`hasta ${P.base} personas`, `up to ${P.base} guests`)}</small><span>+${usd(x)} <small>${tx("por persona adicional", "per extra guest")}</small></span>`;
+  const E = P.esencial, Pl = P.plena;
+  const priceTable = `<table class="prices"><thead><tr><th>${tx("Por noche", "Per night")}</th><th>${tx("Esencial", "Essential")}</th><th class="pl">${tx("Plena", "Full")}</th></tr></thead><tbody>
+  <tr><th>Weekend<small>${tx("jueves a domingo", "Thursday to Sunday")}</small></th><td>${cell(E.weekend)}</td><td class="pl">${cell(Pl.weekend)}</td></tr>
+  <tr><th>Midweek<small>${tx("lunes a miércoles", "Monday to Wednesday")}</small></th><td>${cell(E.midweek)}</td><td class="pl">${cell(Pl.midweek)}</td></tr>
+  <tr class="alta"><th>${tx("Temporada alta", "High season")}<small>${tx(`mínimo ${MIN_ALTA} noches`, `${MIN_ALTA}-night minimum`)}</small></th><td colspan="2">${tx("Todas las noches a precio <b>weekend</b>: el midweek no aplica.", "Every night at the <b>weekend</b> rate: midweek does not apply.")}</td></tr></tbody></table>`;
+  const [eb, ex] = E.weekend, n = 8, extra = n - P.base, total = eb + extra * ex;
+  const MES = tx(["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]);
+  const dm = iso => { const [, m, d] = iso.split("-").map(Number); return [d, MES[m - 1]]; };
+  const rango = ([a, b]) => { const [d1, m1] = dm(a), [d2, m2] = dm(b);
+    return L === "en" ? (m1 === m2 ? `${m1} ${d1}–${d2}` : `${m1} ${d1} – ${m2} ${d2}`) : (m1 === m2 ? `${d1}–${d2} ${m1}` : `${d1} ${m1} – ${d2} ${m2}`); };
+  const ALTA_EN = { "Carnaval": "Carnival", "San José y Semana Santa": "St. Joseph's Day & Holy Week", "19 de abril": "April 19 holiday", "1 de mayo": "Labor Day",
+    "Batalla de Carabobo": "Battle of Carabobo", "5 de julio": "Independence Day", "Vacaciones escolares": "School holidays", "12 de octubre": "October 12 holiday" };
 
-// Portada
-page("cover dark", `
+  const pages = [];
+  const page = (cls, inner) => pages.push({ cls, inner });
+
+  // Portada
+  page("cover dark", `
   <div class="photo"><img src="${img["faro-piscina"]}" alt=""></div>
   <div class="shade"></div>
   <img class="logo" src="${logo("logo-claro.svg")}" alt="Casa Maracuyá">
   <div class="txt">
-    <p class="eyebrow">Alquiler exclusivo · Junto al Faro de Adícora</p>
+    <p class="eyebrow">${tx("Alquiler exclusivo · Junto al Faro de Adícora", "Exclusive rental · Next to the Adícora lighthouse")}</p>
     <h1>Casa Maracuyá</h1>
-    <p class="sub">Tu villa privada de alta gastronomía frente al Mar Caribe.</p>
+    <p class="sub">${tx("Tu villa privada de alta gastronomía frente al Mar Caribe.", "Your private villa with fine dining on the Caribbean Sea.")}</p>
     <div class="facts">
-      <div><b>100%</b><span>Casa privada</span></div>
-      <div><b>1–12</b><span>Huéspedes</span></div>
-      <div><b>3</b><span>Habitaciones</span></div>
-      <div><b>7</b><span>Personas a tu servicio</span></div>
+      <div><b>100%</b><span>${tx("Casa privada", "Private house")}</span></div>
+      <div><b>1–12</b><span>${tx("Huéspedes", "Guests")}</span></div>
+      <div><b>3</b><span>${tx("Habitaciones", "Bedrooms")}</span></div>
+      <div><b>7</b><span>${tx("Personas a tu servicio", "Staff at your service")}</span></div>
     </div>
   </div>`);
 
-// Filosofía
-page("old o2 linen", `
+  // Filosofía
+  page("old o2 linen", `
   <div class="photo"><img src="${img["muelle-atardecer"]}" alt=""></div>
   <div class="body">
-    <p class="eyebrow">Nuestra filosofía · Edutainment</p>
-    <h2>Llegas como turista, <em>te vas siendo parte de nuestra historia.</em></h2>
-    <p class="lead">Casa Maracuyá es hospitalidad boutique con un propósito: que descanses mientras descubres el alma del lugar. Lo llamamos <i>edutainment</i>: el lujo que no solo se siente, también se aprende.</p>
-    <p class="lead">Aquí la privacidad es total. Nunca compartes espacios con extraños: la casa completa y todo nuestro equipo son solo para tu grupo.</p>
+    <p class="eyebrow">${tx("Nuestra filosofía · Edutainment", "Our philosophy · Edutainment")}</p>
+    <h2>${tx("Llegas como turista, <em>te vas siendo parte de nuestra historia.</em>", "Arrive as a tourist, <em>leave as part of our story.</em>")}</h2>
+    <p class="lead">${tx("Casa Maracuyá es hospitalidad boutique con un propósito: que descanses mientras descubres el alma del lugar. Lo llamamos <i>edutainment</i>: el lujo que no solo se siente, también se aprende.",
+      "Casa Maracuyá is boutique hospitality with a purpose: to rest while you discover the soul of the place. We call it <i>edutainment</i>: luxury you don't just feel, you also learn.")}</p>
+    <p class="lead">${tx("Aquí la privacidad es total. Nunca compartes espacios con extraños: la casa completa y todo nuestro equipo son solo para tu grupo.",
+      "Privacy here is complete. You never share spaces with strangers: the whole house and our entire team are just for your group.")}</p>
     <div class="gift">
-      <p class="eyebrow">Privilegio de bienvenida</p>
-      <h3>La historia de Adícora, contada en casa</h3>
-      <p>Como cortesía de la casa, una historiadora local te visita para contarte, en una charla íntima de 5 minutos, los secretos de Adícora, la mística del faro vecino y la historia de nuestra casa.</p>
+      <p class="eyebrow">${tx("Privilegio de bienvenida", "Welcome privilege")}</p>
+      <h3>${tx("La historia de Adícora, contada en casa", "The story of Adícora, told at home")}</h3>
+      <p>${tx("Como cortesía de la casa, una historiadora local te visita para contarte, en una charla íntima de 5 minutos, los secretos de Adícora, la mística del faro vecino y la historia de nuestra casa.",
+        "Compliments of the house, a local historian visits to share, in an intimate 5-minute talk, the secrets of Adícora, the mystique of the lighthouse next door and the story of our house.")}</p>
     </div>
   </div>`);
 
-// El equipo
-page("old o3 dark", `
+  // El equipo
+  page("old o3 dark", `
   <div class="photo"><img src="${img["chef-sirviendo"]}" alt=""></div>
-  <div class="seven"><b>7</b><span>a tu<br>servicio</span></div>
+  <div class="seven"><b>7</b><span>${tx("a tu<br>servicio", "at your<br>service")}</span></div>
   <div class="body">
-    <p class="eyebrow">El lujo de ser atendido</p>
-    <h2>Tu única responsabilidad <em>es disfrutar.</em></h2>
-    <p class="lead">El verdadero lujo es olvidarte de todo. Aquí no cocinas, no recoges y no planificas: siete personas se ocupan de cada detalle mientras tú solo disfrutas.</p>
+    <p class="eyebrow">${tx("El lujo de ser atendido", "The luxury of being looked after")}</p>
+    <h2>${tx("Tu única responsabilidad <em>es disfrutar.</em>", "Your only job <em>is to enjoy.</em>")}</h2>
+    <p class="lead">${tx("El verdadero lujo es olvidarte de todo. Aquí no cocinas, no recoges y no planificas: siete personas se ocupan de cada detalle mientras tú solo disfrutas.",
+      "True luxury is forgetting about everything. Here you don't cook, clean up or plan: seven people take care of every detail while you simply enjoy.")}</p>
     <div class="team">
-      <div><i>2</i><p><b>Chef privada y ayudante de cocina</b><span>Cocina gourmet cada día, a la medida de tu grupo.</span></p></div>
-      <div><i>2</i><p><b>Anfitrionas y mesoneras</b><span>Te atienden en la piscina, el muelle y la mesa.</span></p></div>
-      <div><i>2</i><p><b>Limpieza y mantenimiento</b><span>La casa impecable y todo funcionando, todo el tiempo.</span></p></div>
-      <div><i>1</i><p><b>Concierge</b><span>Tu anfitrión y guía local para turismo y deportes.</span></p></div>
+      <div><i>2</i><p><b>${tx("Chef privada y ayudante de cocina", "Private chef and kitchen assistant")}</b><span>${tx("Cocina gourmet cada día, a la medida de tu grupo.", "Gourmet cooking every day, tailored to your group.")}</span></p></div>
+      <div><i>2</i><p><b>${tx("Anfitrionas y mesoneras", "Hosts and servers")}</b><span>${tx("Te atienden en la piscina, el muelle y la mesa.", "They look after you at the pool, the boardwalk and the table.")}</span></p></div>
+      <div><i>2</i><p><b>${tx("Limpieza y mantenimiento", "Housekeeping and maintenance")}</b><span>${tx("La casa impecable y todo funcionando, todo el tiempo.", "A spotless house with everything working, all the time.")}</span></p></div>
+      <div><i>1</i><p><b>Concierge</b><span>${tx("Tu anfitrión y guía local para turismo y deportes.", "Your host and local guide for tours and sports.")}</span></p></div>
     </div>
   </div>`);
 
-// La cocina
-page("", `
+  // La cocina
+  page("", `
   <div class="photo" style="height:78mm;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:1.5mm">
     <img src="${img["postre-maracuya"]}" alt="" style="grid-row:1 / span 2;min-height:0"><img src="${img["tequenos"]}" alt="" style="min-height:0"><img src="${img["cafe-de-la-tia"]}" alt="" style="min-height:0"></div>
   <div class="body linen" style="background-color:var(--merey)">
-    <p class="eyebrow">Alta gastronomía local</p>
-    <h2>El corazón de la casa: <em>la cocina.</em></h2>
+    <p class="eyebrow">${tx("Alta gastronomía local", "Fine local cuisine")}</p>
+    <h2>${tx("El corazón de la casa: <em>la cocina.</em>", "The heart of the house: <em>the kitchen.</em>")}</h2>
     <ol class="steps">
-      <li>La chef te propone el menú, con ingredientes frescos de la costa.</li>
-      <li>Lo apruebas antes de llegar y nos cuentas tus alergias.</li>
-      <li>Cada día eliges qué te provoca para mañana.</li>
+      <li>${tx("La chef te propone el menú, con ingredientes frescos de la costa.", "The chef suggests a menu made with fresh ingredients from the coast.")}</li>
+      <li>${tx("Lo apruebas antes de llegar y nos cuentas tus alergias.", "You approve it before arriving and tell us about any allergies.")}</li>
+      <li>${tx("Cada día eliges qué te provoca para mañana.", "Each day you choose what you feel like for tomorrow.")}</li>
     </ol>
-    <p class="lead push">¿Traes tus bebidas? <b>Te las servimos</b> y te preparamos los tragos.</p>
+    <p class="lead push">${tx("¿Traes tus bebidas? <b>Te las servimos</b> y te preparamos los tragos.", "Bringing your own drinks? <b>We serve them</b> and mix your cocktails.")}</p>
   </div>`);
 
-// La casa
-page("old o5", `
+  // La casa
+  page("old o5", `
   <div class="duo"><img src="${img["hab-maracuya"]}" alt=""><img src="${img["hab-del-valle"]}" alt=""></div>
   <div class="body">
-    <p class="eyebrow">La casa y sus espacios</p>
-    <h2>Confort pensado para <em>el descanso.</em></h2>
+    <p class="eyebrow">${tx("La casa y sus espacios", "The house and its spaces")}</p>
+    <h2>${tx("Confort pensado para <em>el descanso.</em>", "Comfort designed <em>for rest.</em>")}</h2>
     <div class="rooms">
-      <div><h3>Habitación principal</h3><span>1 cama queen + sofá cama</span></div>
-      <div><h3>Dos habitaciones dobles</h3><span>2 camas queen cada una</span></div>
+      <div><h3>${tx("Habitación principal", "Main bedroom")}</h3><span>${tx("1 cama queen + sofá cama", "1 queen bed + sofa bed")}</span></div>
+      <div><h3>${tx("Dos habitaciones dobles", "Two double bedrooms")}</h3><span>${tx("2 camas queen cada una", "2 queen beds each")}</span></div>
     </div>
-    <p class="note">Hasta 4 personas por habitación · capacidad máxima de la casa: 12 huéspedes.</p>
+    <p class="note">${tx("Hasta 4 personas por habitación · capacidad máxima de la casa: 12 huéspedes.", "Up to 4 guests per bedroom · maximum capacity: 12 guests.")}</p>
     <div class="chips">
-      <span class="hi">Piscina privada</span><span class="hi">Muelle frente al mar</span><span class="hi">Al lado del faro</span>
-      <span>Planta eléctrica</span><span>Aire acondicionado</span><span>Agua caliente</span><span>Wi-Fi</span><span>Estacionamiento</span><span>Pet friendly</span>
+      <span class="hi">${tx("Piscina privada", "Private pool")}</span><span class="hi">${tx("Muelle frente al mar", "Boardwalk on the sea")}</span><span class="hi">${tx("Al lado del faro", "Next to the lighthouse")}</span>
+      <span>${tx("Planta eléctrica", "Backup generator")}</span><span>${tx("Aire acondicionado", "Air conditioning")}</span><span>${tx("Agua caliente", "Hot water")}</span><span>Wi-Fi</span><span>${tx("Estacionamiento", "Parking")}</span><span>Pet friendly</span>
     </div>
-    <dl class="hours"><div><dt>Check-in</dt><dd>desde las 3:00 PM</dd></div><div><dt>Check-out</dt><dd>hasta las 11:00 AM</dd></div></dl>
+    <dl class="hours"><div><dt>Check-in</dt><dd>${tx("desde las 3:00 PM", "from 3:00 PM")}</dd></div><div><dt>Check-out</dt><dd>${tx("hasta las 11:00 AM", "until 11:00 AM")}</dd></div></dl>
   </div>`);
 
-// Viento y mar
-page("old o6", `
+  // Viento y mar
+  page("old o6", `
   <div class="photo"><img src="${img["atardecer-kite"]}" alt=""></div>
   <div class="body">
-    <p class="eyebrow">Aventura, viento y mar</p>
-    <h2>Adrenalina o calma: <em>tú marcas el ritmo.</em></h2>
-    <p class="lead">Adícora es uno de los mejores spots de viento del Caribe. Desde la terraza ves las cometas en el agua.</p>
-    <p class="lead">Nuestro concierge es kitesurfista: te orienta y te da coaching, te conecta con las escuelas de kite de la zona y organiza paseos por la península de Paraguaná.</p>
+    <p class="eyebrow">${tx("Aventura, viento y mar", "Adventure, wind and sea")}</p>
+    <h2>${tx("Adrenalina o calma: <em>tú marcas el ritmo.</em>", "Adrenaline or calm: <em>you set the pace.</em>")}</h2>
+    <p class="lead">${tx("Adícora es uno de los mejores spots de viento del Caribe. Desde la terraza ves las cometas en el agua.", "Adícora is one of the best wind spots in the Caribbean. From the terrace you can watch the kites on the water.")}</p>
+    <p class="lead">${tx("Nuestro concierge es kitesurfista: te orienta y te da coaching, te conecta con las escuelas de kite de la zona y organiza paseos por la península de Paraguaná.",
+      "Our concierge is a kitesurfer: wind tips and coaching, introductions to the local kite schools and trips around the Paraguaná peninsula.")}</p>
     <div class="two">
-      <div><i>Si vienes a volar</i><p>Información del viento, coaching y clases con escuelas aliadas. Al volver, te espera la mesa servida.</p></div>
-      <div><i>Si vienes a desconectarte</i><p>Piscina, muelle, atardeceres frente al faro y nadie apurándote.</p></div>
+      <div><i>${tx("Si vienes a volar", "If you come to fly")}</i><p>${tx("Información del viento, coaching y clases con escuelas aliadas. Al volver, te espera la mesa servida.", "Wind updates, coaching and lessons with partner schools. When you come back, the table is set.")}</p></div>
+      <div><i>${tx("Si vienes a desconectarte", "If you come to switch off")}</i><p>${tx("Piscina, muelle, atardeceres frente al faro y nadie apurándote.", "Pool, boardwalk, sunsets by the lighthouse and no one rushing you.")}</p></div>
     </div>
   </div>`);
 
-// Planes y tarifas (diseño anterior)
-page("old pp", `
+  // Planes y tarifas
+  page("old pp", `
   <div class="body">
-    <p class="eyebrow">Elige tu experiencia</p>
-    <h2>Dos formas de vivir <em>la casa.</em></h2>
+    <p class="eyebrow">${tx("Elige tu experiencia", "Choose your experience")}</p>
+    <h2>${tx("Dos formas de vivir <em>la casa.</em>", "Two ways to enjoy <em>the house.</em>")}</h2>
     <div class="plan">
-      <div class="top"><h3>Experiencia Esencial</h3><span class="tag">Desayuno incluido</span></div>
-      <p class="ideal">Para despertar con la mesa servida y salir a explorar Adícora y la península.</p>
-      <ul><li>Desayunos gourmet diarios, preparados por la chef</li><li class="no">Sin almuerzo ni cena: la cocina es de uso exclusivo del equipo</li></ul>
+      <div class="top"><h3>${tx("Experiencia Esencial", "Essential Experience")}</h3><span class="tag">${tx("Desayuno incluido", "Breakfast included")}</span></div>
+      <p class="ideal">${tx("Para despertar con la mesa servida y salir a explorar Adícora y la península.", "Wake up to the table set, then head out to explore Adícora and the peninsula.")}</p>
+      <ul><li>${tx("Desayunos gourmet diarios, preparados por la chef", "Daily gourmet breakfasts, cooked by the chef")}</li><li class="no">${tx("Sin almuerzo ni cena: la cocina es de uso exclusivo del equipo", "No lunch or dinner: the kitchen is for our team only")}</li></ul>
     </div>
     <div class="plan plena">
-      <div class="top"><h3>Experiencia Plena</h3><span class="tag">Todas las comidas</span></div>
-      <p class="ideal">Para desconectarte de verdad: niños, grupos grandes o kiters que vuelven con hambre.</p>
-      <ul><li>Desayunos gourmet diarios, preparados por la chef</li><li>Almuerzos y cenas a la carta, con postre artesanal</li><li>Servicio de tequeños y cava de playa reforzada con hidratación y frutas</li></ul>
+      <div class="top"><h3>${tx("Experiencia Plena", "Full Experience")}</h3><span class="tag">${tx("Todas las comidas", "All meals")}</span></div>
+      <p class="ideal">${tx("Para desconectarte de verdad: niños, grupos grandes o kiters que vuelven con hambre.", "To truly switch off: kids, big groups or kiters coming back hungry.")}</p>
+      <ul><li>${tx("Desayunos gourmet diarios, preparados por la chef", "Daily gourmet breakfasts, cooked by the chef")}</li><li>${tx("Almuerzos y cenas a la carta, con postre artesanal", "À la carte lunches and dinners, with an artisan dessert")}</li><li>${tx("Servicio de tequeños y cava de playa reforzada con hidratación y frutas", "Tequeños service and a well-stocked beach cooler with drinks and fruit")}</li></ul>
     </div>
-    <p class="eyebrow tt">Tarifas por noche · casa completa</p>
-    ${priceTable()}
-    <p class="ej"><b>Ejemplo:</b> ${EJ.n} personas un fin de semana en la Experiencia Esencial: ${usd(EJ.b)} + ${EJ.extra} × ${usd(EJ.x)} = <b>${usd(EJ.total)} por noche</b>.</p>
-    <p class="fine">Precios en dólares (USD) por noche. Máximo ${PRECIOS.max} huéspedes; los niños de 0 a 3 años no cuentan (detalles en «Bueno saberlo»).</p>
+    <p class="eyebrow tt">${tx("Tarifas por noche · casa completa", "Nightly rates · whole house")}</p>
+    ${priceTable}
+    <p class="ej">${tx(`<b>Ejemplo:</b> ${n} personas un fin de semana en la Experiencia Esencial: ${usd(eb)} + ${extra} × ${usd(ex)} = <b>${usd(total)} por noche</b>.`,
+      `<b>Example:</b> ${n} guests on a weekend, Essential Experience: ${usd(eb)} + ${extra} × ${usd(ex)} = <b>${usd(total)} per night</b>.`)}</p>
+    <p class="fine">${tx(`Precios en dólares (USD) por noche. Máximo ${P.max} huéspedes; los niños de 0 a 3 años no cuentan (detalles en «Bueno saberlo»).`,
+      `Prices in US dollars (USD) per night. Maximum ${P.max} guests; children aged 0 to 3 don't count (see "Good to know").`)}</p>
   </div>`);
 
-// Temporada alta
-if (HIGH[ALTA_Y]) page("dark alta", `
+  // Temporada alta
+  if (HIGH[ALTA_Y]) page("dark alta", `
   <div class="body" style="padding-top:12mm">
-    <p class="eyebrow">Temporada alta ${ALTA_Y}</p>
-    <h2>Fechas <em>más buscadas.</em></h2>
-    <p class="rule">Todas las noches a precio <b>weekend</b> y mínimo <b>${MIN_ALTA} noches</b>.</p>
-    <div class="dates">${HIGH[ALTA_Y].map(x => `<div><b>${rango(x)}</b><span>${x[2]}</span></div>`).join("")}</div>
-    <p class="lead push" style="font-size:9.4pt">El resto del año reservas desde 1 noche.</p>
+    <p class="eyebrow">${tx("Temporada alta", "High season")} ${ALTA_Y}</p>
+    <h2>${tx("Fechas <em>más buscadas.</em>", "Most popular <em>dates.</em>")}</h2>
+    <p class="rule">${tx(`Todas las noches a precio <b>weekend</b> y mínimo <b>${MIN_ALTA} noches</b>.`, `Every night at the <b>weekend</b> rate, with a <b>${MIN_ALTA}-night</b> minimum.`)}</p>
+    <div class="dates">${HIGH[ALTA_Y].map(x => `<div><b>${rango(x)}</b><span>${L === "en" ? ALTA_EN[x[2]] || x[2] : x[2]}</span></div>`).join("")}</div>
+    <p class="lead push" style="font-size:9.4pt">${tx("El resto del año reservas desde 1 noche.", "The rest of the year you can book from 1 night.")}</p>
   </div>`);
 
-// Antes de reservar
-page("linen", `
+  // Antes de reservar
+  page("linen", `
   <div class="photo" style="height:62mm"><img src="${img["sala-frente-al-mar"]}" alt="" style="object-position:50% 55%"></div>
   <div class="body" style="background-color:var(--arena-seca)">
-    <p class="eyebrow">Antes de reservar</p>
-    <h2>Bueno <em>saberlo.</em></h2>
+    <p class="eyebrow">${tx("Antes de reservar", "Before you book")}</p>
+    <h2>${tx("Bueno <em>saberlo.</em>", "Good <em>to know.</em>")}</h2>
     <div class="facts3">
-      <div><h3>Niños de 0 a 3 años, cortesía</h3><p>Hasta 2 por reserva, en la cama de sus padres. Desde los 4 años cuentan como huésped.</p></div>
-      <div><h3>Siempre la casa entera</h3><p>Sin compartir áreas con nadie más.</p></div>
-      <div><h3>Formas de pago</h3><div class="chips"><span>Zelle</span><span>Efectivo</span><span>USDT</span></div></div>
+      <div><h3>${tx("Niños de 0 a 3 años, cortesía", "Children aged 0 to 3 stay free")}</h3><p>${tx("Hasta 2 por reserva, en la cama de sus padres. Desde los 4 años cuentan como huésped.", "Up to 2 per booking, sharing their parents' bed. From age 4 they count as guests.")}</p></div>
+      <div><h3>${tx("Siempre la casa entera", "Always the whole house")}</h3><p>${tx("Sin compartir áreas con nadie más.", "No shared areas with anyone else.")}</p></div>
+      <div><h3>${tx("Formas de pago", "Payment methods")}</h3><div class="chips"><span>Zelle</span><span>${tx("Efectivo", "Cash")}</span><span>USDT</span></div></div>
     </div>
   </div>`);
 
-// Cierre
-page("dark", `
+  // Cierre
+  page("dark", `
   <div class="photo" style="height:84mm"><img src="${img["noche-piscina"]}" alt="" style="object-position:50% 70%"></div>
   <div class="body">
-    <p class="eyebrow">Reservas</p>
-    <h2>Diseña tu estadía en <em>Casa Maracuyá.</em></h2>
-    <div class="cta push"><b>Tu cotización viene con este PDF.</b><span>Hecha para tus fechas, tu grupo y la experiencia que elijas.</span></div>
+    <p class="eyebrow">${tx("Reservas", "Bookings")}</p>
+    <h2>${tx("Diseña tu estadía en <em>Casa Maracuyá.</em>", "Design your stay at <em>Casa Maracuyá.</em>")}</h2>
+    <div class="cta push"><b>${tx("Tu cotización viene con este PDF.", "Your quote comes with this PDF.")}</b><span>${tx("Hecha para tus fechas, tu grupo y la experiencia que elijas.", "Made for your dates, your group and the experience you choose.")}</span></div>
     <dl class="contact">
       <dt>WhatsApp</dt><dd>${WA_TXT}</dd>
       <dt>Instagram</dt><dd>@lacasamaracuya</dd>
       <dt>Web</dt><dd>casa-maracuya.com</dd>
-      <dt>Correo</dt><dd>${EMAIL}</dd>
+      <dt>${tx("Correo", "Email")}</dt><dd>${EMAIL}</dd>
     </dl>
   </div>`);
 
-const N = pages.length, nn = n => String(n).padStart(2, "0");
-const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Casa Maracuyá</title>
+  const N = pages.length, nn = n => String(n).padStart(2, "0");
+  const html = `<!doctype html><html lang="${L}"><head><meta charset="utf-8"><title>Casa Maracuyá</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@300;400;600;700&display=block">
 <style>${CSS}</style></head><body>
 ${pages.map((p, i) => `<section class="pg ${p.cls}">${p.inner}
-  <div class="folio"><span>${i === 0 ? "Adícora, Falcón — Venezuela" : i === N - 1 ? "Viento, mar y cero prisa." : "Casa Maracuyá · Adícora"}</span><span><b>${nn(i + 1)}</b> / ${nn(N)}</span></div>
+  <div class="folio"><span>${i === 0 ? "Adícora, Falcón — Venezuela" : i === N - 1 ? tx("Viento, mar y cero prisa.", "Wind, sea and no rush.") : "Casa Maracuyá · Adícora"}</span><span><b>${nn(i + 1)}</b> / ${nn(N)}</span></div>
 </section>`).join("\n")}
 </body></html>`;
+  return { html, N };
+}
 
-const file = path.join(tmp, "brochure.html");
-fs.writeFileSync(file, html);
-execFileSync(browser, [
-  "--headless=new", "--disable-gpu", "--no-pdf-header-footer", "--allow-file-access-from-files",
-  "--run-all-compositor-stages-before-draw", "--virtual-time-budget=15000",
-  `--user-data-dir=${path.join(tmp, "perfil")}`, `--print-to-pdf=${OUT}`, pathToFileURL(file).href
-], { stdio: "ignore" });
-console.log(`✓ brochure → public/casa-maracuya.pdf (${N} páginas, ${(fs.statSync(OUT).size / 1024).toFixed(0)} kB)`);
+// ---------- Versiones ----------
+// Idioma, aumento de precios (%) y archivo. Las de la carpeta pdf/ no se publican en la web.
+const VERSIONES = [
+  { lang: "es", pct: 0, out: "public/casa-maracuya.pdf" },
+  { lang: "en", pct: 0, out: "public/casa-maracuya-en.pdf" },
+  { lang: "es", pct: 15, out: "pdf/casa-maracuya-15.pdf" },
+  { lang: "en", pct: 15, out: "pdf/casa-maracuya-en-15.pdf" }
+];
+for (const v of VERSIONES) {
+  const P = conAumento(v.pct);
+  const { html, N } = build(v.lang, P);
+  const out = path.join(ROOT, v.out); fs.mkdirSync(path.dirname(out), { recursive: true });
+  const file = path.join(tmp, `${path.basename(v.out, ".pdf")}.html`);
+  fs.writeFileSync(file, html);
+  execFileSync(browser, [
+    "--headless=new", "--disable-gpu", "--no-pdf-header-footer", "--allow-file-access-from-files",
+    "--run-all-compositor-stages-before-draw", "--virtual-time-budget=15000",
+    `--user-data-dir=${path.join(tmp, "perfil")}`, `--print-to-pdf=${out}`, pathToFileURL(file).href
+  ], { stdio: "ignore" });
+  console.log(`✓ ${v.out} (${v.lang}${v.pct ? `, +${v.pct}%` : ""}, ${N} páginas, ${(fs.statSync(out).size / 1024).toFixed(0)} kB)`);
+}
 if (process.env.PDFS_KEEP) console.log("HTML en", tmp); else fs.rmSync(tmp, { recursive: true, force: true });
