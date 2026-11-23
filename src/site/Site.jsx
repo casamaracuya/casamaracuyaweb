@@ -12,37 +12,6 @@ const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.g
 const parseISO = s => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 const nightsBetween = (a, b) => { const A = parseISO(a), B = parseISO(b); return A && B ? Math.round((B - A) / 864e5) : null; };
 
-// La tarifa en dibujo: 6 figuras incluidas en la tarifa de la casa y 6 adicionales (máximo 12).
-// Al pasar el ratón o tocar una figura, la frase de abajo dice qué tarifa aplica a ese grupo.
-// Sin montos: los precios van solo en el PDF.
-const FIG = <svg viewBox="0 0 16 24" aria-hidden="true"><circle cx="8" cy="5" r="3.6" /><path d="M2 23v-6.2C2 12.6 4.7 10.6 8 10.6s6 2 6 6.2V23z" /></svg>;
-function PlanCap({ t }) {
-  const [n, setN] = useState(0);
-  const msg = !n ? t("plans.capP")
-    : n <= 6 ? t("plans.capBase").replace("{n}", n)
-    : t(n === 7 ? "plans.capExtra1" : "plans.capExtraN").replace("{n}", n).replace("{x}", n - 6);
-  return (
-    <div className="cap" onMouseLeave={() => setN(0)}>
-      <p className="cap-k">{t("plans.capK")}</p>
-      <div className="cap-meter" role="group" aria-label={t("plans.rate")}>
-        {[0, 1].map(g => (
-          <div key={g} className={g ? "cap-g extra" : "cap-g inc"}>
-            {Array.from({ length: 6 }, (_, i) => {
-              const k = g * 6 + i + 1;
-              return <button key={k} type="button" className={k <= n ? "on" : undefined} aria-pressed={k === n} aria-label={t("plans.capFig").replace("{n}", k)} onMouseEnter={() => setN(k)} onFocus={() => setN(k)} onClick={() => setN(k)}>{FIG}</button>;
-            })}
-          </div>
-        ))}
-      </div>
-      <div className="cap-legend">
-        <p><b>{t("plans.inc")}</b><span>{t("plans.incS")}</span></p>
-        <p><b>{t("plans.ext")}</b><span>{t("plans.extS")}</span></p>
-      </div>
-      <p className="cap-msg" aria-live="polite">{msg}</p>
-    </div>
-  );
-}
-
 export default function Site({ lang = "es" }) {
   // El idioma viene de la dirección (/ o /en/). El botón cambia de dirección y recuerda la elección.
   const navigate = useNavigate();
@@ -146,7 +115,10 @@ export default function Site({ lang = "es" }) {
         <p className="ideal">{t(`${k}.ideal`)}</p>
         <ul>{[1, 2, 3, 4].map(i => <li key={i}>{t(`${k}.l${i}`)}</li>)}</ul>
         <p className="out">{t(`${k}.out`)}</p>
-        <PlanCap t={t} />
+        <div className="cap">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2" /><circle cx="17" cy="9" r="2.5" /><path d="M16.2 13.9c2.4.1 4.2 1.6 4.8 4.3" /></svg>
+          <p><b>{t("plans.cap1")}</b><span>{t("plans.cap2")}</span></p>
+        </div>
         <div className="price"><a className="btn btn-primary" href="#reservar" onClick={() => pick(id)}>{t("plans.book")}</a><a className="btn btn-ghost" href={waPlan(id)} target="_blank" rel="noopener noreferrer">{t("plans.ask")}</a></div>
       </div>
     </article>
@@ -266,6 +238,29 @@ export default function Site({ lang = "es" }) {
             <div className="plan-grid">
               <Plan id="esencial" n="p1" img="/fotos/cafe-de-la-tia.webp" alt="Café de la mañana en la terraza" />
               <Plan id="plena" n="p2" img="/fotos/postre-maracuya.webp" alt="Postre de maracuyá en vaso" />
+            </div>
+            <div className="howrate" aria-labelledby="t-howrate">
+              <div className="hr-main">
+              <div className="hr-head"><p className="eyebrow">{t("hr.k")}</p><h3 id="t-howrate">{t("hr.t")}</h3><p>{t("hr.p")}</p></div>
+              <ol className="hr-steps">
+                <li><span className="hr-n">1</span><div><b>{t("hr.s1")}</b><p>{t("hr.s1p")}</p></div></li>
+                <li className="plus" aria-hidden="true">+</li>
+                <li><span className="hr-n">2</span><div><b>{t("hr.s2")}</b><p>{t("hr.s2p")}</p></div></li>
+              </ol>
+              <p className="hr-fine">{t("hr.fine")}</p>
+              </div>
+              <aside className="hr-ex">
+                <p className="hr-exk">{t("hr.exk")}</p>
+                <ul>
+                  {[[4, 0], [6, 0], [8, 2], [12, 6]].map(([g, x]) => (
+                    <li key={g}>
+                      <span className="hr-g"><b>{g}</b> {t("people")}</span>
+                      <span className="hr-eq">{x ? <>{t("hr.house")} <em>+ {x} {t(x === 1 ? "hr.one" : "hr.many")}</em></> : t("hr.house")}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="hr-close"><p>{t("hr.close")}</p><span>{t("hr.closeS")}</span><a className="btn btn-primary" href="#reservar">{t("hr.cta")}</a></div>
+              </aside>
             </div>
             <div className="seasons"><p {...html("plans.s1")} /><p {...html("plans.s2")} /></div>
             <div className="compare">
