@@ -95,14 +95,49 @@ function PrintCopy({ holder, children }) {
   useEffect(() => { el.className = "doc-print"; document.body.appendChild(el); holder.current = el; return () => el.remove(); }, [el, holder]);
   return createPortal(children, el);
 }
-async function printDoc(el, title) {
+// Arma el PDF en el propio navegador: cada hoja se convierte en imagen a tamaño A4 exacto.
+// Antes se usaba Imprimir, pero en el iPhone Safari agrega márgenes, la dirección y la fecha,
+// y a veces guardaba la pantalla del panel en vez de la hoja.
+// En el teléfono abre Compartir (Archivos, WhatsApp…); en la computadora lo descarga.
+// Las letras de las hojas, ya dentro del CSS (data:), para que salgan en las imágenes.
+// html-to-image no puede leer la hoja de Google Fonts por sí mismo (es de otro dominio).
+let fontCSS = null;
+async function docFontCSS() {
+  if (fontCSS) return fontCSS;
+  const css = await (await fetch(FONTS)).text();
+  const faces = (css.match(/\/\*[^*]*\*\/\s*@font-face\s*{[^}]*}/g) || []).filter(f => /\/\*\s*latin(-ext)?\s*\*\//.test(f));
+  const toData = async url => { const b = await (await fetch(url)).blob(); return await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); }); };
+  const out = await Promise.all(faces.map(async f => { const m = f.match(/url\(([^)]+)\)/); return m ? f.replace(m[1], await toData(m[1].replace(/["']/g, ""))) : f; }));
+  return (fontCSS = out.join("\n"));
+}
+async function printDoc(el, title, toast) {
+  const W = 794, H = 1123;
+  toast?.("Preparando el PDF…");
+  const [{ toCanvas }, { jsPDF }, fontEmbedCSS] = await Promise.all([import("html-to-image"), import("jspdf"), docFontCSS()]);
   try { await document.fonts?.ready; } catch { /* sin API de fuentes */ }
-  const old = document.title;
-  document.querySelectorAll(".doc-print").forEach(x => { x.hidden = x !== el; });
-  document.body.classList.add("doc-printing"); document.title = title;
-  const done = () => { document.body.classList.remove("doc-printing"); document.title = old; document.querySelectorAll(".doc-print").forEach(x => { x.hidden = false; }); window.removeEventListener("afterprint", done); };
-  window.addEventListener("afterprint", done);
-  window.print();
+  el.classList.add("exporting");
+  // Los logos en SVG hacen fallar la conversión: mientras se arma el PDF van como PNG nítido.
+  const svgs = [...el.querySelectorAll('img[src$=".svg"]')].map(img => ({ img, src: img.getAttribute("src") }));
+  const png = async (src, w, h) => { const im = new Image(); im.src = src; await im.decode();
+    const k = 4, c = document.createElement("canvas"); c.width = Math.round(w * k); c.height = Math.round(h * k);
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); return c.toDataURL("image/png"); };
+  for (const s of svgs) { const r = s.img.getBoundingClientRect(); if (r.width && r.height) s.img.src = await png(s.src, r.width, r.height); }
+  try {
+    const sheets = [...el.children].filter(x => x.classList.contains("dz"));
+    const pdf = new jsPDF({ unit: "px", format: [W, H], hotfixes: ["px_scaling"], compress: true });
+    for (let i = 0; i < sheets.length; i++) {
+      const c = await toCanvas(sheets[i], { width: W, height: H, pixelRatio: 2, backgroundColor: "#F8FBF0", fontEmbedCSS });
+      if (i) pdf.addPage([W, H]);
+      pdf.addImage(c.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, W, H);
+    }
+    const name = `${title.replace(/[\\/:*?"<>|]+/g, "").trim()}.pdf`;
+    const file = new File([pdf.output("blob")], name, { type: "application/pdf" });
+    if (/iPhone|iPad|Android/i.test(navigator.userAgent) && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title }); return; } catch (e) { if (e?.name === "AbortError") return; }
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  } finally { svgs.forEach(s => { s.img.src = s.src; }); el.classList.remove("exporting"); }
 }
 
 const Star = ({ c }) => <svg className={`dz-star ${c}`} viewBox="0 0 12 12"><path fill="currentColor" d="M6 0C6.6 4.2 7.8 5.4 12 6 7.8 6.6 6.6 7.8 6 12 5.4 7.8 4.2 6.6 0 6 4.2 5.4 5.4 4.2 6 0Z" /></svg>;
@@ -221,7 +256,7 @@ export function BudgetSheet({ res }) {
   const download = () => {
     if (!b.nombre) return toast("Escribe para quién es el presupuesto");
     if (!b.noches) return toast("Revisa las fechas: la salida va después de la llegada");
-    printDoc(holder.current, `Presupuesto Casa Maracuyá - ${b.nombre}`);
+    printDoc(holder.current, `Presupuesto Casa Maracuyá - ${b.nombre}`, toast).catch(e => { console.error("PDF", e); toast("No se pudo armar el PDF. Inténtalo de nuevo."); });
   };
   const both = b.paquetes.length > 1;
   const stepper = (k, min, max, label, fmt = v => v) => <div className="stepper" role="group" aria-label={label}>
@@ -471,7 +506,7 @@ export function MenuStudio() {
     if (id) act(a => a.borrarCarta(id), "Menú borrado");
     rest[0] ? open(rest[0]) : (idRef.current = null, setC({ id: null, name: "Desayunos", data: clone(MENU_DESAYUNOS) }));
   };
-  const download = () => printDoc(holder.current, `Maracuyá — ${[m.titulo, m.enfasis].filter(Boolean).join(" ")}`.trim());
+  const download = () => printDoc(holder.current, `Maracuyá — ${[m.titulo, m.enfasis].filter(Boolean).join(" ")}`.trim(), toast).catch(e => { console.error("PDF", e); toast("No se pudo armar el PDF. Inténtalo de nuevo."); });
 
   return <div className="studio">
     <div>

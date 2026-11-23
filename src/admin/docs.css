@@ -133,6 +133,9 @@
 
 /* Impresión: solo la hoja, sin márgenes */
 .doc-print{display:none}
+/* Mientras se arma el PDF: la copia existe fuera de la vista para poder convertirla en imagen */
+.doc-print.exporting{display:block; position:fixed; left:-10000px; top:0; width:794px; pointer-events:none}
+.doc-print.exporting > .dz{margin:0}
 @media print{
   @page{size:A4; margin:0}
   html,body{background:#F8FBF0 !important; margin:0 !important; padding:0 !important}

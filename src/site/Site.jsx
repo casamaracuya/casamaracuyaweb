@@ -23,7 +23,6 @@ export default function Site({ lang = "es" }) {
   useEffect(() => { setToday(todayISO()); shownAt.current = Date.now(); }, []);
   const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState(0); // pregunta abierta (0 = ninguna)
-  const [group, setGroup] = useState({ esencial: "1-6", plena: "1-6" });
   const [f, setF] = useState({ plan: "esencial", guests: "4", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" });
   const [error, setError] = useState(""); const [result, setResult] = useState(null); const [taken, setTaken] = useState(false); const [sending, setSending] = useState(false); const [copied, setCopied] = useState(false);
   const d = T[lang]; const t = k => d[k] ?? k; const html = k => ({ dangerouslySetInnerHTML: { __html: d[k] } });
@@ -71,7 +70,7 @@ export default function Site({ lang = "es" }) {
   }, [menu]);
 
   const set = (k, v) => { setF(x => { const n = { ...x, [k]: v }; if (k === "checkin" && n.checkout && n.checkout <= v) n.checkout = ""; return n; }); setError(""); };
-  const pick = plan => { setError(""); setF(x => ({ ...x, plan, guests: group[plan] === "6-12" ? "8" : "4" })); };
+  const pick = plan => { setError(""); setF(x => ({ ...x, plan })); };
   const n = Number(f.guests); const nights = nightsBetween(f.checkin, f.checkout);
   const planName = t(f.plan === "plena" ? "p2.title" : "p1.title");
   const groupLabel = n <= 6 ? t("grp.small") : t("grp.large");
@@ -106,7 +105,7 @@ export default function Site({ lang = "es" }) {
   const copyMsg = async () => { try { await navigator.clipboard.writeText(result.text); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* */ } };
 
   // Mensaje de WhatsApp listo, con el plan y el tamaño del grupo que eligió en la tarjeta
-  const waPlan = id => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wa").replace("{plan}", t(id === "plena" ? "p2.title" : "p1.title")).replace("{grp}", t(group[id] === "6-12" ? "grp.large" : "grp.small")))}`;
+  const waPlan = id => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wa").replace("{plan}", t(id === "plena" ? "p2.title" : "p1.title")))}`;
   const Plan = ({ id, img, alt, n: k }) => (
     <article className="plan" data-plan={id}>
       <img src={img} alt={alt} loading="lazy" />
@@ -116,9 +115,6 @@ export default function Site({ lang = "es" }) {
         <p className="ideal">{t(`${k}.ideal`)}</p>
         <ul>{[1, 2, 3, 4].map(i => <li key={i}>{t(`${k}.l${i}`)}</li>)}</ul>
         <p className="out">{t(`${k}.out`)}</p>
-        <div className="seg" role="group" aria-label="Tamaño del grupo">
-          {[["1-6", "grp.small"], ["6-12", "grp.large"]].map(([g, key]) => <button key={g} type="button" aria-pressed={group[id] === g} onClick={() => setGroup(x => ({ ...x, [id]: g }))}>{t(key)}</button>)}
-        </div>
         <p className="rate">{t("plans.rate")}</p>
         <div className="price"><a className="btn btn-primary" href="#reservar" onClick={() => pick(id)}>{t("plans.book")}</a><a className="btn btn-ghost" href={waPlan(id)} target="_blank" rel="noopener noreferrer">{t("plans.ask")}</a></div>
       </div>
