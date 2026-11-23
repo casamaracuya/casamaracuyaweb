@@ -115,7 +115,10 @@ export default function Site({ lang = "es" }) {
         <p className="ideal">{t(`${k}.ideal`)}</p>
         <ul>{[1, 2, 3, 4].map(i => <li key={i}>{t(`${k}.l${i}`)}</li>)}</ul>
         <p className="out">{t(`${k}.out`)}</p>
-        <p className="rate">{t("plans.rate")}</p>
+        <div className="cap" aria-label={t("plans.rate")}>
+          <div><b>6</b><span>{t("plans.cap1")}</span></div>
+          <div><b>12</b><span>{t("plans.cap2")}</span></div>
+        </div>
         <div className="price"><a className="btn btn-primary" href="#reservar" onClick={() => pick(id)}>{t("plans.book")}</a><a className="btn btn-ghost" href={waPlan(id)} target="_blank" rel="noopener noreferrer">{t("plans.ask")}</a></div>
       </div>
     </article>
