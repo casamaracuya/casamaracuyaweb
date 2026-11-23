@@ -80,7 +80,7 @@
 .dz-foot .line::before,.dz-foot .line::after{content:""; flex:1; border-top:1.2px solid var(--dz-green); opacity:.85}
 .dz-seal{width:22px; height:34px; border-radius:12px; background:var(--dz-ink); display:grid; place-items:center}
 .dz-seal img{width:15px; height:auto; filter:invert(1) brightness(1.6)}
-.dz-foot p{margin-top:16px; font-size:9.5px; letter-spacing:.32em; text-transform:uppercase}
+.dz-foot p{margin-top:16px; font-size:9.5px; letter-spacing:.26em; text-transform:uppercase; white-space:nowrap}
 
 /* Menú */
 .dz-mhead{position:relative; height:304px; margin:0 -73px; flex:none}

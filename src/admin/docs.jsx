@@ -34,7 +34,8 @@ function A4({ children }) {
    Los bloques se miden fuera de la vista con las fuentes reales y se reparten. */
 function paginate(spec, m) {
   const B = spec.blocks, pages = [[]]; let used = 0, over = false;
-  const cap = () => m.caps[pages.length === 1 ? 0 : 1];
+  // Un pequeño colchón: el iPhone dibuja las letras apenas más anchas y el texto podía quedar bajo el pie.
+  const cap = () => m.caps[pages.length === 1 ? 0 : 1] - 14;
   const cost = (i, top) => (top && pages.length > 1 ? 0 : B[i].gap || 0) + m.hs[i];
   B.forEach((b, i) => {
     const top = pages.at(-1).length === 0;

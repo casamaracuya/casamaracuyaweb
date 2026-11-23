@@ -115,9 +115,9 @@ export default function Site({ lang = "es" }) {
         <p className="ideal">{t(`${k}.ideal`)}</p>
         <ul>{[1, 2, 3, 4].map(i => <li key={i}>{t(`${k}.l${i}`)}</li>)}</ul>
         <p className="out">{t(`${k}.out`)}</p>
-        <div className="cap" aria-label={t("plans.rate")}>
-          <div><b>6</b><span>{t("plans.cap1")}</span></div>
-          <div><b>12</b><span>{t("plans.cap2")}</span></div>
+        <div className="cap">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2" /><circle cx="17" cy="9" r="2.5" /><path d="M16.2 13.9c2.4.1 4.2 1.6 4.8 4.3" /></svg>
+          <p><b>{t("plans.cap1")}</b><span>{t("plans.cap2")}</span></p>
         </div>
         <div className="price"><a className="btn btn-primary" href="#reservar" onClick={() => pick(id)}>{t("plans.book")}</a><a className="btn btn-ghost" href={waPlan(id)} target="_blank" rel="noopener noreferrer">{t("plans.ask")}</a></div>
       </div>
