@@ -222,7 +222,7 @@ export default function Site({ lang = "es" }) {
 
         <section className="dia" id="un-dia" aria-labelledby="t-dia">
           <div className="wrap">
-            <div className="dia-media"><img src="/fotos/atardecer-palmera.webp" alt="Atardecer desde el jardín, con una palmera y el mar al fondo" loading="lazy" width="1080" height="1432" /></div>
+            <div className="dia-media"><video autoPlay muted loop playsInline preload="metadata" poster="/videos/atardecer-dia-portada.webp" aria-label="Atardecer en el jardín: la pérgola iluminada, las palmeras y el mar al fondo"><source src="/videos/atardecer-dia.mp4" type="video/mp4" /></video></div>
             <div className="dia-copy">
               <p className="eyebrow">{t("dia.eyebrow")}</p><h2 id="t-dia">{t("dia.title")}</h2>
               <p className="dia-lede">{t("dia.p")}</p>
