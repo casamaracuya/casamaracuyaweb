@@ -13,6 +13,8 @@ const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.g
 const parseISO = s => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 const nightsBetween = (a, b) => { const A = parseISO(a), B = parseISO(b); return A && B ? Math.round((B - A) / 864e5) : null; };
 
+const EMPTY_FORM = { plan: "esencial", guests: "4", babies: "0", how: "", celebra: "", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" };
+
 export default function Site({ lang = "es" }) {
   // El idioma viene de la dirección (/ o /en/). El botón cambia de dirección y recuerda la elección.
   const navigate = useNavigate();
@@ -24,7 +26,7 @@ export default function Site({ lang = "es" }) {
   useEffect(() => { setToday(todayISO()); shownAt.current = Date.now(); }, []);
   const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState(0); // pregunta abierta (0 = ninguna)
-  const [f, setF] = useState({ plan: "esencial", guests: "4", babies: "0", how: "", celebra: "", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" });
+  const [f, setF] = useState(EMPTY_FORM);
   const [error, setError] = useState(""); const [result, setResult] = useState(null); const [taken, setTaken] = useState(false); const [sending, setSending] = useState(false); const [copied, setCopied] = useState(false);
   const d = T[lang]; const t = k => d[k] ?? k; const html = k => ({ dangerouslySetInnerHTML: { __html: d[k] } });
   const root = useRef();
@@ -75,7 +77,7 @@ export default function Site({ lang = "es" }) {
     const ad = Number(n.guests), bb = Number(n.babies);
     if (k === "guests" && ad + Math.max(bb - 2, 0) > 12) n.babies = String(2 + 12 - ad);
     if (k === "babies" && ad + Math.max(bb - 2, 0) > 12) n.guests = String(12 - (bb - 2));
-    return n; }); setError(""); };
+    return n; }); setError(""); setResult(null); };
   const pick = plan => { setError(""); setF(x => ({ ...x, plan })); };
   const n = Number(f.guests); const nights = nightsBetween(f.checkin, f.checkout);
   const planName = t(f.plan === "plena" ? "p2.title" : "p1.title");
@@ -428,7 +430,7 @@ export default function Site({ lang = "es" }) {
                 {result.saved && <p className="fine" style={{ fontWeight: 700 }}>{t("f.saved")}</p>}
                 {result.failed && <p className="form-error" role="status">{t("err.send")}</p>}
                 <pre>{result.text.split("\n").map((l, i) => <span key={i}>{l.split(/\*([^*]+)\*/).map((x, j) => j % 2 ? <b key={j}>{x}</b> : x)}{"\n"}</span>)}</pre>
-                <div className="row"><a className="btn btn-primary" href={waHref} target="_blank" rel="noopener noreferrer">{t("f.wa")}</a><button className="btn btn-ghost" type="button" onClick={copyMsg}>{copied ? t("f.copied") : t("f.copy")}</button></div>
+                <div className="row"><a className="btn btn-primary" href={waHref} target="_blank" rel="noopener noreferrer" onClick={() => setF(EMPTY_FORM)}>{t("f.wa")}</a><button className="btn btn-ghost" type="button" onClick={copyMsg}>{copied ? t("f.copied") : t("f.copy")}</button></div>
               </div>}
             </form>
           </div>
