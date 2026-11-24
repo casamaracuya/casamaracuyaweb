@@ -569,3 +569,13 @@ button.row:active,a.row:active{background:var(--fill)}
 .bar-row.hi .tr i{background:var(--arena)}
 .bar-row b{min-width:3ch}
 .bar-note{grid-column:2 / -1;margin-top:-8px;font-size:12.5px;font-weight:600;color:var(--ink2)}
+
+/* Listas: cambio suave al pasar de filtro o de página, y paginador */
+.swap{animation:swap .32s cubic-bezier(.2,.7,.2,1) both}
+@keyframes swap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 4px}
+.pager .btn{gap:6px}
+.pager .btn:disabled{opacity:.35;pointer-events:none}
+.pager .pg-n{font-size:13px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums}
+.pager .flip{transform:scaleX(-1)}
+@media (prefers-reduced-motion:reduce){.swap{animation:none}}

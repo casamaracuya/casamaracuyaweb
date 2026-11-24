@@ -104,7 +104,7 @@ export const HOLDS = ["pre","confirmada","casa"];
 export const PLAN = { esencial:{ name:"Experiencia Esencial", short:"Esencial", meals:["Desayunos gourmet","Café de la tía"] }, plena:{ name:"Experiencia Plena", short:"Plena", meals:["Desayunos","Almuerzos","Cenas","Postres","Snacks y cava"] } };
 export const ROOM_ST = ["sucia","limpiando","lista","revisada"];
 export const ROOM_LB = { sucia:"Sucia", limpiando:"En limpieza", lista:"Lista", revisada:"Revisada" };
-export const METODOS = ["Zelle","Pago móvil","Transferencia","Efectivo USD"];
+export const METODOS = ["Zelle","USDT","Efectivo"];
 export const CANALES = ["Instagram","WhatsApp","Google","Recomendación","Web"];
 
 export function monthStats(S, y, mo) {

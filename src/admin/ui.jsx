@@ -90,5 +90,22 @@ export function Chips({ value, onChange, options, label, form }) {
 export function Switch({ id, checked, onChange, label, disabled }) {
   return <label className="switch"><input type="checkbox" id={id} checked={!!checked} disabled={disabled} aria-label={label} onChange={e => onChange(e.target.checked)} /><span /></label>;
 }
+// Listas largas en páginas. Vuelve a la primera página cuando cambia «reset» (el filtro).
+export function usePages(list, size, reset) {
+  const [p, setP] = useState(0); const [k, setK] = useState(reset);
+  if (k !== reset) { setK(reset); setP(0); }
+  const pages = Math.max(1, Math.ceil(list.length / size)); const page = Math.min(p, pages - 1);
+  return { items: list.slice(page * size, page * size + size), page, pages, total: list.length, size, set: setP };
+}
+export function Pager({ pg, anchor }) {
+  if (pg.pages <= 1) return null;
+  const go = n => { pg.set(n); requestAnimationFrame(() => anchor?.current?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })); };
+  const from = pg.page * pg.size + 1, to = Math.min(pg.total, from + pg.size - 1);
+  return <nav className="pager" aria-label="Páginas">
+    <button type="button" className="btn small plain press" disabled={pg.page === 0} onClick={() => go(pg.page - 1)}><Icon n="chev" c="s flip" />Anterior</button>
+    <span className="pg-n" aria-live="polite">{from}–{to} de {pg.total}</span>
+    <button type="button" className="btn small plain press" disabled={pg.page >= pg.pages - 1} onClick={() => go(pg.page + 1)}>Siguiente<Icon n="chev" c="s" /></button>
+  </nav>;
+}
 // Dirección, Operaciones y Calidad supervisan: ven las tareas de todas las áreas.
 export const myTasks = (S, role) => can(role, "supervisar") ? S.tasks : S.tasks.filter(t => t.area === role);

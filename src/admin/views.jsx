@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MenuStudio } from "./docs.jsx";
-import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks } from "./ui.jsx";
+import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks, usePages, Pager } from "./ui.jsx";
 import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
@@ -89,12 +89,17 @@ export function Reservas() {
   const [f, setF] = useState("activas");
   const cnt = k => S.reservas.filter(r => F[k].includes(r.state)).length;
   const list = S.reservas.filter(r => F[f].includes(r.state)).sort((a, b) => f === "cerradas" ? (a.in < b.in ? 1 : -1) : (FLOW.indexOf(a.state) - FLOW.indexOf(b.state) || (a.in < b.in ? -1 : 1)));
+  const pg = usePages(list, 10, f); const top = useRef();
   return <>
     <Head title="Reservas" lead="Toca una reserva para verla y moverla al siguiente paso. Un WhatsApp nunca es una reserva confirmada hasta que entra el anticipo." />
     <Chips value={f} onChange={setF} label="Filtrar por estado" options={Object.keys(F).map(k => [k, <>{FL[k]} <span className="n">{cnt(k)}</span></>])} />
-    {f === "activas"
-      ? F.activas.map(s => { const rs = list.filter(r => r.state === s); return rs.length ? <section className="sec" key={s}><div className="sec-h">{STATE[s]}</div><div className="group res">{rs.map(r => <ResRow key={r.id} r={r} />)}</div></section> : null; })
-      : <section className="sec"><div className="group res">{list.length ? list.map(r => <ResRow key={r.id} r={r} />) : <Empty icon="reservas">No hay reservas en este estado.</Empty>}</div></section>}
+    <div ref={top} key={`${f}-${pg.page}`} className="swap">
+      {!list.length ? <section className="sec"><div className="group res"><Empty icon="reservas">No hay reservas en este estado.</Empty></div></section>
+        : f === "activas"
+          ? F.activas.map(s => { const rs = pg.items.filter(r => r.state === s); return rs.length ? <section className="sec" key={s}><div className="sec-h">{STATE[s]}</div><div className="group res">{rs.map(r => <ResRow key={r.id} r={r} />)}</div></section> : null; })
+          : <section className="sec"><div className="group res">{pg.items.map(r => <ResRow key={r.id} r={r} />)}</div></section>}
+    </div>
+    <Pager pg={pg} anchor={top} />
   </>;
 }
 
@@ -157,12 +162,14 @@ export function Tareas() {
   let list = all.filter(segF[seg]); if (showArea && area !== "todas") list = list.filter(t => t.area === area);
   list.sort((a, b) => a.due < b.due ? -1 : 1);
   const n = k => all.filter(segF[k]).length;
+  const pg = usePages(list, 12, `${seg}|${who}|${area}`); const top = useRef();
   return <>
     <Head title="Tareas" lead={role === "mantenimiento" ? "Lo que hay que arreglar o preparar. Toca una tarea para tomarla o ponerla en proceso." : "Toca una tarea para tomarla o ponerla en proceso, y el círculo cuando termines. Todo el equipo ve el avance."} />
     <Seg value={seg} onChange={setSeg} label="Cuándo" options={[["hoy", `Hoy · ${n("hoy")}`], ["proximas", `Próximas · ${n("proximas")}`], ["hechas", `Hechas · ${n("hechas")}`]]} />
     <div style={{ marginTop: 12 }}><Chips value={who} onChange={setWho} label="De quién" options={[["todas", "Todas"], ["mias", "Mías"], ["libres", "Sin asignar"]]} /></div>
     {showArea && <div style={{ marginTop: 8 }}><Chips value={area} onChange={setArea} label="Área" options={[["todas", "Todas"], ...AREAS_NUEVAS.map(k => [k, AREAS[k], <i className="dot" style={{ background: AREA_C[k] }} />])]} /></div>}
-    <section className="sec"><div className="group">{list.length ? list.map(t => <TaskRow key={t.id} t={t} />) : <Empty icon="check">{seg === "hechas" ? "Todavía no hay tareas hechas." : "Nada pendiente aquí."}</Empty>}</div></section>
+    <section ref={top} key={`${seg}-${who}-${area}-${pg.page}`} className="sec swap"><div className="group">{list.length ? pg.items.map(t => <TaskRow key={t.id} t={t} />) : <Empty icon="check">{seg === "hechas" ? "Todavía no hay tareas hechas." : "Nada pendiente aquí."}</Empty>}</div></section>
+    <Pager pg={pg} anchor={top} />
     <div className="btns"><button className="btn plain press" onClick={() => openSheet("newTask")}><Icon n={role === "mantenimiento" ? "camera" : "plus"} />{role === "mantenimiento" ? "Reportar un daño" : "Nueva tarea"}</button></div>
   </>;
 }

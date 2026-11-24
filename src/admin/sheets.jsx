@@ -204,27 +204,28 @@ function AuditSec({ r }) {
 
 /* ---------- Detalle de reserva ---------- */
 const TEMPLATES = [
-  ["Bienvenida completa", `¡Hola {n}! 👋 Qué gusto saludarte. Bienvenido a *Casa Maracuyá*, tu villa privada junto al Faro de Adícora 🌊
+  ["Bienvenida completa", `¡Hola! 👋 Qué gusto saludarte. Bienvenido a *Casa Maracuyá*, tu villa privada junto al Faro de Adícora 🌊
 
 Más que una casa de playa, es hospitalidad boutique: llegas como turista y te vas conociendo el alma de este lugar.
 
 ✨ *Lo que hace única tu estadía*
-• *La casa completa, solo para tu grupo*, con sus 3 habitaciones, vengan 2 o 12.
+• *La casa completa, solo para tu grupo*, con sus 3 habitaciones.
 • *Un equipo de 7 personas a tu servicio:* chef privada, ayudante de cocina, dos anfitrionas, limpieza, mantenimiento y concierge.
 • *Bienvenida con historia:* una historiadora del pueblo les cuenta, en 5 minutos, los secretos de Adícora, del faro y de la casa 🏛️
 • *Tú no cocinas ni lavas un plato.* La cocina es solo de nuestro equipo.
 
 🍽️ *Experiencias*
-• *Esencial:* desayunos gourmet diarios preparados por la chef.
-• *Plena:* además, almuerzos y cenas a la carta, postre artesanal, tequeños y cava de playa con hidratación y frutas.
+• *Esencial:* desayuno de autor cada mañana.
+• *Plena:* desayuno, almuerzo (o cava para la playa) y cena en tiempos.
 Siempre café, té y jugos. ¿Traen sus bebidas? Se las servimos y les preparamos los tragos 🍸
 
-🏡 *Tarifa por noche, por la casa completa:* un precio base hasta 6 personas y un monto por cada persona adicional, hasta 12. Niños de 0 a 3 años, cortesía 👶
-Piscina, muelle frente al mar, planta eléctrica, A/A, agua caliente, Wi-Fi y un concierge kitesurfista 🪁
+🏡 Trabajamos con una *tarifa base hasta 6 personas*; cada invitado adicional cancela la tarifa que corresponda.
+Los niños de 0 a 3 años son cortesía si duermen en la misma cama que sus padres (máx. 2).
 
-📎 Aquí puedes ver la presentación completa: https://casa-maracuya.com/casa-maracuya.pdf
+Piscina, muelle frente al mar, planta eléctrica, A/A, agua caliente, Wi‑Fi y un concierge kitesurfista 🪁
 
-Ya tengo tus fechas ({f}). En un momento te envío la cotización 📅`],
+Te envío la presentación completa en PDF 📎
+¿Para qué fechas y cuántas personas serían? Así te preparo la cotización 📅`],
   ["Saludo", "¡Hola {n}! Gracias por escribirle a Casa Maracuyá. Tenemos tus fechas ({f}). Te cuento la tarifa y lo que incluye el plan en un momento."],
   ["Disponible", "¡Buenas noticias, {n}! Las fechas {f} están libres. Si quieres, te las apartamos 24 horas mientras haces el anticipo."],
   ["Sin cupo", "Hola {n}, qué pena: las fechas {f} ya están tomadas. ¿Te sirve otra fecha cercana?"]
