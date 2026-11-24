@@ -1,17 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useMC, Icon, Pill, ResRow, Seg, Chips, Switch } from "./ui.jsx";
-import { TODAY, ROLES, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, NIVEL, can, FLOW, STATE, STATE_SHORT, PLAN, METODOS, CANALES, MESL, addDays, day, fdate, frange, money, ago, left, nights, initials, parse, nextBirthday, birthdaysIn } from "./util.js";
+import { useMC, Icon, Pill, ResRow, Seg, Chips, Switch, Err, KV, copy } from "./ui.jsx";
+import { LocCard, PayRow, PaySheet, PaidSheet, ApprovalSheet, HistorySheet } from "./cobros.jsx";
+import { TODAY, ROLES, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, NIVEL, can, FLOW, STATE, STATE_SHORT, PLAN, CANALES, MESL, addDays, day, fdate, frange, money, ago, left, nights, initials, parse, nextBirthday, birthdaysIn } from "./util.js";
 import { findGuest } from "../lib/api.js";
 import { REVIEW_URL } from "../lib/contacto.js";
 import { OPCIONES } from "../site/ficha-data.js";
 import { BudgetSheet } from "./docs.jsx";
 
-const Err = ({ msg }) => msg ? <div className="err" role="alert">{msg}</div> : null;
-const KV = ({ k, v }) => <div className="row"><span className="k">{k}</span><span className="val">{v}</span></div>;
-
-async function copy(text, toast) {
-  try { await navigator.clipboard.writeText(text); toast("Copiado"); } catch { toast("No se pudo copiar. Mantén presionado el texto para copiarlo."); }
-}
 
 // Resumen de una reserva para mandar al equipo por WhatsApp.
 export function teamMsg(S, r) {
@@ -231,7 +226,7 @@ Te envío la presentación completa en PDF 📎
   ["Sin cupo", "Hola {n}, qué pena: las fechas {f} ya están tomadas. ¿Te sirve otra fecha cercana?"]
 ];
 export function ResSheet({ id }) {
-  const { S, R, act, openSheet, toast, canMove, canReceive, canMoney } = useMC();
+  const { S, R, act, openSheet, toast, canMove, canReceive, canMoney, canPay } = useMC();
   const [err, setErr] = useState(""); const [sure, setSure] = useState(false);
   const r = S.reservas.find(x => x.id === id);
   if (!r) return <p className="sec-f">Esta reserva ya no existe.</p>;
@@ -243,7 +238,7 @@ export function ResSheet({ id }) {
   if (canMove || canReceive) {
     if (canMove && r.state === "nueva") actions = <><button className="btn press" onClick={() => step("conversacion", "En conversación")}><Icon n="chat" w="f" />Ya le respondí por WhatsApp</button><button className="btn danger press" onClick={() => step("rechazada", "Marcada sin cupo")}>No hay cupo</button></>;
     if (canMove && r.state === "conversacion") actions = <><button className="btn press" onClick={() => step("pre", "Fechas apartadas por 24 horas")}><Icon n="lock" w="f" />Apartar las fechas 24 horas</button><button className="btn danger press" onClick={() => step("rechazada", "Marcada sin cupo")}>No hay cupo</button></>;
-    if (canMove && r.state === "pre") actions = <>{canMoney ? <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el anticipo</button> : <p className="sec-f" style={{ padding: "0 4px" }}>Administración registra el anticipo y la reserva se confirma sola.</p>}<button className="btn danger press" onClick={() => step("vencida", "Fechas liberadas")}>Liberar las fechas</button></>;
+    if (canMove && r.state === "pre") actions = <>{canPay ? <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el pago</button> : <p className="sec-f" style={{ padding: "0 4px" }}>Quien cobra registra el pago y, al llegar al 100 %, la reserva se confirma sola.</p>}<button className="btn danger press" onClick={() => step("vencida", "Fechas liberadas")}>Liberar las fechas</button></>;
     if (r.state === "confirmada") actions = <><button className="btn press" onClick={() => step("casa", `¡Bienvenidos! ${first} ya está en casa`)}><Icon n="door" w="f" />Ya llegaron</button>{canMove && <button className="btn danger press" onClick={() => sure ? step("cancelada", "Reserva cancelada. Fechas libres") : (setSure(true), setTimeout(() => setSure(false), 3500))}>{sure ? "Toca otra vez para cancelar" : "Cancelar la reserva"}</button>}</>;
     if (r.state === "casa") actions = <button className="btn press" onClick={() => step("finalizada", "Cuenta cerrada. Se crearon las tareas de salida")}><Icon n="out" />Cerrar la cuenta y despedir</button>;
     if (canMove && r.state === "finalizada") actions = <a className="btn plain press" href={`${wa}?text=${encodeURIComponent(`¡Gracias por quedarte en Casa Maracuyá, ${first}! Si te gustó, nos ayudas mucho dejando tu reseña en Google: ${REVIEW_URL}`)}`} target="_blank" rel="noreferrer"><Icon n="heart" w="f" />Enviar las gracias por WhatsApp</a>;
@@ -251,10 +246,11 @@ export function ResSheet({ id }) {
   return <>
     <div className="res-hero"><span className="avatar l" style={{ background: `var(--s-${fi >= 0 ? r.state : "salida"}-bg)`, color: `var(--s-${fi >= 0 ? r.state : "salida"}-ink)` }}>{initials(g.name)}</span>
       <div style={{ minWidth: 0 }}><h3>{g.name}</h3><div className="st">{r.code} · llegó por {r.channel} {ago(r.created)}</div><div style={{ marginTop: 8 }}><Pill s={r.state} /></div></div></div>
+    {r.loc && <LocCard r={r} first={first} wa={wa} />}
     {fi >= 0
       ? <div className="track" aria-label={`Paso ${fi + 1} de ${FLOW.length}: ${STATE[r.state]}`}>{FLOW.map((s, i) => <div key={s} className={`stp ${i < fi ? "done" : i === fi ? "now" : ""}`}><i>{i < fi && <Icon n="check" c="xs" w="b" />}</i>{STATE_SHORT[s]}</div>)}</div>
       : <div className="note"><Icon n="alert" c="s" w="f" /><span>Esta reserva terminó como <b>{STATE[r.state].toLowerCase()}</b>. Sus fechas quedaron libres.</span></div>}
-    {r.state === "pre" && r.hold && <div className="countdown"><Icon n="clock" c="s" w="f" /><span>Fechas apartadas. Si no llega el anticipo, se liberan solas en <b>{left(r.hold)}</b>.</span></div>}
+    {r.state === "pre" && r.hold && <div className="countdown"><Icon n="clock" c="s" w="f" /><span>Fechas apartadas. Si no llega ningún pago, se liberan solas en <b>{left(r.hold)}</b>.</span></div>}
     <Err msg={err} />
     {actions && <div className="btns">{actions}</div>}
     <section className="sec"><div className="sec-h">Estadía</div><div className="group kv"><KV k="Llegada" v={fdate(r.in)} /><KV k="Salida" v={fdate(r.out)} /><KV k="Noches" v={nights(r)} /><KV k="Plan" v={PLAN[r.plan].name} /><KV k="Personas" v={r.people} /><KV k="Mascota" v={r.pet ? (g.pet || "Sí") : "No"} /></div></section>
@@ -266,9 +262,11 @@ export function ResSheet({ id }) {
       <a className="row press" href={`https://wa.me/?text=${encodeURIComponent(teamMsg(S, r))}`} target="_blank" rel="noreferrer"><span className="ico" style={{ background: "var(--good-bg)", color: "var(--good)" }}><Icon n="chat" c="s" w="f" /></span><span className="grow"><span className="t">Enviar el resumen por WhatsApp</span><span className="st">Elige el grupo del equipo o a una persona</span></span><Icon n="chev" c="s chev" /></a>
       <button className="row press" onClick={() => copy(teamMsg(S, r), toast)}><span className="ico"><Icon n="copy" c="s" /></span><span className="grow"><span className="t">Copiar el resumen</span></span></button>
     </div></section>}
-    {canMoney && (() => { const ps = S.payments.filter(p => p.res === r.id).sort((a, b) => a.date < b.date ? -1 : 1); return <section className="sec"><div className="sec-h">Pagos recibidos · {money(r.paid)}</div><div className="group">
-      {ps.length ? ps.map(p => <div key={p.id} className="row"><span className="ico"><Icon n="check" c="s" w="b" /></span><span className="grow"><span className="t">{p.kind}</span><span className="st">{p.method} · {fdate(p.date)}</span></span><span className="val">{money(p.amount)}</span></div>) : <div className="row"><span className="st">Todavía no hay pagos de esta reserva.</span></div>}
-      {["confirmada","casa","finalizada"].includes(r.state) && <button className="row press" onClick={() => openSheet("pay", { id: r.id })}><span className="ico"><Icon n="plus" c="s" /></span><span className="grow"><span className="t" style={{ color: "var(--accent-ink)" }}>Registrar otro pago</span></span></button>}
+    {canPay && (() => { const ps = S.payments.filter(p => p.res === r.id).sort((a, b) => (a.at || 0) - (b.at || 0)); const falta = Math.max((r.total || 0) - (r.paid || 0), 0);
+      return <section className="sec"><div className="sec-h">Pagos · {money(r.paid)}{r.total ? ` de ${money(r.total)}` : ""}</div><div className="group">
+      {ps.length ? ps.map(p => <PayRow key={p.id} p={p} />) : <div className="row"><span className="st">Todavía no hay pagos de esta reserva.</span></div>}
+      {(S.approvals || []).filter(a => a.res === r.id && a.state !== "aprobada").map(a => <button key={a.id} className="row press" onClick={() => openSheet("aprob", { id: a.id })}><span className="ico" style={{ background: a.state === "pendiente" ? "var(--s-pre-bg)" : "var(--fill2)" }}><Icon n={a.state === "pendiente" ? "clock" : "alert"} c="s" w="f" /></span><span className="grow"><span className="t">{a.state === "pendiente" ? "Pago en espera de aprobación" : "Cobro rechazado"}</span><span className="st">{a.detail}</span></span><Icon n="chev" c="s chev" /></button>)}
+      {!["rechazada","vencida","cancelada"].includes(r.state) && <button className="row press" onClick={() => openSheet("pay", { id: r.id })}><span className="ico"><Icon n="plus" c="s" /></span><span className="grow"><span className="t" style={{ color: "var(--accent-ink)" }}>{ps.length ? "Registrar otro pago" : "Registrar un pago"}</span>{r.total > 0 && falta > 0 && <span className="st">Faltan {money(falta)} para el 100 %</span>}</span></button>}
     </div></section>; })()}
     <section className="sec"><div className="sec-h">Huésped</div><div className="group">
       <button className="row press" onClick={() => openSheet("guest", { id: r.g })}><span className="grow"><span className="t">Ver la ficha completa</span><span className="st">{[(g.allergies || []).length ? `Alergias: ${g.allergies.join(", ")}` : "Sin alergias anotadas", g.visits > 1 ? `${g.visits} visitas` : ""].filter(Boolean).join(" · ")}</span></span><Icon n="chev" c="s chev" /></button>
@@ -322,40 +320,6 @@ export function TotalSheet({ id }) {
 }
 
 /* ---------- Pago ---------- */
-export function PaySheet({ id }) {
-  const { S, act, openSheet } = useMC();
-  const r = S.reservas.find(x => x.id === id); const g = S.guests[r.g] || {};
-  const [amt, setAmt] = useState("");
-  const [method, setMethod] = useState(METODOS[0]); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
-  const [total, setTotal] = useState(r.total ? String(r.total) : "");
-  const [concept, setConcept] = useState(r.concept || `${nights(r)} noches · ${PLAN[r.plan].name} · ${r.people} personas`);
-  const { toast } = useMC();
-  const num = v => Number(String(v).replace(",", "."));
-  const submit = async e => {
-    e.preventDefault(); const n = num(amt), tot = total === "" ? null : num(total);
-    if (!n || n <= 0) return setErr("Escribe el monto que recibiste.");
-    if (tot == null || isNaN(tot) || tot < 0) return setErr("Escribe el total de la estadía: va en el comprobante.");
-    setBusy(true); const wasPre = r.state === "pre";
-    const er = await act(a => a.registrarPago(r.id, n, method, tot, concept.trim()), wasPre ? "Confirmada. Se crearon las tareas para el equipo" : "Pago registrado");
-    if (er) { setBusy(false); return setErr(er); }
-    // Al confirmar, el comprobante sale solo por correo.
-    if (wasPre) await act(async a => { const res = await a.enviarComprobante(r.id);
-      toast(res?.sinCorreo ? "Confirmada. No tiene correo anotado: envíale el comprobante por WhatsApp" : `Confirmada. Comprobante enviado a ${res.to}`); }, null);
-    setBusy(false); openSheet("res", { id: r.id });
-  };
-  return <form className="form" onSubmit={submit}>
-    <div className="res-hero" style={{ paddingBottom: 6 }}><div><h3>{g.name}</h3><div className="st">{frange(r.in, r.out)}{r.paid ? ` · ya recibido ${money(r.paid)}` : ""}</div></div></div>
-    <section className="sec"><div className="group"><div className="row"><label className="k" htmlFor="payAmt">Monto recibido</label><span style={{ color: "var(--ink3)" }}>$</span><input id="payAmt" className="field-in" inputMode="decimal" value={amt} onChange={e => setAmt(e.target.value)} style={{ maxWidth: 120, color: "var(--ink)" }} /></div></div></section>
-    <section className="sec"><div className="sec-h">Para el comprobante</div><div className="group">
-      <div className="row"><label className="k" htmlFor="payTot">Total de la estadía</label><span style={{ color: "var(--ink3)" }}>$</span><input id="payTot" className="field-in" inputMode="decimal" value={total} onChange={e => setTotal(e.target.value)} style={{ maxWidth: 120, color: "var(--ink)" }} /></div>
-      <div className="row"><label className="k" htmlFor="payCon">Concepto</label><input id="payCon" className="field-in" value={concept} onChange={e => setConcept(e.target.value)} autoComplete="off" /></div>
-    </div>{r.state === "pre" && <p className="sec-f">Al registrar el pago se confirma la reserva y el huésped recibe el comprobante por correo.</p>}</section>
-    <section className="sec"><div className="sec-h">Cómo pagó</div><Chips value={method} onChange={setMethod} label="Método de pago" options={METODOS.map(m => [m, m])} /></section>
-    <Err msg={err} />
-    <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{r.state === "pre" ? "Registrar y confirmar la reserva" : "Registrar el pago"}</button></div>
-  </form>;
-}
-
 /* ---------- Ficha del huésped (interna) ---------- */
 // Campo que se guarda solo al salir de él.
 function FactRow({ label, id, value, onSave, type = "text", placeholder, disabled }) {
@@ -408,7 +372,7 @@ function NotesBox({ gid, initial, disabled }) {
     onChange={e => { setV(e.target.value); clearTimeout(t.current); const val = e.target.value; t.current = setTimeout(() => act(a => a.updateHuesped(gid, { notes: val }), null, { quiet: true }), 800); }} />;
 }
 export function GuestSheet({ id }) {
-  const { S, role, R, act, toast } = useMC();
+  const { S, role, R, act, toast, openSheet } = useMC();
   const g = S.guests[id]; if (!g) return null;
   const stays = S.reservas.filter(r => r.g === id).sort((a, b) => a.in < b.in ? 1 : -1);
   const canFacts = can(role, "datosHuesped");
@@ -425,6 +389,7 @@ export function GuestSheet({ id }) {
           {g.kite && <span className="tag"><Icon n="wind" c="xs" />Hace kite</span>}
           {months.length > 0 && <span className="tag good"><Icon n="calendario" c="xs" w="f" />Suele venir en {months.map(m => MESL[m]).join(", ")}</span>}
         </div></div></div>
+    {role === "direccion" && <section className="sec"><div className="group"><button className="row press" onClick={() => openSheet("hist", { id })}><span className="ico"><Icon n="clock" c="s" w="f" /></span><span className="grow"><span className="t">Historial completo</span><span className="st">Cotizaciones, pagos, cambios y cobros fuera de lo normal · solo Dirección</span></span><Icon n="chev" c="s chev" /></button></div></section>}
     {R.phone && g.phone && <div className="btns" style={{ gridTemplateColumns: "1fr 1fr" }}><a className="btn plain press" href={`https://wa.me/${g.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"><Icon n="chat" w="f" />WhatsApp</a><button className="btn plain press" onClick={() => copy(g.phone, toast)}><Icon n="phone" w="f" />Copiar</button></div>}
 
     <section className="sec"><div className="sec-h">Alergias y dietas</div>
@@ -682,7 +647,7 @@ export function ProfileSheet() {
 
 export const SHEETS = {
   budget: ["Presupuesto", BudgetSheet],
-  res: ["Reserva", ResSheet], pay: ["Registrar pago", PaySheet], guest: ["Huésped", GuestSheet], newRes: ["Nueva reserva", NewResSheet],
+  res: ["Reserva", ResSheet], pay: ["Registrar pago", PaySheet], aprob: ["Cobro por aprobar", ApprovalSheet], hist: ["Historial", HistorySheet], guest: ["Huésped", GuestSheet], newRes: ["Nueva reserva", NewResSheet], paid: ["Reserva pagada", PaidSheet],
   newTask: ["Nueva tarea", NewTaskSheet], block: ["Bloquear fechas", BlockSheet], task: ["Tarea", TaskSheet], newGuest: ["Nuevo huésped", NewGuestSheet],
   role: ["Rol", RoleSheet], person: ["Persona", PersonSheet], profile: ["Perfil", ProfileSheet], ficha: ["Ficha de registro", FichaSheet], total: ["Total y concepto", TotalSheet]
 };

@@ -8,7 +8,7 @@ export const useMC = () => useContext(Ctx);
 
 // Íconos Phosphor: w = r (normal), f (relleno), d (duotono), b (negrita = check)
 export function Icon({ n, c = "", w = "r" }) {
-  const set = PH[n] || PH.check;
+  const set = PH[n] || PH[{ control: "alert" }[n]] || PH.check;
   return <svg className={`i ${c}`} viewBox="0 0 256 256" aria-hidden="true" dangerouslySetInnerHTML={{ __html: set[w === "b" ? "f" : w] || set.r }} />;
 }
 export const Pill = ({ s }) => <span className={`pill ${s}`}>{STATE[s]}</span>;
@@ -37,7 +37,7 @@ export function ResRow({ r, extra }) {
       <span className={`dbox st-${r.state}`}><b>{d.getDate()}</b><span>{MES[d.getMonth()]}</span></span>
       <span className="grow">
         <span className="t">{g.name}</span>
-        <span className="st">{n} {n === 1 ? "noche" : "noches"} · {PLAN[r.plan].short} · {r.people} pers.{r.pet && <> · <Icon n="paw" c="xs" /></>}</span>
+        <span className="st">{r.loc && <><b style={{ fontFamily: "ui-monospace,Menlo,Consolas,monospace", letterSpacing: ".04em" }}>{r.loc}</b> · </>}{n} {n === 1 ? "noche" : "noches"} · {PLAN[r.plan].short} · {r.people} pers.{r.pet && <> · <Icon n="paw" c="xs" /></>}</span>
         {extra}
       </span>
       {r.state === "nueva"
@@ -109,3 +109,9 @@ export function Pager({ pg, anchor }) {
 }
 // Dirección, Operaciones y Calidad supervisan: ven las tareas de todas las áreas.
 export const myTasks = (S, role) => can(role, "supervisar") ? S.tasks : S.tasks.filter(t => t.area === role);
+
+export const Err = ({ msg }) => msg ? <div className="err" role="alert">{msg}</div> : null;
+export const KV = ({ k, v }) => <div className="row"><span className="k">{k}</span><span className="val">{v}</span></div>;
+export async function copy(text, toast) {
+  try { await navigator.clipboard.writeText(text); toast("Copiado"); } catch { toast("No se pudo copiar. Mantén presionado el texto para copiarlo."); }
+}

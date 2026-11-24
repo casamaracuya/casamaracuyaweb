@@ -32,6 +32,7 @@
 .dz-bhead h1{font:300 52px/1 var(--dz-serif); margin:12px 0 10px; letter-spacing:-.02em; font-variation-settings:"opsz" 144}
 .dz-bhead h1 em{font-size:1em}
 .dz-bhead .issued{font-size:11.5px}
+.dz-bhead .issued.code{margin-top:4px;letter-spacing:.02em}.dz-bhead .issued.code b{letter-spacing:.08em}
 .dz-horizon{position:absolute; left:0; top:168px; width:794px; height:56px}
 
 .dz-fill{flex:1 1 auto; min-height:0; overflow:hidden}

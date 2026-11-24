@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import "./docs.css";
 import { useMC, Icon, Seg } from "./ui.jsx";
 import { TODAY, MES, MESL, DIA, DIAL, PLAN, parse, addDays, diff, season, rateKind, rateKey, can, BASE_GUESTS, MIN_ALTA } from "./util.js";
@@ -186,7 +186,7 @@ export function budgetSpec(b) {
     <Frame />
     {p === 0 ? <><Horizon /><header className="dz-bhead">
       <img src="/logo/logo-dorado.svg" alt="Maracuyá · Relaxing Getaway" />
-      <div className="r"><div className="dz-eyebrow">Cotización de estadía</div><h1>Presu<em>puesto</em></h1><div className="issued">Emitido el {longDate(b.emitido)}</div></div>
+      <div className="r"><div className="dz-eyebrow">Cotización de estadía</div><h1>Presu<em>puesto</em></h1><div className="issued">Emitido el {longDate(b.emitido)}</div>{b.codigo && <div className="issued code">Código <b>{b.codigo}</b> · válida hasta el {longDate(b.vence)}</div>}</div>
     </header></> : <header className="dz-chead"><img src="/logo/logo-dorado.svg" alt="Maracuyá" /><div className="r"><div className="dz-eyebrow">Presupuesto · continuación</div><b>{b.nombre}</b></div></header>}
     <div className="dz-fill" data-fit>{children}</div>
     <footer className="dz-foot"><div className="line"><span className="dz-seal"><img src="/logo/simbolo.svg" alt="" /></span></div><p>Casa Maracuyá · Junto al Faro de Adícora, Falcón{hoja(p, total)}</p></footer>
@@ -241,7 +241,8 @@ const blank = () => ({ nombre: "", modo: "fechas", in: addDays(TODAY, 14), out: 
 
 export function BudgetSheet({ res }) {
   useDocFonts();
-  const { S, toast } = useMC();
+  const { S, toast, act, canPay } = useMC();
+  const [saved, setSaved] = useState(null);   // { key, codigo, vence }: la cotización guardada de lo que se ve
   const [f, setF] = useState(() => {
     const r = res && S.reservas.find(x => x.id === res);
     if (r) return { ...blank(), nombre: S.guests[r.g]?.name || "", in: r.in, out: r.out, personas: r.people, paq: r.plan };
@@ -250,13 +251,25 @@ export function BudgetSheet({ res }) {
   useEffect(() => { draft = f; }, [f]);
   const holder = useRef();
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
-  const b = buildBudget(f, S);
+  const b0 = buildBudget(f, S);
+  // Si cambia algo de lo que se cobra, la cotización anterior ya no vale: al descargar sale un código nuevo.
+  const key = JSON.stringify({ n: b0.nombre, i: b0.fechas ? f.in : "", o: b0.fechas ? f.out : "", ns: b0.noches, p: f.personas, t: b0.totals });
+  const b = saved && saved.key === key ? { ...b0, codigo: saved.codigo, vence: saved.vence } : b0;
   const P = usePaged(budgetSpec(b));
   const setPrice = (p, k, v) => setF(x => ({ ...x, precios: { ...x.precios, [`${p}|${k}`]: v.replace(/[^\d.,]/g, "") } }));
   const setAll = (p, v) => setF(x => { const pr = { ...x.precios }; b.rows.forEach(r => { pr[`${p}|${r.key}`] = v.replace(/[^\d.,]/g, ""); }); return { ...x, precios: pr }; });
-  const download = () => {
+  const download = async () => {
     if (!b.nombre) return toast("Escribe para quién es el presupuesto");
     if (!b.noches) return toast("Revisa las fechas: la salida va después de la llegada");
+    if (canPay && !b.codigo) {
+      if (b.falta) return toast("Pon el precio de todas las noches: la cotización guarda lo que se va a cobrar");
+      let q = null;
+      const er = await act(async a => { q = await a.guardarCotizacion({ nombre: b.nombre, llegada: b.fechas ? f.in : null, salida: b.fechas ? f.out : null, noches: b.noches,
+        personas: f.personas || null, totales: b.totals, detalle: b.rows.map(r => ({ noche: r.label, ...r.vals })), reserva_id: res || null }); }, null);
+      if (er || !q) return;
+      flushSync(() => setSaved({ key, codigo: q.codigo, vence: q.vence }));
+      toast(`Cotización ${q.codigo} guardada · vale 7 días`);
+    }
     printDoc(holder.current, `Presupuesto Casa Maracuyá - ${b.nombre}`, toast).catch(e => { console.error("PDF", e); toast("No se pudo armar el PDF. Inténtalo de nuevo."); });
   };
   const both = b.paquetes.length > 1;
@@ -305,6 +318,8 @@ export function BudgetSheet({ res }) {
     <section className="sec"><div className="sec-h">Así queda</div>
       <Sheets P={P} holder={holder} overMsg="Una nota es más larga que una hoja: divídela en varias líneas." />
       {b.falta && <div className="note"><Icon n="alert" c="s" w="f" /><span>Hay noches sin precio: salen con una raya.</span></div>}
+      {b.codigo && <div className="note"><Icon n="check" c="s" w="b" /><span>Cotización <b>{b.codigo}</b> guardada. Vale hasta el {longDate(b.vence)}. Al cobrar, escribe este código y el panel trae lo que se cobra.</span></div>}
+      {canPay && !b.codigo && <p className="sec-f">Al descargar, la cotización se guarda con un código que va impreso en el PDF y vale 7 días.</p>}
     </section>
     <div className="btns">
       <button type="button" className="btn press" onClick={download}><Icon n="receipt" w="f" />Descargar PDF</button>

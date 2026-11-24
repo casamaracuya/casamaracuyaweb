@@ -270,6 +270,31 @@ button.row:active,a.row:active{background:var(--fill)}
 .track .stp.done i{background:var(--arena)}
 .track .stp.now{color:var(--ink)}
 .track .stp.now i{background:var(--paper);box-shadow:0 0 0 3px var(--arena) inset}
+.loc-card{margin-top:14px;padding:16px 18px;border-radius:18px;background:var(--paper);border:1.5px solid var(--arena);display:grid;gap:6px;justify-items:start}
+.loc-k{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+.loc-v{font:800 2rem/1.1 ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.08em;color:var(--ink);user-select:all}
+.loc-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.pay-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0 4px}
+.pay-sum>div{background:var(--paper);border-radius:16px;padding:12px 14px;display:grid;gap:2px}
+.pay-sum span{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}
+.pay-sum b{font-size:20px;font-weight:800}
+.pay-sum .due{background:var(--s-pre-bg)}.pay-sum .ok{background:var(--good-bg)}
+.proof{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:var(--paper);border:1.5px dashed var(--line2);cursor:pointer}
+.proof img{width:64px;height:64px;object-fit:cover;border-radius:10px;flex:none}
+.proof .t{display:block;font-weight:700}.proof .st{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px}
+.proof:focus-within{border-color:var(--arena)}
+.quote{margin-top:10px;padding:14px 16px;border-radius:16px;background:var(--paper);border:1.5px solid var(--line2);display:grid;gap:8px}
+.quote.ok{border-color:var(--melon);background:var(--good-bg)}
+.quote.warn{background:var(--s-pre-bg);border-color:transparent}
+.quote .q-h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.quote .q-h b{letter-spacing:.06em}.quote .q-h span{color:var(--ink2);font-size:13.5px}
+.quote .q-t{display:flex;justify-content:space-between;align-items:baseline}.quote .q-t span{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}.quote .q-t b{font-size:24px}
+.quote .q-ok{display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px}
+.quote ul{margin:0;padding-left:20px;font-size:14px;line-height:1.5}
+.quote .q-l{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.quote textarea{background:var(--paper);border-radius:12px;padding:10px 12px}
+.quote .q-f{margin:0;font-size:13px;color:var(--ink2)}
+.hist .row{align-items:flex-start}.hist .row .st{display:block}
+.hist .row.raro{background:var(--s-pre-bg)}
 .countdown{display:flex;gap:10px;align-items:center;margin-top:12px;padding:13px 16px;border-radius:16px;background:var(--s-pre-bg);color:var(--s-pre-ink);font-weight:700;font-size:14px}
 
 /* Calendario */
