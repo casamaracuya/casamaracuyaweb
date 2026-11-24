@@ -6,6 +6,7 @@ import { WHATSAPP, supabase } from "../lib/supabase.js";
 import { MAPS_URL } from "../lib/contacto.js";
 import { useNavigate } from "react-router-dom";
 import { PATHS, saveLang } from "./paths.js";
+import { season, MIN_ALTA } from "../admin/util.js";
 import { useMode, PageFooter } from "./shared.jsx";
 
 const todayISO = () => { const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset()); return t.toISOString().slice(0, 10); };
@@ -23,7 +24,7 @@ export default function Site({ lang = "es" }) {
   useEffect(() => { setToday(todayISO()); shownAt.current = Date.now(); }, []);
   const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState(0); // pregunta abierta (0 = ninguna)
-  const [f, setF] = useState({ plan: "esencial", guests: "4", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" });
+  const [f, setF] = useState({ plan: "esencial", guests: "4", babies: "0", how: "", celebra: "", pet: "no", checkin: "", checkout: "", name: "", phone: "", notes: "" });
   const [error, setError] = useState(""); const [result, setResult] = useState(null); const [taken, setTaken] = useState(false); const [sending, setSending] = useState(false); const [copied, setCopied] = useState(false);
   const d = T[lang]; const t = k => d[k] ?? k; const html = k => ({ dangerouslySetInnerHTML: { __html: d[k] } });
   const root = useRef();
@@ -69,20 +70,44 @@ export default function Site({ lang = "es" }) {
     return () => { removeEventListener("keydown", onKey); removeEventListener("scroll", onScroll); };
   }, [menu]);
 
-  const set = (k, v) => { setF(x => { const n = { ...x, [k]: v }; if (k === "checkin" && n.checkout && n.checkout <= v) n.checkout = ""; return n; }); setError(""); };
+  const set = (k, v) => { setF(x => { const n = { ...x, [k]: v }; if (k === "checkin" && n.checkout && n.checkout <= v) n.checkout = "";
+    // Cupo: hasta 12 personas que cuentan; los 2 primeros menores de 3 años no cuentan.
+    const ad = Number(n.guests), bb = Number(n.babies);
+    if (k === "guests" && ad + Math.max(bb - 2, 0) > 12) n.babies = String(2 + 12 - ad);
+    if (k === "babies" && ad + Math.max(bb - 2, 0) > 12) n.guests = String(12 - (bb - 2));
+    return n; }); setError(""); };
   const pick = plan => { setError(""); setF(x => ({ ...x, plan })); };
   const n = Number(f.guests); const nights = nightsBetween(f.checkin, f.checkout);
   const planName = t(f.plan === "plena" ? "p2.title" : "p1.title");
-  const groupLabel = n <= 6 ? t("grp.small") : t("grp.large");
+  // Tarifa: la de la casa cubre hasta 6 personas; desde la 7.ª, cada una es adicional.
+  // Los 2 primeros menores de 3 años no pagan; del tercero en adelante cuentan como una persona más.
+  const babies = Number(f.babies); const freeB = Math.min(babies, 2); const payB = babies - freeB;
+  const payN = n + payB; const extra = Math.max(payN - 6, 0);
+  const rateLabel = extra ? `${t("rate.base")} ${extra === 1 ? t("rate.extra1") : t("rate.extraN").replace("{n}", extra)}` : t("rate.base");
   const fmtDate = s => { const x = parseISO(s); return x ? x.toLocaleDateString(lang === "es" ? "es-VE" : "en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : ""; };
 
+  // Mensaje de WhatsApp por bloques, para que Dirección cotice de un vistazo (negritas con *…*).
+  const nightsBySeason = () => { const c = { alta: 0, media: 0, baja: 0 }; const d = parseISO(f.checkin);
+    for (let i = 0; d && i < nights; i++) { const x = new Date(d.getTime() + i * 864e5); c[season(x.toISOString().slice(0, 10))]++; } return c; };
   const buildMessage = code => {
-    const lines = [t("msg.hello"), "", t("msg.data"), `• ${t("msg.name")}: ${f.name.trim()}`, `• ${t("msg.plan")}: ${planName} (${groupLabel})`, `• ${t("msg.guests")}: ${n}`,
-      `• ${t("msg.pet")}: ${f.pet === "si" ? t("f.yes") : t("f.no")}`, `• ${t("msg.in")}: ${fmtDate(f.checkin)}`, `• ${t("msg.out")}: ${fmtDate(f.checkout)}`, `• ${t("msg.nights")}: ${nights}`];
-    if (f.notes.trim()) lines.push(`• ${t("msg.notes")}: ${f.notes.trim()}`);
-    if (code) lines.push(`• Ref: ${code}`);
-    lines.push("", t("msg.bye"));
-    return lines.join("\n");
+    const LINE = "━━━━━━━━━━━━━━";
+    const ns = nightsBySeason(); const nn = k => `${ns[k]} ${t("m2." + k)}`;
+    const mix = ["alta", "media", "baja"].filter(k => ns[k]).map(nn).join(" · ");
+    const L = [t("m2.hello"), t("m2.ask")];
+    if (code) L.push(`${t("m2.ref")} *${code}*`);
+    L.push("", LINE, `📅 *${t("m2.dates")}*`, `${t("msg.in")}: ${fmtDate(f.checkin)}`, `${t("msg.out")}: ${fmtDate(f.checkout)}`,
+      `*${nights} ${nights === 1 ? t("m2.night") : t("m2.nights")}*${mix ? ` (${mix})` : ""}`);
+    if (ns.alta && nights < MIN_ALTA) L.push(`⚠️ ${t("m2.min").replace("{n}", MIN_ALTA)}`);
+    L.push("", LINE, `👥 *${t("m2.group")}*`, `${t("msg.adults")}: *${n}*`);
+    if (babies) L.push(`${t("msg.babies")}: *${babies}* (${payB ? t(payB === 1 ? "msg.babiespay1" : "msg.babiespay").replace("{f}", freeB).replace("{p}", payB) : t("msg.babiesfree")})`);
+    L.push(`➡️ *${t("msg.rate")}: ${payN}*`, rateLabel);
+    L.push("", LINE, `🌿 *${t("m2.plan")}*`, `${planName} (${t(f.plan === "plena" ? "m2.p2" : "m2.p1")})`, `🐾 ${t("msg.pet")}: ${f.pet === "si" ? t("f.yes") : t("f.no")}`);
+    if (f.celebra) L.push(`🎉 ${t("m2.celebra")}: *${t("cel." + f.celebra)}*`);
+    if (f.notes.trim()) L.push("", LINE, `💬 *${t("m2.notes")}*`, f.notes.trim());
+    L.push("", LINE, `👤 *${t("m2.contact")}*`, f.name.trim(), f.phone.trim());
+    if (f.how) L.push(`${t("m2.how")}: ${t("how." + f.how)}`);
+    L.push("", t("m2.bye"));
+    return L.join("\n");
   };
   const submit = async e => {
     e.preventDefault();
@@ -91,12 +116,14 @@ export default function Site({ lang = "es" }) {
     if (nights <= 0) return setError(t("err.order"));
     if (!f.name.trim()) return setError(t("err.name"));
     if (f.phone.replace(/\D/g, "").length < 7) return setError(t("err.phone"));
+    if (payN > 12) return setError(t("err.max"));
     setSending(true);
     let code = null, saved = false;
     // Un robot llena el campo trampa o envía en menos de 3 segundos: no se guarda nada,
     // pero se le muestra lo mismo que a una persona para no darle pistas.
     const bot = !!trap.current?.value || Date.now() - shownAt.current < 3000;
-    if (!bot) try { code = await crearSolicitud({ name: f.name.trim(), phone: f.phone, plan: f.plan, people: n, pet: f.pet === "si", in: f.checkin, out: f.checkout, notes: f.notes, channel: new URLSearchParams(location.search).get("utm_source") || "Web", lang }); saved = !!code; } catch { /* sigue por WhatsApp */ }
+    if (!bot) try { code = await crearSolicitud({ name: f.name.trim(), phone: f.phone, plan: f.plan, people: payN, pet: f.pet === "si", in: f.checkin, out: f.checkout, notes: [`${n} adultos y niños desde 3 años` + (babies ? `, ${babies} menores de 3 años (${payB ? `${payB} ${payB === 1 ? "paga" : "pagan"}` : "no pagan"})` : ""),
+              f.celebra && `Celebran: ${T.es["cel." + f.celebra]}`, f.how && `Nos conoció por: ${T.es["how." + f.how]}`, f.notes.trim()].filter(Boolean).join(". "), channel: new URLSearchParams(location.search).get("utm_source") || "Web", lang }); saved = !!code; } catch { /* sigue por WhatsApp */ }
     setSending(false);
     const text = buildMessage(code);
     setResult({ text, saved: saved || bot, failed: !!supabase && !saved && !bot });
@@ -368,18 +395,26 @@ export default function Site({ lang = "es" }) {
                   {["esencial","plena"].map((p, i) => <label key={p}><input type="radio" name="plan" id={`plan-${p}`} value={p} checked={f.plan === p} onChange={() => set("plan", p)} /> <span>{t(i ? "p2.title" : "p1.title")}</span></label>)}
                 </div>
               </fieldset>
-              <div className="field"><label htmlFor="guests">{t("f.guests")}</label>
-                <select id="guests" value={f.guests} onChange={e => set("guests", e.target.value)}>{Array.from({ length: 12 }, (_, i) => i + 1).map(i => <option key={i} value={i}>{i} {i === 1 ? t("person") : t("people")}</option>)}</select></div>
-              <div className="field"><label htmlFor="pet">{t("f.pet")}</label>
-                <select id="pet" value={f.pet} onChange={e => set("pet", e.target.value)}><option value="no">{t("f.no")}</option><option value="si">{t("f.yes")}</option></select></div>
+              <div className="field"><label htmlFor="guests">{t("f.adults")}</label>
+                <select id="guests" value={f.guests} onChange={e => set("guests", e.target.value)}>{Array.from({ length: 12 - payB }, (_, i) => i + 1).map(i => <option key={i} value={i}>{i} {i === 1 ? t("person") : t("people")}</option>)}</select></div>
+              <div className="field"><label htmlFor="babies">{t("f.babies")}</label>
+                <select id="babies" value={f.babies} aria-describedby="babies-hint" onChange={e => set("babies", e.target.value)}>{Array.from({ length: 2 + (12 - n) + 1 }, (_, i) => i).map(i => <option key={i} value={i}>{i}</option>)}</select>
+                <small id="babies-hint" className="hint">{t("f.babieshint")}</small></div>
+              <p className="hint" style={{ gridColumn: "1 / -1", margin: "-6px 0 0", fontSize: ".82rem", color: "var(--muted)" }}>{t("f.capacity")}</p>
               <div className="field"><label htmlFor="checkin">{t("f.in")}</label><input type="date" id="checkin" min={today || undefined} value={f.checkin} onChange={e => set("checkin", e.target.value)} required /></div>
               <div className="field"><label htmlFor="checkout">{t("f.out")}</label><input type="date" id="checkout" min={f.checkin || today || undefined} value={f.checkout} onChange={e => set("checkout", e.target.value)} required /></div>
               <div className="field"><label htmlFor="name">{t("f.name")}</label><input type="text" id="name" autoComplete="name" value={f.name} onChange={e => set("name", e.target.value)} required /></div>
               <div className="field"><label htmlFor="phone">{t("f.phone")}</label><input type="tel" id="phone" autoComplete="tel" placeholder={t("f.phoneph")} value={f.phone} onChange={e => set("phone", e.target.value)} required /></div>
+              <div className="field"><label htmlFor="pet">{t("f.pet")}</label>
+                <select id="pet" value={f.pet} onChange={e => set("pet", e.target.value)}><option value="no">{t("f.no")}</option><option value="si">{t("f.yes")}</option></select></div>
+              <div className="field"><label htmlFor="how">{t("f.how")}</label>
+                <select id="how" value={f.how} onChange={e => set("how", e.target.value)}><option value="">{t("f.choose")}</option>{["ig","google","rec","tiktok","other"].map(k => <option key={k} value={k}>{t("how." + k)}</option>)}</select></div>
+              <div className="field"><label htmlFor="celebra">{t("f.celebra")}</label>
+                <select id="celebra" value={f.celebra} onChange={e => set("celebra", e.target.value)}><option value="">{t("f.no")}</option>{["cumple","aniv","luna","familia","amigos","other"].map(k => <option key={k} value={k}>{t("cel." + k)}</option>)}</select></div>
               <div className="hp" aria-hidden="true"><label htmlFor="sitio_web">Sitio web</label><input type="text" id="sitio_web" name="sitio_web" ref={trap} tabIndex={-1} autoComplete="off" defaultValue="" /></div>
               <div className="field full"><label htmlFor="notes">{t("f.notes")}</label><textarea id="notes" placeholder={t("f.notesph")} value={f.notes} onChange={e => set("notes", e.target.value)} /></div>
               <div className="summary" aria-live="polite">
-                <span>{t("sum.plan")}: <b>{planName}</b></span><span>{t("sum.group")}: <b>{groupLabel}</b></span>
+                <span>{t("sum.plan")}: <b>{planName}</b></span><span>{t("sum.rate")}: <b>{payN} {payN === 1 ? t("person") : t("people")}</b> · {rateLabel}</span>
                 <span>{nights && nights > 0 ? <><b>{nights}</b> {nights === 1 ? t("night") : t("nights")}</> : t("sum.empty")}</span>
               </div>
               {taken && <p className="form-error" role="status">{t("f.taken")}</p>}
@@ -392,7 +427,7 @@ export default function Site({ lang = "es" }) {
               {result && <div className="result">
                 {result.saved && <p className="fine" style={{ fontWeight: 700 }}>{t("f.saved")}</p>}
                 {result.failed && <p className="form-error" role="status">{t("err.send")}</p>}
-                <pre>{result.text}</pre>
+                <pre>{result.text.split("\n").map((l, i) => <span key={i}>{l.split(/\*([^*]+)\*/).map((x, j) => j % 2 ? <b key={j}>{x}</b> : x)}{"\n"}</span>)}</pre>
                 <div className="row"><a className="btn btn-primary" href={waHref} target="_blank" rel="noopener noreferrer">{t("f.wa")}</a><button className="btn btn-ghost" type="button" onClick={copyMsg}>{copied ? t("f.copied") : t("f.copy")}</button></div>
               </div>}
             </form>
