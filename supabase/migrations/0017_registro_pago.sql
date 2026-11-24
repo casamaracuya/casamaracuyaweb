@@ -115,7 +115,7 @@ create or replace function registrar_pago(p_reserva uuid, p jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   r reservas;
-  metodos constant text[] := '{Transferencia,"Pago móvil",Zelle,"Binance (USDT)","Efectivo USD","Efectivo Bs"}';
+  metodos constant text[] := '{Zelle,"Binance (USDT)","Efectivo USD"}';
   met   text := trim(coalesce(p->>'metodo',''));
   mon   text := coalesce(nullif(p->>'moneda',''), 'USD');
   orig  numeric := nullif(p->>'monto_original','')::numeric;
@@ -387,7 +387,7 @@ create or replace function aplicar_pago(p_reserva uuid, p jsonb, p_cot uuid) ret
 language plpgsql security definer set search_path = public as $$
 declare
   r reservas;
-  metodos constant text[] := '{Transferencia,"Pago móvil",Zelle,"Binance (USDT)","Efectivo USD","Efectivo Bs"}';
+  metodos constant text[] := '{Zelle,"Binance (USDT)","Efectivo USD"}';
   met   text := trim(coalesce(p->>'metodo',''));
   mon   text := coalesce(nullif(p->>'moneda',''), 'USD');
   orig  numeric := nullif(p->>'monto_original','')::numeric;
@@ -442,7 +442,7 @@ create or replace function registrar_pago(p_reserva uuid, p jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   r reservas; c cotizaciones;
-  metodos constant text[] := '{Transferencia,"Pago móvil",Zelle,"Binance (USDT)","Efectivo USD","Efectivo Bs"}';
+  metodos constant text[] := '{Zelle,"Binance (USDT)","Efectivo USD"}';
   met  text := trim(coalesce(p->>'metodo',''));
   mon  text := coalesce(nullif(p->>'moneda',''), 'USD');
   orig numeric := nullif(p->>'monto_original','')::numeric;

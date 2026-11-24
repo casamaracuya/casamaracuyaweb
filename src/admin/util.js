@@ -103,7 +103,7 @@ export const HOLDS = ["pre","confirmada","casa"];
 export const PLAN = { esencial:{ name:"Experiencia Esencial", short:"Esencial", meals:["Desayunos gourmet","Café de la tía"] }, plena:{ name:"Experiencia Plena", short:"Plena", meals:["Desayunos","Almuerzos","Cenas","Postres","Snacks y cava"] } };
 export const ROOM_ST = ["sucia","limpiando","lista","revisada"];
 export const ROOM_LB = { sucia:"Sucia", limpiando:"En limpieza", lista:"Lista", revisada:"Revisada" };
-export const METODOS = ["Transferencia","Pago móvil","Zelle","Binance (USDT)","Efectivo USD","Efectivo Bs"];
+export const METODOS = ["Zelle","Binance (USDT)","Efectivo USD"];
 // Moneda de cada método: los de Bs. piden monto en bolívares y tasa del día. Transferencia puede ser en cualquiera.
 export const METODO_MONEDA = { "Pago móvil": "Bs", "Efectivo Bs": "Bs", "Zelle": "USD", "Binance (USDT)": "USD", "Efectivo USD": "USD" };
 export const CANALES = ["Instagram","WhatsApp","Google","Recomendación","Web"];
