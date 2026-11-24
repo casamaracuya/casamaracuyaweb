@@ -128,11 +128,11 @@ export default function Site({ lang = "es" }) {
     const text = buildMessage(code);
     setResult({ text, saved: saved || bot, failed: !!supabase && !saved && !bot });
   };
-  const waHref = result ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(result.text)}` : "#";
+  const waHref = result ? `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(result.text)}` : "#";
   const copyMsg = async () => { try { await navigator.clipboard.writeText(result.text); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* */ } };
 
   // Mensaje de WhatsApp listo, con el plan y el tamaño del grupo que eligió en la tarjeta
-  const waPlan = id => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wa").replace("{plan}", t(id === "plena" ? "p2.title" : "p1.title")))}`;
+  const waPlan = id => `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(t("plans.wa").replace("{plan}", t(id === "plena" ? "p2.title" : "p1.title")))}`;
   const Plan = ({ id, img, alt, n: k }) => (
     <article className="plan" data-plan={id}>
       <img src={img} alt={alt} loading="lazy" />
@@ -299,7 +299,7 @@ export default function Site({ lang = "es" }) {
             <p className="eyebrow">{t("esp.k")}</p>
             <h2 id="t-espera">{t("esp.t1")} <em>{t("esp.t2")}</em></h2>
             <p className="body">{t("esp.p")}</p>
-            <div className="e-help"><p>{t("cmp.help")}</p><a className="btn btn-primary" href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wahelp"))}`} target="_blank" rel="noopener noreferrer">{t("cmp.helpbtn")}</a></div>
+            <div className="e-help"><p>{t("cmp.help")}</p><a className="btn btn-primary" href={`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(t("plans.wahelp"))}`} target="_blank" rel="noopener noreferrer">{t("cmp.helpbtn")}</a></div>
           </div>
         </section>
 
