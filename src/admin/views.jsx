@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MenuStudio } from "./docs.jsx";
+import { histLine } from "./cobros.jsx";
 import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks, usePages, Pager } from "./ui.jsx";
 import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
@@ -26,8 +27,8 @@ export function Hoy() {
   const st = (n, l, to) => <L className="stat press" to={to}><b>{n}</b><span>{l}</span></L>;
   let stats = null;
   if (role === "direccion") stats = <>{st(<>{m.occ}<small>%</small></>, `ocupación de ${MESL[T0.getMonth()]}`, "reportes")}{st(money(m.cash), "cobrado este mes", "pagos")}{st(nuevas.length, nuevas.length === 1 ? "solicitud nueva" : "solicitudes nuevas", "reservas")}</>;
-  if (role === "recepcion") stats = <>{st(nuevas.length, "sin responder", "reservas")}{st(pres.length, "esperan anticipo", "reservas")}{st(act.filter(r => r.state === "casa" && r.out === TODAY).length, "salen hoy", "reservas")}</>;
-  if (role === "admin") { const yr = S.payments.filter(p => p.date.startsWith(String(T0.getFullYear()))).reduce((s, p) => s + p.amount, 0); stats = <>{st(money(m.cash), "cobrado este mes", "pagos")}{st(money(yr), `ingresos de ${T0.getFullYear()}`, "reportes")}{st(pres.length, "esperan anticipo", "pagos")}</>; }
+  if (role === "recepcion") stats = <>{st(nuevas.length, "sin responder", "reservas")}{st(pres.length, "esperan el pago", "reservas")}{st(act.filter(r => r.state === "casa" && r.out === TODAY).length, "salen hoy", "reservas")}</>;
+  if (role === "admin") { const yr = S.payments.filter(p => p.date.startsWith(String(T0.getFullYear()))).reduce((s, p) => s + p.amount, 0); stats = <>{st(money(m.cash), "cobrado este mes", "pagos")}{st(money(yr), `ingresos de ${T0.getFullYear()}`, "reportes")}{st(pres.length, "esperan el pago", "pagos")}</>; }
   if (role === "cocina") { const al = act.filter(r => HOLDS.includes(r.state) && r.out >= TODAY).flatMap(r => G(r.g).allergies || []); stats = <>{st(enCasa ? enCasa.people : 0, "personas en casa", "cocina")}{st(al.length, al.length === 1 ? "alergia a cuidar" : "alergias a cuidar", "cocina")}{st(S.shopping.filter(s => !s.done).length, "cosas por comprar", "cocina")}</>; }
   if (role === "limpieza") { const ready = S.rooms.filter(x => ["lista","revisada"].includes(x.state)).length; stats = <>{st(<>{ready}<small>/{S.rooms.length}</small></>, "espacios listos", "casa")}{st(S.rooms.length - ready, "por limpiar", "casa")}{st(pend, "tareas de hoy", "tareas")}</>; }
   if (role === "operaciones") { const hoyLlegan = act.filter(r => ["confirmada","casa"].includes(r.state) && r.in === TODAY).length; stats = <>{st(hoyLlegan, hoyLlegan === 1 ? "grupo llega hoy" : "grupos llegan hoy", "calendario")}{st(S.tasks.filter(t => !t.done && t.due <= TODAY).length, "tareas del equipo hoy", "tareas")}{st(S.shopping.filter(s => !s.done).length, "cosas por comprar", "cocina")}</>; }
@@ -37,7 +38,7 @@ export function Hoy() {
 
   let feature = null;
   if (role === "admin") {
-    if (pres.length) feature = <section className="sec"><div className="sec-h"><h2>Esperan anticipo</h2><L to="pagos">Ver ingresos</L></div><div className="group res">{pres.slice(0, 3).map(r => <ResRow key={r.id} r={r} extra={r.hold ? <span className="st" style={{ color: "var(--ink)", fontWeight: 800 }}>Vence en {left(r.hold)}</span> : null} />)}</div></section>;
+    if (pres.length) feature = <section className="sec"><div className="sec-h"><h2>Esperan el pago</h2><L to="pagos">Ver ingresos</L></div><div className="group res">{pres.slice(0, 3).map(r => <ResRow key={r.id} r={r} extra={r.hold ? <span className="st" style={{ color: "var(--ink)", fontWeight: 800 }}>Vence en {left(r.hold)}</span> : null} />)}</div></section>;
   } else {
     const r = (role === "cocina" && enCasa) ? enCasa : nextIn;
     if (r) { const g = G(r.g);
@@ -53,7 +54,9 @@ export function Hoy() {
   const al = []; const see = x => x.includes(role);
   const res = id => () => openSheet("res", { id });
   if (see(["direccion","recepcion"])) nuevas.forEach(r => al.push({ i: "chat", c: "var(--s-nueva-bg)", k: "var(--s-nueva-ink)", t: `${G(r.g).name} pidió fechas`, s: `${frange(r.in, r.out)} · ${r.people} pers. · ${ago(r.created)}`, on: res(r.id) }));
-  if (see(["direccion","recepcion","admin"])) pres.forEach(r => al.push({ i: "clock", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `${G(r.g).name}: el anticipo vence en ${left(r.hold)}`, s: "Si no paga, las fechas se liberan solas", on: res(r.id) }));
+  if (see(["direccion","admin"])) (S.approvals || []).filter(a => a.state === "pendiente").forEach(a => { const r = S.reservas.find(x => x.id === a.res);
+    al.push({ i: "alert", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `Cobro por aprobar: ${r ? G(r.g).name : "reserva"}`, s: a.detail, on: () => openSheet("aprob", { id: a.id }) }); });
+  if (see(["direccion","recepcion","admin"])) pres.forEach(r => al.push({ i: "clock", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `${G(r.g).name}: las fechas apartadas vencen en ${left(r.hold)}`, s: "Si no paga, las fechas se liberan solas", on: res(r.id) }));
   // Semáforo en rojo: aviso inmediato a la CEO (y a Calidad, que lo registró).
   if (see(["direccion","calidad"])) (S.audits || []).filter(a => a.level === "rojo").forEach(a => { const r = act.find(x => x.id === a.res); if (r && r.out >= addDays(TODAY, -7))
     al.push({ i: "alert", c: "var(--danger-bg)", k: "var(--danger)", t: `Semáforo en rojo: ${AMBITOS[a.area]?.name || a.area}`, s: `${G(r.g).name}${a.note ? ` · ${a.note}` : ""}`, on: res(r.id) }); });
@@ -94,11 +97,12 @@ export function Reservas() {
   const cnt = k => S.reservas.filter(r => F[k].includes(r.state)).length;
   const nq = norm(q.trim()), dq = q.replace(/\D/g, "");
   const hit = r => { if (!nq) return true; const g = S.guests[r.g] || {};
-    return norm(g.name).includes(nq) || norm(r.code).includes(nq) || norm(r.channel).includes(nq) || (dq.length >= 6 && (g.phone || "").replace(/\D/g, "").includes(dq)); };
+    const qc = q.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return norm(g.name).includes(nq) || norm(r.code).includes(nq) || (qc.length >= 3 && (r.loc || "").replace("-", "").includes(qc)) || norm(r.channel).includes(nq) || (dq.length >= 6 && (g.phone || "").replace(/\D/g, "").includes(dq)); };
   const list = S.reservas.filter(r => F[f].includes(r.state) && hit(r)).sort((a, b) => f === "cerradas" ? (a.in < b.in ? 1 : -1) : (FLOW.indexOf(a.state) - FLOW.indexOf(b.state) || (a.in < b.in ? -1 : 1)));
   const pg = usePages(list, 10, `${f}|${q}`); const top = useRef();
   return <>
-    <Head title="Reservas" lead="Toca una reserva para verla y moverla al siguiente paso. Un WhatsApp nunca es una reserva confirmada hasta que entra el anticipo." />
+    <Head title="Reservas" lead="Toca una reserva para verla y moverla al siguiente paso. Una reserva solo está confirmada cuando entra el pago completo." />
     <Buscar q={q} setQ={setQ} label="Buscar reserva" ph="Buscar por nombre, código o teléfono" />
     <Chips value={f} onChange={setF} label="Filtrar por estado" options={Object.keys(F).map(k => [k, <>{FL[k]} <span className="n">{cnt(k)}</span></>])} />
     <div ref={top} key={`${f}-${pg.page}`} className="swap">
@@ -277,10 +281,12 @@ export function Pagos() {
   const pre = S.reservas.filter(r => r.state === "pre").sort((a, b) => a.in < b.in ? -1 : 1);
   const byMonth = {}; S.payments.slice().sort((a, b) => a.date < b.date ? 1 : -1).forEach(p => { (byMonth[p.date.slice(0, 7)] ||= []).push(p); });
   return <>
-    <Head title="Ingresos" lead="Lo que entra por las reservas. Al registrar el anticipo, la reserva queda confirmada.">
+    <Head title="Ingresos" lead="Lo que entra por las reservas. La reserva se confirma cuando lo pagado llega al 100 % de su cotización.">
       <div className="stats"><div className="stat"><b>{money(sum(p => p.date.startsWith(ym)))}</b><span>en {MESL[T0.getMonth()]}</span></div><div className="stat"><b>{money(sum(p => p.date.startsWith(y)))}</b><span>en {y}</span></div><div className="stat"><b>{S.payments.filter(p => p.date.startsWith(ym)).length}</b><span>pagos este mes</span></div></div></Head>
     <section className="sec"><div className="group"><L className="row press" to="reportes"><span className="ico"><Icon n="reportes" c="s" w="f" /></span><span className="grow"><span className="t">Ver los gráficos del año</span><span className="st">Ingresos por mes, temporadas y qué noches se llenan</span></span><Icon n="chev" c="s chev" /></L></div></section>
-    {pre.length > 0 && <section className="sec"><div className="sec-h">Esperan anticipo</div><div className="group">{pre.map(r =>
+    {(S.approvals || []).some(a => a.state === "pendiente") && <section className="sec"><div className="sec-h">Cobros por aprobar</div><div className="group">{S.approvals.filter(a => a.state === "pendiente").map(a => { const r = S.reservas.find(x => x.id === a.res);
+      return <button key={a.id} className="row press" onClick={() => openSheet("aprob", { id: a.id })}><span className="ico" style={{ background: "var(--s-pre-bg)" }}><Icon n="alert" c="s" w="f" /></span><span className="grow"><span className="t">{r ? G(r.g).name : "Reserva"} · {money(a.pay.monto || (a.pay.monto_original && a.pay.tasa ? a.pay.monto_original / a.pay.tasa : 0))}</span><span className="st">{a.detail}</span></span><Icon n="chev" c="s chev" /></button>; })}</div></section>}
+    {pre.length > 0 && <section className="sec"><div className="sec-h">Esperan el pago</div><div className="group">{pre.map(r =>
       <div key={r.id} className="row"><span className="grow"><span className="t">{G(r.g).name}</span><span className="st">{frange(r.in, r.out)}{r.hold ? ` · vence en ${left(r.hold)}` : ""}</span></span><button className="btn small press" onClick={() => openSheet("pay", { id: r.id })}>Registrar</button></div>)}</div></section>}
     {Object.keys(byMonth).length ? Object.entries(byMonth).map(([m, ps]) => { const [yy, mm] = m.split("-"); return (
       <section key={m} className="sec"><div className="sec-h">{MESL[+mm - 1]} {yy} · {money(ps.reduce((s, p) => s + p.amount, 0))}</div><div className="group">{ps.map(p => { const r = S.reservas.find(x => x.id === p.res); return (
@@ -404,4 +410,46 @@ export function Mas() {
   </>;
 }
 
-export const VIEW_CMP = { hoy: Hoy, reservas: Reservas, calendario: Calendario, huespedes: Huespedes, tareas: Tareas, cocina: Cocina, casa: Casa, pagos: Pagos, tarifas: Tarifas, reportes: Reportes, equipo: Equipo, mas: Mas };
+/* ---------- CONTROL (solo Dirección): lo que hay que mirar ---------- */
+export function Control() {
+  const { S, act, openSheet } = useMC();
+  const G = id => S.guests[id] || {};
+  const who = uid => uid ? ((S.team.find(p => p.id === uid) || {}).name || "Alguien del equipo") : "El sistema";
+  const [log, setLog] = useState(null);
+  useEffect(() => { let on = true; act(async a => { const d = await a.bitacoraReciente(7); if (on) setLog(d); }, null, { quiet: true }).then(er => { if (er && on) setLog([]); }); return () => { on = false; }; }, []);
+  const pend = (S.approvals || []).filter(a => a.state === "pendiente");
+  const rech = (S.approvals || []).filter(a => a.state === "rechazada" && a.doneAt > Date.now() - 30 * 864e5);
+  // Reservas cobradas que no cuadran con su cotización.
+  const paidStates = ["confirmada","casa","finalizada"];
+  const desc = S.reservas.filter(r => paidStates.includes(r.state)).map(r => {
+    const q = r.quoteId && (S.quotes || []).find(x => x.id === r.quoteId); const qt = q ? q.totals[r.plan] : null; const why = [];
+    // «Sin cotización» solo para lo cobrado con el sistema nuevo (pagos con comprobante): las reservas de antes no tenían cotización con código.
+    if (!r.quoteId && S.payments.some(p => p.res === r.id && p.proof)) why.push("confirmada sin cotización");
+    else if (qt != null && Math.abs(qt - (r.total || 0)) > 0.009) why.push(`total ${money(r.total)} y la cotización dice ${money(qt)}`);
+    if ((r.paid || 0) < (r.total || 0) - 0.009) why.push(`faltan ${money(r.total - r.paid)} por cobrar`);
+    if ((r.paid || 0) > (r.total || 0) + 0.009) why.push(`se cobró ${money(r.paid - r.total)} de más`);
+    return why.length ? { r, why } : null; }).filter(Boolean).sort((a, b) => a.r.in < b.r.in ? 1 : -1);
+  // Efectivo: quién lo tiene.
+  const cash = {}; S.payments.filter(p => (p.method || "").startsWith("Efectivo")).forEach(p => { const k = p.cashWith || "Sin anotar";
+    const c = cash[k] ||= { usd: 0, bs: 0, n: 0, last: "" }; c.usd += p.amount; if (p.currency === "Bs" && p.orig) c.bs += p.orig; c.n++; if (p.date > c.last) c.last = p.date; });
+  const raros = (log || []).map(e => ({ e, l: histLine(e, S) })).filter(x => x.l && x.l.raro);
+  return <>
+    <Head title="Control" lead="Solo Dirección ve esta pantalla. Lo que no cuadra, lo que espera aprobación y quién tiene el efectivo.">
+      <div className="stats"><div className="stat"><b>{pend.length}</b><span>por aprobar</span></div><div className="stat"><b>{desc.length}</b><span>no cuadran</span></div><div className="stat"><b>{money(Object.values(cash).reduce((s, c) => s + c.usd, 0))}</b><span>en efectivo</span></div></div>
+    </Head>
+    <section className="sec"><div className="sec-h">Cobros por aprobar</div><div className="group">{pend.length ? pend.map(a => { const r = S.reservas.find(x => x.id === a.res);
+      return <button key={a.id} className="row press" onClick={() => openSheet("aprob", { id: a.id })}><span className="ico" style={{ background: "var(--s-pre-bg)" }}><Icon n="clock" c="s" w="f" /></span><span className="grow"><span className="t">{r ? G(r.g).name : "Reserva"} · pidió {who(a.by)}</span><span className="st">{a.detail} · {ago(a.at)}</span></span><Icon n="chev" c="s chev" /></button>; })
+      : <div className="row"><span className="st">Nada esperando aprobación.</span></div>}</div></section>
+    <section className="sec"><div className="sec-h">Reservas que no cuadran</div><div className="group res">{desc.length ? desc.map(({ r, why }) => <ResRow key={r.id} r={r} extra={<span className="st" style={{ color: "var(--ink)", fontWeight: 700 }}>{why.join(" · ")}</span>} />)
+      : <div className="row"><span className="st">Todas las reservas cobradas cuadran con su cotización.</span></div>}</div></section>
+    <section className="sec"><div className="sec-h">Efectivo por persona</div><div className="group">{Object.keys(cash).length ? Object.entries(cash).sort((a, b) => b[1].usd - a[1].usd).map(([k, c]) => <div key={k} className="row"><span className="ico"><Icon n="pagos" c="s" w="f" /></span><span className="grow"><span className="t">{k}</span><span className="st">{c.n} {c.n === 1 ? "pago" : "pagos"}{c.bs ? ` · incluye Bs. ${Math.round(c.bs).toLocaleString("es-VE")}` : ""} · último {fdate(c.last)}</span></span><span className="val">{money(c.usd)}</span></div>)
+      : <div className="row"><span className="st">No hay pagos en efectivo registrados.</span></div>}</div></section>
+    <section className="sec"><div className="sec-h">Fuera de lo normal · últimos 7 días</div>{log == null ? <p className="sec-f">Cargando…</p> : <div className="group hist">{raros.length ? raros.map(({ e, l }) => { const r = e.reserva_id && S.reservas.find(x => x.id === e.reserva_id);
+      return <button key={e.id} className="row press raro" onClick={() => e.huesped_id && openSheet("hist", { id: e.huesped_id })}><span className="ico"><Icon n="alert" c="s" w="f" /></span><span className="grow"><span className="t">{l.t}{r ? ` · ${G(r.g).name}` : ""}</span>{l.s && <span className="st">{l.s}</span>}<span className="st">{who(e.quien)} · {new Date(e.cuando).toLocaleString("es-VE", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span></span></button>; })
+      : <div className="row"><span className="st">Nada fuera de lo normal esta semana.</span></div>}</div>}</section>
+    {rech.length > 0 && <section className="sec"><div className="sec-h">Cobros rechazados · últimos 30 días</div><div className="group">{rech.map(a => { const r = S.reservas.find(x => x.id === a.res);
+      return <button key={a.id} className="row press" onClick={() => openSheet("aprob", { id: a.id })}><span className="grow"><span className="t">{r ? G(r.g).name : "Reserva"} · rechazó {who(a.doneBy)}</span><span className="st">{a.detail}{a.note ? ` · ${a.note}` : ""}</span></span><Icon n="chev" c="s chev" /></button>; })}</div></section>}
+  </>;
+}
+
+export const VIEW_CMP = { control: Control, hoy: Hoy, reservas: Reservas, calendario: Calendario, huespedes: Huespedes, tareas: Tareas, cocina: Cocina, casa: Casa, pagos: Pagos, tarifas: Tarifas, reportes: Reportes, equipo: Equipo, mas: Mas };

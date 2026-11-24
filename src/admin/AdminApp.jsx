@@ -110,9 +110,11 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
 
   const badge = v => v === "reservas" ? S.reservas.filter(r => r.state === "nueva").length : v === "tareas" ? S.tasks.filter(t => t.area === role && !t.done && t.due <= TODAY).length : 0;
   const canMove = can(role, "vender"), canReceive = can(role, "recibir"), canMoney = !!R.money;
+  // Registrar pagos: quien ve dinero y Recepción, que cobra lo que acuerda por WhatsApp (0017).
+  const canPay = canMoney || role === "recepcion";
   // «Nueva reserva» tiene su propio botón fijo, así que el + de la barra queda para lo demás.
   const plus = { tareas: "newTask", casa: can(role, "afuera") ? "block" : "" }[view];
-  const ctx = { S, role, R, me, setRole, act, toast, openSheet, closeSheet, bandEl, canMove, canReceive, canMoney,
+  const ctx = { S, role, R, me, setRole, act, toast, openSheet, closeSheet, bandEl, canMove, canReceive, canMoney, canPay,
     openTour: () => { closeSheet(); setTour(true); },
     renameMe: name => setMe(m => ({ ...m, name })),
     signOut: async () => { await api.signOut(); location.href = "/admin"; } };
@@ -126,6 +128,7 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
         <aside className="side" aria-label="Menú">
           <div className="side-brand"><img src="/logo/logo-claro.svg" alt="Maracuyá" width="110" height="44" /><span>Control</span></div>
           {canMove && <button className="side-new press" onClick={() => openSheet("newRes")}><Icon n="plus" c="s" w="b" />Nueva reserva</button>}
+          {canPay && <button className="side-doc press" onClick={() => openSheet("paid")}><Icon n="pagos" c="s" />Reserva pagada</button>}
           {canMove && <button className="side-doc press" onClick={() => openSheet("budget")}><Icon n="receipt" c="s" />Presupuesto</button>}
           {items.map(t => { const b = badge(t); return <Link key={t} to={`/admin/${t}`} aria-current={t === view ? "page" : undefined}><Icon n={t} w={t === view ? "f" : "r"} /><span>{VIEWS[t]}</span>{b > 0 && <span className="badge">{b}</span>}</Link>; })}
           <div className="side-foot">
@@ -137,6 +140,7 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
               <div className="nb-left">{R.more.includes(view) && <button className="back" onClick={() => nav("/admin/mas")}><Icon n="chevL" c="s" />Más</button>}</div>
               <div className="nb-title">{VIEWS[view]}</div>
               <div className="nb-right">
+                {canPay && <button className="icon-btn press nb-doc" onClick={() => openSheet("paid")} aria-label="Registrar una reserva pagada" title="Reserva pagada"><Icon n="pagos" c="s" /></button>}
                 {canMove && <button className="icon-btn press nb-doc" onClick={() => openSheet("budget")} aria-label="Hacer un presupuesto" title="Presupuesto"><Icon n="receipt" c="s" /></button>}
                 {plus && <button className="icon-btn press" onClick={() => openSheet(plus)} aria-label="Agregar"><Icon n="plus" c="s" /></button>}
                 <button className="avatar-btn press" onClick={() => openSheet("profile")} aria-label={`Perfil: ${R.name}`}><span className="avatar" style={{ background: `var(--r-${role})`, color: `var(--r-${role}-ink)` }}><Icon n={R.icon} c="s" w="d" /></span></button>

@@ -48,6 +48,19 @@ async function mergePrivate(S) {
   S.reservas.forEach(r => { const x = rs[r.id]; if (!x) return; r.ficha.people = x.ocupantes || []; r.receiptToken = x.comprobante_token || null; r.receiptTo = x.comprobante_correo || ""; });
 }
 
+// Fotos del celular: se reducen a 1600 px y JPG antes de subirlas (de ~4 MB a ~300 KB). PDF y otros, tal cual.
+async function shrinkImage(file, max = 1600) {
+  if (!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type)) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(res => c.toBlob(res, "image/jpeg", 0.82));
+    return blob ? new File([blob], "comprobante.jpg", { type: "image/jpeg" }) : file;
+  } catch { return file; }
+}
+
 /* ===================== Supabase ===================== */
 const real = {
   async session() { const { data } = await supabase.auth.getSession(); return data.session; },
@@ -88,7 +101,7 @@ const real = {
     (hu.data || []).forEach(g => S.guests[g.id] = { name: g.nombre, city: g.ciudad, phone: "", telNorm: "", email: "", doc: "", birthday: g.cumple,
       allergies: g.alergias || [], likes: g.gustos || [], dislikes: g.no_le_gusta || [], notes: g.notas || "", pet: g.mascota, visits: g.visitas, kite: g.kite, celebra: g.celebra, companions: [] });
     (ac.data || []).forEach(a => S.guests[a.huesped_id]?.companions.push({ id: a.id, name: a.nombre, rel: a.relacion, birthday: a.cumple, allergies: a.alergias, notes: a.notas, doc: "", age: a.edad }));
-    S.reservas = (re.data || []).map(r => ({ id: r.id, code: r.codigo, g: r.huesped_id, plan: r.plan, people: r.personas, pet: r.mascota, in: r.llegada, out: r.salida, state: r.estado, channel: r.canal, lang: r.idioma || "es", created: ms(r.creado), hold: ms(r.vence_en), notes: r.notas,
+    S.reservas = (re.data || []).map(r => ({ id: r.id, code: r.codigo, loc: "", g: r.huesped_id, plan: r.plan, people: r.personas, pet: r.mascota, in: r.llegada, out: r.salida, state: r.estado, channel: r.canal, lang: r.idioma || "es", created: ms(r.creado), hold: ms(r.vence_en), notes: r.notas,
       // Ficha de registro: la llena el huésped en papel y el equipo la pasa al panel.
       total: +r.total || 0, concept: r.concepto || "", receiptToken: null, receiptSent: ms(r.comprobante_enviado), receiptTo: "",
       ficha: { filled: !!r.ficha_en, at: ms(r.ficha_en), by: r.ficha_por, signed: ms(r.ficha_firmada), firma: r.ficha_firma || "", arrival: r.hora_llegada || "", adults: r.adultos, kids: r.ninos,
@@ -103,7 +116,9 @@ const real = {
     S.rooms = (ha.data || []).map(h => ({ id: h.id, name: h.nombre, note: h.nota, img: h.foto, state: h.estado }));
     S.outside = (ex.data || []).map(e => ({ id: e.id, name: e.nombre, ok: e.al_dia }));
     S.blocks = (bl.data || []).map(b => ({ id: b.id, from: b.desde, to: b.hasta, reason: b.motivo }));
-    S.payments = (pa.data || []).map(p => ({ id: p.id, res: p.reserva_id, amount: +p.monto, method: p.metodo, date: p.fecha, kind: p.tipo }));
+    S.payments = (pa.data || []).map(p => ({ id: p.id, res: p.reserva_id, amount: +p.monto, method: p.metodo, date: p.fecha, kind: p.tipo, by: p.creado_por,
+      currency: p.moneda || "USD", orig: p.monto_original != null ? +p.monto_original : null, rate: p.tasa != null ? +p.tasa : null,
+      ref: p.referencia || "", proof: p.comprobante_path || null, cashWith: p.efectivo_lo_tiene || "", at: ms(p.creado) }));
     const paid = {}; S.payments.forEach(p => { paid[p.res] = (paid[p.res] || 0) + p.amount; });
     S.reservas.forEach(r => { r.paid = paid[r.id] || 0; });
     S.shopping = (co.data || []).map(c => ({ id: c.id, text: c.texto, done: c.hecho }));
@@ -114,6 +129,17 @@ const real = {
     S.audits = (au.data || []).map(a => ({ id: a.id, res: a.reserva_id, area: a.ambito, level: a.nivel, note: a.nota, at: ms(a.creado) }));
     if (!ca.error) S.cartas = (ca.data || []).map(c => ({ id: c.id, name: c.nombre, data: c.datos || {}, updated: ms(c.actualizado) }));
     await mergePrivate(S);
+    // Cotizaciones con código (0017). Aparte, por si la migración aún no se corrió.
+    const qt = await supabase.from("cotizaciones").select("*").order("creada", { ascending: false }).limit(500);
+    S.quotes = qt.error ? [] : qt.data.map(q => ({ id: q.id, code: q.codigo, name: q.nombre, in: q.llegada, out: q.salida, nights: q.noches, people: q.personas,
+      totals: q.totales || {}, until: q.vence, res: q.reserva_id, by: q.creado_por, at: ms(q.creada) }));
+    // Código de reserva CM-XXXXXX (0017). Aparte, para que el panel siga andando si la migración aún no se corrió.
+    const lo = await supabase.from("reservas").select("id,localizador,cotizacion_id");
+    if (!lo.error) { const m = {}; lo.data.forEach(x => { m[x.id] = x; }); S.reservas.forEach(r => { r.loc = m[r.id]?.localizador || ""; r.quoteId = m[r.id]?.cotizacion_id || null; }); }
+    // Cobros en espera de aprobación (0017 parte 6).
+    const ap = await supabase.from("aprobaciones").select("*").order("pedida_en", { ascending: false }).limit(300);
+    S.approvals = ap.error ? [] : ap.data.map(a => ({ id: a.id, res: a.reserva_id, quoteId: a.cotizacion_id, pay: a.pago || {}, diffs: a.diferencias || [], detail: a.detalle, reason: a.motivo,
+      state: a.estado, by: a.pedida_por, at: ms(a.pedida_en), doneBy: a.resuelta_por, doneAt: ms(a.resuelta_en), note: a.nota }));
     return S;
   },
   subscribe(onChange) {
@@ -125,7 +151,26 @@ const real = {
     return () => supabase.removeChannel(ch);
   },
   async cambiarEstado(_S, id, to) { ok(await supabase.rpc("cambiar_estado", { p_reserva: id, p_estado: to })); },
-  async registrarPago(_S, id, amount, method, total = null, concept = null) { ok(await supabase.rpc("registrar_pago", { p_reserva: id, p_monto: amount, p_metodo: method, p_total: total, p_concepto: concept })); },
+  // Pago con su prueba (0017). p: { monto, metodo, moneda, monto_original, tasa, referencia, comprobante, efectivo_lo_tiene, total, concepto }.
+  // Devuelve { confirmada, localizador, pagado, total, falta }.
+  async registrarPago(_S, id, p) { return ok(await supabase.rpc("registrar_pago", { p_reserva: id, p })); },
+  // Sube el comprobante (foto reducida o PDF) al bucket privado y devuelve su ruta.
+  async subirComprobante(_S, resId, file) {
+    const f = await shrinkImage(file);
+    const ext = f.type === "application/pdf" ? "pdf" : f.type === "image/png" ? "png" : "jpg";
+    const path = `${resId}/${crypto.randomUUID()}.${ext}`;
+    ok(await supabase.storage.from("comprobantes").upload(path, f, { contentType: f.type }));
+    return path;
+  },
+  // Cliente + reserva + pago del 100 % en una sola transacción (0017 parte 3).
+  async crearReservaPagada(_S, id, p) { return ok(await supabase.rpc("crear_reserva_pagada", { p_id: id, p })); },
+  // Cotización con código COT-XXXX (0017 parte 5). Devuelve { codigo, vence }.
+  async guardarCotizacion(_S, p) { return ok(await supabase.rpc("guardar_cotizacion", { p })); },
+  async resolverAprobacion(_S, id, aprobar, nota = "") { return ok(await supabase.rpc("resolver_aprobacion", { p_id: id, p_aprobar: aprobar, p_nota: nota })); },
+  // Historial del cliente (0017 parte 7). La base de datos solo se lo entrega a Dirección.
+  async historial(_S, guestId) { return ok(await supabase.from("bitacora").select("*").eq("huesped_id", guestId).order("cuando", { ascending: false }).limit(400)); },
+  async bitacoraReciente(_S, days = 7) { const d = new Date(Date.now() - days * 864e5).toISOString(); return ok(await supabase.from("bitacora").select("*").gte("cuando", d).order("cuando", { ascending: false }).limit(800)); },
+  async verComprobante(_S, path) { const { data } = await supabase.storage.from("comprobantes").createSignedUrl(path, 600); return data?.signedUrl || null; },
   async fijarTotal(_S, id, total, concept) { ok(await supabase.rpc("fijar_total", { p_reserva: id, p_total: total, p_concepto: concept })); },
   // Correo con el comprobante (función enviar-comprobante en Supabase). Devuelve { ok, to } o { sinCorreo: true }.
   async enviarComprobante(_S, id) {

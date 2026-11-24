@@ -24,15 +24,21 @@ export const nights = r => diff(r.in, r.out);
 // jefe: a quién reporta. money: ve dinero. phone: ve teléfonos y documentos de los huéspedes.
 export const ROLES = {
   direccion: { name: "Dirección", sub: "CEO & Founder · reservas y estrategia", icon: "crown", money: true, phone: true, jefe: null,
-    tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["tareas","casa","cocina","pagos","tarifas","reportes","equipo"],
+    tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["control","tareas","casa","cocina","pagos","tarifas","reportes","equipo"],
     ve: "Todo: reservas, ingresos, fichas de los huéspedes, el trabajo de cada área y el semáforo de calidad de cada estadía.",
-    hace: ["Vende las fechas y cobra el 100% para confirmar","Ficha de registro de cada grupo: el titular la firma en papel y se pasa al panel","Tarifas, promociones y quién entra al panel","Revisa los informes de Calidad y los balances de Administración"],
+    hace: ["Supervisa todo: el historial de cada cliente y la pantalla Control","Ficha de registro de cada grupo: el titular la firma en papel y se pasa al panel","Tarifas, promociones y quién entra al panel","Revisa los informes de Calidad y los balances de Administración"],
     recibe: "Las solicitudes nuevas, cada semáforo en rojo y el informe de Calidad al final de cada estadía." },
   admin: { name: "Administración y Finanzas", sub: "Faby · contabilidad, nómina y caja chica", icon: "money", money: true, phone: true, jefe: "direccion",
-    tabs: ["hoy","reservas","pagos","calendario","reportes"], more: [],
-    ve: "Reservas, pagos recibidos e ingresos del mes y del año.",
-    hace: ["Registra los pagos de cada reserva","Revisa los ingresos de cada mes y temporada","Contabilidad, nómina, caja chica e inventarios (en su sistema contable)"],
-    recibe: "Aviso cuando una reserva apartada está por vencer sin pago." },
+    tabs: ["hoy","reservas","pagos","calendario","mas"], more: ["huespedes","tareas","casa","cocina","tarifas","reportes","equipo"],
+    ve: "Todo el panel: reservas, pagos con su comprobante, ingresos, reportes y el trabajo de cada área.",
+    hace: ["Aprueba o rechaza los cobros que no coinciden con su cotización","Revisa y cuadra los pagos de cada reserva","Revisa los ingresos de cada mes y temporada","Contabilidad, nómina, caja chica e inventarios (en su sistema contable)"],
+    recibe: "Cada cobro que espera su aprobación y el aviso cuando una reserva apartada está por vencer sin pago." },
+  // Se reactiva (0017): la persona del WhatsApp, de confianza. Habla con el cliente, cotiza, cobra y recibe.
+  recepcion: { name: "Recepción y reservas", sub: "WhatsApp, cotizaciones, cobros, llegadas y salidas", icon: "chat", phone: true, jefe: "direccion",
+    tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["tareas","casa","cocina"],
+    ve: "Solicitudes, cotizaciones, reservas, calendario, fichas de los huéspedes y los pagos de sus reservas.",
+    hace: ["Responde por WhatsApp y arma la cotización con su código","Registra el pago con su comprobante; la reserva se confirma sola al 100 %","Si el cobro no coincide con la cotización, pide la aprobación de Administración","Recibe y despide al grupo con el código de reserva"],
+    recibe: "Cada solicitud nueva y el aviso cuando Administración aprueba o rechaza una diferencia de cobro." },
   operaciones: { name: "Operaciones", sub: "Robert · técnica, logística y check-in", icon: "bell", phone: true, jefe: "direccion",
     tabs: ["hoy","tareas","casa","calendario","mas"], more: ["huespedes","cocina"],
     ve: "Las tareas de todo el equipo, la casa, quién llega y cuándo, y la lista de compras.",
@@ -62,24 +68,17 @@ export const ROLES = {
     tabs: ["hoy","casa","tareas"], more: [],
     ve: "El estado de cada habitación: sucia, en limpieza, lista y revisada.",
     hace: ["Limpieza y desinfección profunda con presencia invisible","Lidera el tendido de camas con Odely y Yanely","Cuida las antigüedades y controla la lencería"],
-    recibe: "«Preparar habitaciones y tendido de camas» el día antes de cada llegada." },
-  // Rol anterior: sus funciones pasaron a Dirección, Operaciones y Servicio. Solo sigue
-  // funcionando para quien ya lo tenía; ya no se ofrece al asignar roles.
-  recepcion: { name: "Recepción (anterior)", sub: "Ya no se usa: asigna Dirección, Operaciones o Servicio", icon: "bell", phone: true, legacy: true, jefe: "direccion",
-    tabs: ["hoy","reservas","calendario","huespedes","tareas"], more: [],
-    ve: "Solicitudes, calendario, fichas de huéspedes y llegadas y salidas de la semana.",
-    hace: ["Rol anterior al organigrama actual"],
-    recibe: "Aviso de cada solicitud nueva." }
+    recibe: "«Preparar habitaciones y tendido de camas» el día antes de cada llegada." }
 };
 // Quién puede hacer qué en el panel (la base de datos lo vuelve a comprobar).
 export const CAN = {
   vender: ["direccion","recepcion","admin"],                           // mover reservas y crear nuevas
   recibir: ["direccion","recepcion","admin","operaciones"],            // «Ya llegaron» y «Cerrar la cuenta»
-  supervisar: ["direccion","recepcion","operaciones","calidad"],       // ven y marcan tareas de todas las áreas
+  supervisar: ["direccion","admin","recepcion","operaciones","calidad"],       // ven y marcan tareas de todas las áreas
   habitaciones: ["direccion","limpieza","servicio","calidad","operaciones"],
   afuera: ["direccion","mantenimiento","operaciones"],                 // piscina, jardín, muelle y fechas bloqueadas
-  datosHuesped: ["direccion","recepcion"],
-  notasHuesped: ["direccion","recepcion","cocina","servicio","calidad"],
+  datosHuesped: ["direccion","admin","recepcion"],
+  notasHuesped: ["direccion","admin","recepcion","cocina","servicio","calidad"],
   compras: ["direccion","cocina","operaciones"],
   semaforo: ["direccion","calidad"]
 };
@@ -92,10 +91,10 @@ export const AMBITOS = {
   limpieza: { name: "Housekeeping y limpieza", who: "Zai, Odely y Yanely", check: "Habitaciones y baños impecables, camas armadas en equipo, cuidado de las antigüedades y presencia invisible." }
 };
 export const NIVEL = { verde: "Excelente", amarillo: "Detalle a corregir", rojo: "Fallo en estándar" };
-export const VIEWS = { hoy:"Hoy", reservas:"Reservas", calendario:"Calendario", huespedes:"Huéspedes", tareas:"Tareas", cocina:"Cocina", casa:"La casa", pagos:"Ingresos", tarifas:"Tarifas", reportes:"Reportes", equipo:"Equipo", mas:"Más" };
-// Áreas de las tareas, en el orden del organigrama. «recepcion» solo para tareas viejas.
+export const VIEWS = { hoy:"Hoy", reservas:"Reservas", calendario:"Calendario", huespedes:"Huéspedes", tareas:"Tareas", cocina:"Cocina", casa:"La casa", pagos:"Ingresos", tarifas:"Tarifas", reportes:"Reportes", equipo:"Equipo", control:"Control", mas:"Más" };
+// Áreas de las tareas, en el orden del organigrama.
 export const AREAS = { direccion:"Dirección", admin:"Administración", operaciones:"Operaciones", calidad:"Calidad", mantenimiento:"Áreas verdes", cocina:"Cocina", servicio:"Servicio", limpieza:"Housekeeping", recepcion:"Recepción" };
-export const AREAS_NUEVAS = Object.keys(AREAS).filter(k => k !== "recepcion");
+export const AREAS_NUEVAS = Object.keys(AREAS);
 export const AREA_C = { direccion:"var(--alga)", admin:"var(--nocturna)", operaciones:"var(--melon)", calidad:"var(--arena)", mantenimiento:"var(--verde-tabla)", cocina:"var(--sol)", servicio:"var(--laguna)", limpieza:"var(--aguacate)", recepcion:"var(--merey)" };
 export const FLOW = ["nueva","conversacion","pre","confirmada","casa","finalizada"];
 export const STATE = { nueva:"Nueva", conversacion:"En conversación", pre:"Pre-reservada", confirmada:"Confirmada", casa:"En casa", finalizada:"Finalizada", rechazada:"Rechazada", vencida:"Vencida", cancelada:"Cancelada" };
@@ -104,7 +103,9 @@ export const HOLDS = ["pre","confirmada","casa"];
 export const PLAN = { esencial:{ name:"Experiencia Esencial", short:"Esencial", meals:["Desayunos gourmet","Café de la tía"] }, plena:{ name:"Experiencia Plena", short:"Plena", meals:["Desayunos","Almuerzos","Cenas","Postres","Snacks y cava"] } };
 export const ROOM_ST = ["sucia","limpiando","lista","revisada"];
 export const ROOM_LB = { sucia:"Sucia", limpiando:"En limpieza", lista:"Lista", revisada:"Revisada" };
-export const METODOS = ["Zelle","USDT","Efectivo"];
+export const METODOS = ["Transferencia","Pago móvil","Zelle","Binance (USDT)","Efectivo USD","Efectivo Bs"];
+// Moneda de cada método: los de Bs. piden monto en bolívares y tasa del día. Transferencia puede ser en cualquiera.
+export const METODO_MONEDA = { "Pago móvil": "Bs", "Efectivo Bs": "Bs", "Zelle": "USD", "Binance (USDT)": "USD", "Efectivo USD": "USD" };
 export const CANALES = ["Instagram","WhatsApp","Google","Recomendación","Web"];
 
 export function monthStats(S, y, mo) {
