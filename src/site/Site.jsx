@@ -263,9 +263,16 @@ export default function Site({ lang = "es" }) {
               </aside>
             </div>
             <div className="seasons"><p {...html("plans.s1")} /><p {...html("plans.s2")} /></div>
-            <div className="compare">
-              <div className="help"><p>{t("cmp.help")}</p><a className="btn btn-primary" href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wahelp"))}`} target="_blank" rel="noopener noreferrer">{t("cmp.helpbtn")}</a></div>
-            </div>
+          </div>
+        </section>
+
+        <section className="fullbleed espera" aria-labelledby="t-espera">
+          <video autoPlay muted loop playsInline preload="none" poster="/videos/todo-puede-esperar-portada.webp" aria-hidden="true"><source src="/videos/todo-puede-esperar.mp4" type="video/mp4" /></video>
+          <div className="wrap">
+            <p className="eyebrow">{t("esp.k")}</p>
+            <h2 id="t-espera">{t("esp.t1")} <em>{t("esp.t2")}</em></h2>
+            <p className="body">{t("esp.p")}</p>
+            <div className="e-help"><p>{t("cmp.help")}</p><a className="btn btn-primary" href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t("plans.wahelp"))}`} target="_blank" rel="noopener noreferrer">{t("cmp.helpbtn")}</a></div>
           </div>
         </section>
 
