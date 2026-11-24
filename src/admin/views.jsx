@@ -5,6 +5,10 @@ import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, my
 import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
+// Para buscar sin importar tildes ni mayúsculas.
+const norm = s => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const Buscar = ({ q, setQ, label, ph }) => <label className="search" style={{ marginBottom: 12 }}><Icon n="search" c="s" /><span className="sr">{label}</span><input className="field-in" type="search" style={{ textAlign: "left", color: "var(--ink)" }} placeholder={ph} value={q} onChange={e => setQ(e.target.value)} autoComplete="off" /></label>;
+
 const L = ({ to, children, className }) => <Link className={className} to={`/admin/${to}`}>{children}</Link>;
 
 /* ---------- HOY ---------- */
@@ -86,15 +90,19 @@ const F = { activas: ["nueva","conversacion","pre","confirmada","casa"], nueva: 
 const FL = { activas: "Activas", nueva: "Nuevas", conversacion: "En conversación", pre: "Pre-reservadas", confirmada: "Confirmadas", casa: "En casa", cerradas: "Cerradas" };
 export function Reservas() {
   const { S } = useMC();
-  const [f, setF] = useState("activas");
+  const [f, setF] = useState("activas"); const [q, setQ] = useState("");
   const cnt = k => S.reservas.filter(r => F[k].includes(r.state)).length;
-  const list = S.reservas.filter(r => F[f].includes(r.state)).sort((a, b) => f === "cerradas" ? (a.in < b.in ? 1 : -1) : (FLOW.indexOf(a.state) - FLOW.indexOf(b.state) || (a.in < b.in ? -1 : 1)));
-  const pg = usePages(list, 10, f); const top = useRef();
+  const nq = norm(q.trim()), dq = q.replace(/\D/g, "");
+  const hit = r => { if (!nq) return true; const g = S.guests[r.g] || {};
+    return norm(g.name).includes(nq) || norm(r.code).includes(nq) || norm(r.channel).includes(nq) || (dq.length >= 6 && (g.phone || "").replace(/\D/g, "").includes(dq)); };
+  const list = S.reservas.filter(r => F[f].includes(r.state) && hit(r)).sort((a, b) => f === "cerradas" ? (a.in < b.in ? 1 : -1) : (FLOW.indexOf(a.state) - FLOW.indexOf(b.state) || (a.in < b.in ? -1 : 1)));
+  const pg = usePages(list, 10, `${f}|${q}`); const top = useRef();
   return <>
     <Head title="Reservas" lead="Toca una reserva para verla y moverla al siguiente paso. Un WhatsApp nunca es una reserva confirmada hasta que entra el anticipo." />
+    <Buscar q={q} setQ={setQ} label="Buscar reserva" ph="Buscar por nombre, código o teléfono" />
     <Chips value={f} onChange={setF} label="Filtrar por estado" options={Object.keys(F).map(k => [k, <>{FL[k]} <span className="n">{cnt(k)}</span></>])} />
     <div ref={top} key={`${f}-${pg.page}`} className="swap">
-      {!list.length ? <section className="sec"><div className="group res"><Empty icon="reservas">No hay reservas en este estado.</Empty></div></section>
+      {!list.length ? <section className="sec"><div className="group res"><Empty icon={q.trim() ? "search" : "reservas"}>{q.trim() ? "No encontramos reservas con esa búsqueda." : "No hay reservas en este estado."}</Empty></div></section>
         : f === "activas"
           ? F.activas.map(s => { const rs = pg.items.filter(r => r.state === s); return rs.length ? <section className="sec" key={s}><div className="sec-h">{STATE[s]}</div><div className="group res">{rs.map(r => <ResRow key={r.id} r={r} />)}</div></section> : null; })
           : <section className="sec"><div className="group res">{pg.items.map(r => <ResRow key={r.id} r={r} />)}</div></section>}
@@ -154,21 +162,23 @@ export function Huespedes() {
 /* ---------- TAREAS ---------- */
 export function Tareas() {
   const { S, role, me, openSheet } = useMC();
-  const [seg, setSeg] = useState("hoy"); const [area, setArea] = useState("todas"); const [who, setWho] = useState("todas");
+  const [seg, setSeg] = useState("hoy"); const [area, setArea] = useState("todas"); const [who, setWho] = useState("todas"); const [q, setQ] = useState("");
   const whoF = { todas: () => true, mias: t => me && t.who === me.id, libres: t => !t.who && !t.done };
   const all = myTasks(S, role).filter(whoF[who]);
   const segF = { hoy: t => !t.done && t.due <= TODAY, proximas: t => !t.done && t.due > TODAY, hechas: t => t.done };
   const showArea = can(role, "supervisar");
   let list = all.filter(segF[seg]); if (showArea && area !== "todas") list = list.filter(t => t.area === area);
+  const nq = norm(q.trim()); if (nq) list = list.filter(t => norm(t.title).includes(nq) || norm(AREAS[t.area]).includes(nq));
   list.sort((a, b) => a.due < b.due ? -1 : 1);
   const n = k => all.filter(segF[k]).length;
-  const pg = usePages(list, 12, `${seg}|${who}|${area}`); const top = useRef();
+  const pg = usePages(list, 12, `${seg}|${who}|${area}|${q}`); const top = useRef();
   return <>
     <Head title="Tareas" lead={role === "mantenimiento" ? "Lo que hay que arreglar o preparar. Toca una tarea para tomarla o ponerla en proceso." : "Toca una tarea para tomarla o ponerla en proceso, y el círculo cuando termines. Todo el equipo ve el avance."} />
+    <Buscar q={q} setQ={setQ} label="Buscar tarea" ph="Buscar tarea o área" />
     <Seg value={seg} onChange={setSeg} label="Cuándo" options={[["hoy", `Hoy · ${n("hoy")}`], ["proximas", `Próximas · ${n("proximas")}`], ["hechas", `Hechas · ${n("hechas")}`]]} />
     <div style={{ marginTop: 12 }}><Chips value={who} onChange={setWho} label="De quién" options={[["todas", "Todas"], ["mias", "Mías"], ["libres", "Sin asignar"]]} /></div>
     {showArea && <div style={{ marginTop: 8 }}><Chips value={area} onChange={setArea} label="Área" options={[["todas", "Todas"], ...AREAS_NUEVAS.map(k => [k, AREAS[k], <i className="dot" style={{ background: AREA_C[k] }} />])]} /></div>}
-    <section ref={top} key={`${seg}-${who}-${area}-${pg.page}`} className="sec swap"><div className="group">{list.length ? pg.items.map(t => <TaskRow key={t.id} t={t} />) : <Empty icon="check">{seg === "hechas" ? "Todavía no hay tareas hechas." : "Nada pendiente aquí."}</Empty>}</div></section>
+    <section ref={top} key={`${seg}-${who}-${area}-${pg.page}`} className="sec swap"><div className="group">{list.length ? pg.items.map(t => <TaskRow key={t.id} t={t} />) : <Empty icon={q.trim() ? "search" : "check"}>{q.trim() ? "No encontramos tareas con esa búsqueda." : seg === "hechas" ? "Todavía no hay tareas hechas." : "Nada pendiente aquí."}</Empty>}</div></section>
     <Pager pg={pg} anchor={top} />
     <div className="btns"><button className="btn plain press" onClick={() => openSheet("newTask")}><Icon n={role === "mantenimiento" ? "camera" : "plus"} />{role === "mantenimiento" ? "Reportar un daño" : "Nueva tarea"}</button></div>
   </>;
