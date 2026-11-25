@@ -113,6 +113,9 @@ svg.i.xl{width:30px;height:30px}
   .nb-left .back{display:none}
   .band{padding-bottom:70px}
   .lift{margin-top:-46px}
+  /* En PC el contenido usa el ancho disponible, no una columna angosta al centro */
+  .wrap,.nb{max-width:1280px;padding-left:40px;padding-right:40px}
+  .lead{max-width:72ch}
 }
 .side-brand{display:grid;gap:4px;padding:2px 10px 22px}
 .side-brand img{height:44px;width:auto}

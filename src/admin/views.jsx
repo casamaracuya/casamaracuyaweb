@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MenuStudio } from "./docs.jsx";
 import { histLine } from "./cobros.jsx";
 import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks, usePages, Pager } from "./ui.jsx";
-import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, SOLICITUD, ARCHIVO, cupo, RESPONDER_H, SEGUIR_D, horasDesde, ultimaActividad, pideSeguimiento, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
+import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, SOLICITUD, ARCHIVO, pasada, cupo, RESPONDER_H, SEGUIR_D, horasDesde, ultimaActividad, pideSeguimiento, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
 // Para buscar sin importar tildes ni mayúsculas.
@@ -20,7 +20,7 @@ export function Hoy() {
   const act = S.reservas;
   const enCasa = act.find(r => r.state === "casa");
   const nextIn = act.filter(r => ["confirmada","pre"].includes(r.state) && r.in >= TODAY).sort((a, b) => a.in < b.in ? -1 : 1)[0];
-  const nuevas = act.filter(r => r.state === "nueva"), pres = act.filter(r => r.state === "pre");
+  const nuevas = act.filter(r => r.state === "nueva" && !pasada(r)), pres = act.filter(r => r.state === "pre" && !pasada(r));
   const mt = myTasks(S, role).filter(t => t.due <= TODAY); const pend = mt.filter(t => !t.done).length;
   const m = monthStats(S, T0.getFullYear(), T0.getMonth());
   const G = id => S.guests[id] || {};
@@ -131,11 +131,13 @@ export const dupesOf = (S, r) => { const t = (S.guests[r.g] || {}).telNorm; if (
 const espera = h => h < 1 ? "hace menos de 1 hora" : h < 48 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} días`;
 function SolRow({ r }) {
   const { S } = useMC();
-  const c = SOLICITUD.includes(r.state) ? cupo(S, r.in, r.out, r.id, 1) : null; const d = dupesOf(S, r);
+  const old = pasada(r);
+  const c = SOLICITUD.includes(r.state) && !old ? cupo(S, r.in, r.out, r.id, 1) : null; const d = old ? [] : dupesOf(S, r);
   const h = horasDesde(r.created); const seg = pideSeguimiento(S, r);
   return <ResRow r={r} extra={<span style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", alignItems: "center" }}>
     <span className="canal"><Icon n={CANAL_ICON[r.channel] || "chat"} c="xs" />{r.channel}</span>
-    {r.state === "nueva" && <span className={`cupo ${h < 6 ? "si" : h < RESPONDER_H ? "no" : "tarde"}`}><Icon n="clock" c="xs" w="f" />Sin respuesta {espera(h)}</span>}
+    {old && <span className="cupo">La fecha de llegada ya pasó</span>}
+    {r.state === "nueva" && !old && <span className={`cupo ${h < 6 ? "si" : h < RESPONDER_H ? "no" : "tarde"}`}><Icon n="clock" c="xs" w="f" />Sin respuesta {espera(h)}</span>}
     {seg && <span className="cupo tarde"><Icon n="clock" c="xs" w="f" />Hacer seguimiento · {espera(horasDesde(ultimaActividad(S, r)))} sin novedad</span>}
     {c && (c.free ? <span className="cupo si"><Icon n="check" c="xs" w="b" />Hay cupo</span> : <span className="cupo no">Sin cupo{c.alt[0] ? ` · libre ${frange(c.alt[0].in, c.alt[0].out)}` : ""}</span>)}
     {d.length > 0 && <span className="cupo no">Posible duplicado</span>}
@@ -148,14 +150,14 @@ export function Solicitudes() {
   const [f, setF] = useState("activas"); const [q, setQ] = useState("");
   const hit = hitRes(S, q);
   // Cada solicitud cae en un solo grupo: las conversaciones quietas pasan a «Hacer seguimiento».
-  const grupo = r => r.state === "nueva" ? "responder" : r.state === "conversacion" ? (pideSeguimiento(S, r) ? "seguir" : "conversacion") : r.state === "pre" ? "pre" : ARCHIVO.includes(r.state) ? "archivo" : null;
+  const grupo = r => pasada(r) || ARCHIVO.includes(r.state) ? "archivo" : r.state === "nueva" ? "responder" : r.state === "conversacion" ? (pideSeguimiento(S, r) ? "seguir" : "conversacion") : r.state === "pre" ? "pre" : ARCHIVO.includes(r.state) ? "archivo" : null;
   const ACT = ["responder", "seguir", "conversacion", "pre"];
   const keys = f === "activas" ? ACT : [f];
   const list = S.reservas.filter(r => keys.includes(grupo(r)) && hit(r))
     // Por responder: la que más lleva esperando primero. Lo demás: por fecha de llegada.
     .sort((a, b) => f === "archivo" ? (a.created < b.created ? 1 : -1) : grupo(a) === "responder" && grupo(b) === "responder" ? a.created - b.created : (a.in < b.in ? -1 : 1));
   const cnt = k => S.reservas.filter(r => (k === "activas" ? ACT : [k]).includes(grupo(r))).length;
-  const tarde = S.reservas.filter(r => r.state === "nueva" && horasDesde(r.created) >= RESPONDER_H).length;
+  const tarde = S.reservas.filter(r => r.state === "nueva" && !pasada(r) && horasDesde(r.created) >= RESPONDER_H).length;
   const pg = usePages(list, 12, `${f}|${q}`); const top = useRef();
   return <>
     <Head title="Solicitudes" lead={`Lo que llega por la web, Instagram y WhatsApp. La meta: que ninguna se quede sin respuesta. Responder en menos de ${RESPONDER_H} horas y hacer seguimiento si una conversación lleva ${SEGUIR_D} días quieta.`}>
