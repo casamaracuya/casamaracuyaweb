@@ -91,6 +91,10 @@ const VIEWS = fs.readFileSync("src/admin/util.js", "utf8").match(/export const V
 fs.writeFileSync(path.join(DIST, "admin.html"), shell);
 // El comprobante (/comprobante?c=…): app vacía con código 200, para que el enlace del correo y de WhatsApp abra bien.
 fs.writeFileSync(path.join(DIST, "comprobante.html"), shell);
+// «Mi reserva» (/mi-reserva?c=…, /en/my-booking?c=…): igual, app vacía con código 200.
+fs.writeFileSync(path.join(DIST, "mi-reserva.html"), shell);
+fs.mkdirSync(path.join(DIST, "en"), { recursive: true });
+fs.writeFileSync(path.join(DIST, "en", "my-booking.html"), shell);
 fs.mkdirSync(path.join(DIST, "admin"), { recursive: true });
 VIEWS.forEach(v => fs.writeFileSync(path.join(DIST, "admin", `${v}.html`), shell));
 console.log(`✓ 404.html y el panel: admin.html + ${VIEWS.length} secciones (app vacía)`);

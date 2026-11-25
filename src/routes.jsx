@@ -15,6 +15,8 @@ export function AppRoutes({ C }) {
       <Route path="/normas" element={<C.Normas lang="es" />} />
       <Route path="/en/house-rules" element={<C.Normas lang="en" />} />
       <Route path="/comprobante" element={<C.Comprobante />} />
+      <Route path="/mi-reserva" element={<C.MiReserva lang="es" />} />
+      <Route path="/en/my-booking" element={<C.MiReserva lang="en" />} />
       <Route path="/en/*" element={<C.NotFound lang="en" />} />
       <Route path="*" element={<C.NotFound lang="es" />} />
     </Routes>

@@ -28,6 +28,7 @@ const C = {
   Privacy: lazy(() => import("./site/Privacy.jsx")),
   Normas: lazy(() => import("./site/Normas.jsx")),
   Comprobante: lazy(() => import("./site/Comprobante.jsx")),
+  MiReserva: lazy(() => import("./site/MiReserva.jsx")),
   NotFound: lazy(() => import("./site/NotFound.jsx"))
 };
 

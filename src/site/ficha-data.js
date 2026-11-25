@@ -9,6 +9,9 @@ export const OPCIONES = {
   motivo: [{ v: "Cumpleaños", en: "Birthday" }, { v: "Aniversario", en: "Anniversary" }, { v: "Descanso", en: "Rest" }, { v: "Kitesurf", en: "Kitesurfing" }]
 };
 
+// Versión de las normas: queda guardada con cada firma del portal (0020). Si cambian las normas, cámbiala.
+export const NORMAS_VERSION = "2026-11-24";
+
 export const FICHA_PDF = { es: "/ficha-registro-casa-maracuya.pdf", en: "/guest-registration-casa-maracuya.pdf" };
 
 export const FICHA = {

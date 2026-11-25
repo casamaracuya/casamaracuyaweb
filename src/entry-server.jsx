@@ -8,8 +8,8 @@ import Privacy from "./site/Privacy.jsx";
 import Normas from "./site/Normas.jsx";
 import NotFound from "./site/NotFound.jsx";
 
-// El comprobante solo existe en el navegador (depende del enlace privado de cada reserva).
-const C = { Site, Privacy, Normas, NotFound, Comprobante: () => null, AdminApp: () => null };
+// El comprobante y «Mi reserva» solo existen en el navegador (dependen del enlace privado de cada reserva).
+const C = { Site, Privacy, Normas, NotFound, Comprobante: () => null, MiReserva: () => null, AdminApp: () => null };
 
 export function render(url) {
   return renderToString(

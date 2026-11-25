@@ -45,7 +45,8 @@ async function mergePrivate(S) {
   const docs = {}; (p.acompanantes || []).forEach(x => { docs[x.id] = x.documento || ""; });
   Object.values(S.guests).forEach(g => g.companions.forEach(c => { c.doc = docs[c.id] || ""; }));
   const rs = {}; (p.reservas || []).forEach(x => { rs[x.id] = x; });
-  S.reservas.forEach(r => { const x = rs[r.id]; if (!x) return; r.ficha.people = x.ocupantes || []; r.receiptToken = x.comprobante_token || null; r.receiptTo = x.comprobante_correo || ""; });
+  S.reservas.forEach(r => { const x = rs[r.id]; if (!x) return; r.ficha.people = x.ocupantes || []; r.receiptToken = x.comprobante_token || null; r.receiptTo = x.comprobante_correo || "";
+    r.emergency = x.emergencia && x.emergencia.nombre ? { name: x.emergencia.nombre, rel: x.emergencia.parentesco || "", phone: x.emergencia.telefono || "" } : null; });
 }
 
 // Fotos del celular: se reducen a 1600 px y JPG antes de subirlas (de ~4 MB a ~300 KB). PDF y otros, tal cual.
@@ -136,6 +137,11 @@ const real = {
     // Código de reserva CM-XXXXXX (0017). Aparte, para que el panel siga andando si la migración aún no se corrió.
     const lo = await supabase.from("reservas").select("id,localizador,cotizacion_id");
     if (!lo.error) { const m = {}; lo.data.forEach(x => { m[x.id] = x; }); S.reservas.forEach(r => { r.loc = m[r.id]?.localizador || ""; r.quoteId = m[r.id]?.cotizacion_id || null; }); }
+    // Portal del cliente «Mi reserva» (0020): de dónde vino la ficha y el envío del acceso. Aparte, por si aún no se corrió.
+    const po = await supabase.from("reservas").select("id,ficha_origen,ficha_partes,acceso_enviado,acceso_veces,acceso_por");
+    if (!po.error) { const m = {}; po.data.forEach(x => { m[x.id] = x; });
+      S.reservas.forEach(r => { const x = m[r.id]; if (!x) return; r.ficha.origin = x.ficha_origen || ""; r.ficha.parts = x.ficha_partes || [];
+        r.access = { at: ms(x.acceso_enviado), times: x.acceso_veces || 0, by: x.acceso_por }; }); }
     // La conversación de cada solicitud (0019). Aparte, por si la migración aún no se corrió.
     const cv = await supabase.from("conversaciones").select("*").order("creada").limit(3000);
     S.notes = cv.error ? [] : cv.data.map(n => ({ id: n.id, res: n.reserva_id, text: n.texto, by: n.autor, at: ms(n.creada) }));
@@ -171,6 +177,9 @@ const real = {
   async guardarCotizacion(_S, p) { return ok(await supabase.rpc("guardar_cotizacion", { p })); },
   async resolverAprobacion(_S, id, aprobar, nota = "") { return ok(await supabase.rpc("resolver_aprobacion", { p_id: id, p_aprobar: aprobar, p_nota: nota })); },
   // Historial del cliente (0017 parte 7). La base de datos solo se lo entrega a Dirección.
+  // Portal «Mi reserva» (0020): anota que se envió el acceso al cliente; la firma que hizo el cliente.
+  async registrarAcceso(_S, id) { return ok(await supabase.rpc("registrar_acceso", { p_reserva: id })); },
+  async verFirma(_S, id) { return ok(await supabase.rpc("ver_firma", { p_reserva: id })); },
   async historial(_S, guestId) { return ok(await supabase.from("bitacora").select("*").eq("huesped_id", guestId).order("cuando", { ascending: false }).limit(400)); },
   async bitacoraReciente(_S, days = 7) { const d = new Date(Date.now() - days * 864e5).toISOString(); return ok(await supabase.from("bitacora").select("*").gte("cuando", d).order("cuando", { ascending: false }).limit(800)); },
   // Nota de la conversación con el cliente (0019). Queda fija: no se edita ni se borra.
@@ -261,6 +270,25 @@ export async function nochesOcupadas(from, to) {
 }
 
 /* ===================== Comprobante (enlace privado, solo lectura) ===================== */
+// Portal del huésped (0020): entra con el código CM- y el apellido del titular.
+// Devuelve {ok:true, reserva, ficha} o {ok:false, error}.
+export async function portalEntrar(codigo, apellido) {
+  if (!supabase) throw new Error("Sin conexión con la base de datos");
+  return ok(await supabase.rpc("portal_entrar", { p_codigo: codigo, p_apellido: apellido }));
+}
+
+// Guarda una parte de la ficha (1 a 5). Devuelve lo mismo que portalEntrar, o {ok:false, error}.
+export async function portalGuardarFicha(codigo, apellido, parte, datos) {
+  if (!supabase) throw new Error("Sin conexión con la base de datos");
+  return ok(await supabase.rpc("portal_guardar_ficha", { p_codigo: codigo, p_apellido: apellido, p_parte: parte, p: datos }));
+}
+
+// Firma la ficha (normas + firma con el dedo). Devuelve lo mismo que portalEntrar, o {ok:false, error}.
+export async function portalFirmar(codigo, apellido, datos) {
+  if (!supabase) throw new Error("Sin conexión con la base de datos");
+  return ok(await supabase.rpc("portal_firmar", { p_codigo: codigo, p_apellido: apellido, p: datos }));
+}
+
 export async function leerComprobante(token) {
   if (!supabase) throw new Error("Sin conexión con la base de datos");
   return ok(await supabase.rpc("leer_comprobante", { p_token: token }));
