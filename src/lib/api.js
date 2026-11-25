@@ -188,6 +188,12 @@ const real = {
   async verComprobante(_S, path) { const { data } = await supabase.storage.from("comprobantes").createSignedUrl(path, 600); return data?.signedUrl || null; },
   async fijarTotal(_S, id, total, concept) { ok(await supabase.rpc("fijar_total", { p_reserva: id, p_total: total, p_concepto: concept })); },
   // Correo con el comprobante (función enviar-comprobante en Supabase). Devuelve { ok, to } o { sinCorreo: true }.
+  // El acceso a «Mi reserva» por correo (función enviar-acceso, 0020). {ok, to} o {sinCorreo}.
+  async enviarAcceso(_S, id) {
+    const { data, error } = await supabase.functions.invoke("enviar-acceso", { body: { reserva: id } });
+    if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch { /* sin detalle */ } throw new Error(m); }
+    return data;
+  },
   async enviarComprobante(_S, id) {
     const { data, error } = await supabase.functions.invoke("enviar-comprobante", { body: { reserva: id } });
     if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch { /* sin detalle */ } throw new Error(m); }

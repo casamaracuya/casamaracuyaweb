@@ -113,6 +113,17 @@ export const horasDesde = t => t ? (Date.now() - t) / 36e5 : 0;
 export const ultimaActividad = (S, r) => Math.max(r.created || 0, ...(S.notes || []).filter(n => n.res === r.id).map(n => n.at || 0));
 // Una solicitud cuya llegada ya pasó no se responde ni se sigue: va al archivo (0019 la archiva sola en la base).
 export const pasada = r => SOLICITUD.includes(r.state) && r.in < TODAY;
+// Portal «Mi reserva» (0020): lo que Recepción no puede olvidar de cada reserva pagada que viene.
+//   «enviar»: pagó y todavía no se le envió el acceso.
+//   «ficha»:  se le envió, faltan 3 días o menos para llegar y no ha firmado la ficha.
+// Si la 0020 no se ha corrido (r.access no existe), no avisa nada.
+export const FICHA_ANTES_D = 3;
+export const portalPendiente = r => {
+  if (!r.access || !r.loc || r.state !== "confirmada" || r.in < TODAY || r.ficha?.signed) return null;
+  if (!r.access.times) return "enviar";
+  if (diff(TODAY, r.in) <= FICHA_ANTES_D) return "ficha";
+  return null;
+};
 export const pideSeguimiento = (S, r) => r.state === "conversacion" && !pasada(r) && horasDesde(ultimaActividad(S, r)) >= SEGUIR_D * 24;
 
 // Cupo: ¿están libres esas noches? Si no, las ventanas libres más cercanas con las mismas noches.

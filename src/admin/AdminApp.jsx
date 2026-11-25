@@ -8,7 +8,7 @@ import { Tour, tourSeen } from "./Tour.jsx";
 import { Ctx, Icon } from "./ui.jsx";
 import { VIEW_CMP } from "./views.jsx";
 import { SHEETS } from "./sheets.jsx";
-import { ROLES, VIEWS, TODAY, can, pasada } from "./util.js";
+import { ROLES, VIEWS, TODAY, can, pasada, portalPendiente } from "./util.js";
 
 const ROLE_KEY = "mc-role";
 const getSaved = () => { try { return localStorage.getItem(ROLE_KEY); } catch { return null; } };
@@ -108,7 +108,7 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
     catch (e) { if (!opt.quiet) toast(e.message); await reload(); return e.message; }
   }, [bound, reload, toast]);
 
-  const badge = v => v === "solicitudes" ? S.reservas.filter(r => r.state === "nueva" && !pasada(r)).length : v === "tareas" ? S.tasks.filter(t => t.area === role && !t.done && t.due <= TODAY).length : 0;
+  const badge = v => v === "reservas" && ["direccion","admin","recepcion"].includes(role) ? S.reservas.filter(r => portalPendiente(r)).length : v === "solicitudes" ? S.reservas.filter(r => r.state === "nueva" && !pasada(r)).length : v === "tareas" ? S.tasks.filter(t => t.area === role && !t.done && t.due <= TODAY).length : 0;
   const canMove = can(role, "vender"), canReceive = can(role, "recibir"), canMoney = !!R.money;
   // Registrar pagos: quien ve dinero y Recepción, que cobra lo que acuerda por WhatsApp (0017).
   const canPay = canMoney || role === "recepcion";
