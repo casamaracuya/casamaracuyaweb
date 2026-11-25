@@ -111,7 +111,9 @@ export const RESPONDER_H = 12, SEGUIR_D = 2, CERRAR_D = 5;
 export const horasDesde = t => t ? (Date.now() - t) / 36e5 : 0;
 // Lo último que pasó con la solicitud: su nota más reciente o, si no hay, cuándo llegó.
 export const ultimaActividad = (S, r) => Math.max(r.created || 0, ...(S.notes || []).filter(n => n.res === r.id).map(n => n.at || 0));
-export const pideSeguimiento = (S, r) => r.state === "conversacion" && horasDesde(ultimaActividad(S, r)) >= SEGUIR_D * 24;
+// Una solicitud cuya llegada ya pasó no se responde ni se sigue: va al archivo (0019 la archiva sola en la base).
+export const pasada = r => SOLICITUD.includes(r.state) && r.in < TODAY;
+export const pideSeguimiento = (S, r) => r.state === "conversacion" && !pasada(r) && horasDesde(ultimaActividad(S, r)) >= SEGUIR_D * 24;
 
 // Cupo: ¿están libres esas noches? Si no, las ventanas libres más cercanas con las mismas noches.
 // Ocupan las apartadas, confirmadas y en casa, y los bloqueos de la casa.
