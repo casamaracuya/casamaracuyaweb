@@ -171,7 +171,7 @@ button.row:active,a.row:active{background:var(--fill)}
 .pill.confirmada{background:var(--s-confirmada-bg);color:var(--s-confirmada-ink)}
 .pill.casa{background:var(--s-casa-bg);color:var(--s-casa-ink)}
 .pill.finalizada{background:var(--s-finalizada-bg);color:var(--s-finalizada-ink)}
-.pill.rechazada,.pill.vencida,.pill.cancelada{background:var(--s-salida-bg);color:var(--s-salida-ink)}
+.pill.rechazada,.pill.no_siguio,.pill.vencida,.pill.cancelada{background:var(--s-salida-bg);color:var(--s-salida-ink)}
 .pill.light{background:var(--blanco);color:var(--alga)}
 .tag{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:10px;font-size:13px;font-weight:700;background:var(--fill);color:var(--ink2)}
 .tag.warn{background:var(--danger-bg);color:var(--danger)}
@@ -295,6 +295,20 @@ button.row:active,a.row:active{background:var(--fill)}
 .quote .q-f{margin:0;font-size:13px;color:var(--ink2)}
 .hist .row{align-items:flex-start}.hist .row .st{display:block}
 .hist .row.raro{background:var(--s-pre-bg)}
+.cupo{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;width:fit-content}
+.cupo.si{background:var(--good-bg);color:var(--ink)}.cupo.no{background:var(--s-pre-bg);color:var(--ink)}.cupo.tarde{background:rgba(190,84,56,.2);color:var(--ink)}
+.canal{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--ink2)}
+.cupo-box{margin-top:10px;padding:14px 16px;border-radius:16px;display:grid;gap:8px}
+.cupo-box.si{background:var(--good-bg)}.cupo-box.no{background:var(--s-pre-bg)}
+.cupo-alt{display:flex;flex-wrap:wrap;gap:8px}
+.cupo-alt button{font:inherit;font-weight:700;font-size:14px;border:1.5px solid var(--ink);background:var(--paper);border-radius:12px;padding:8px 12px;min-height:44px;cursor:pointer}
+.chat{display:grid;gap:8px}
+.chat .msg{background:var(--paper);border-radius:14px 14px 14px 4px;padding:10px 12px;max-width:92%}
+.chat .msg.mine{justify-self:end;border-radius:14px 14px 4px 14px;background:var(--good-bg)}
+.chat .msg p{margin:0;white-space:pre-wrap;line-height:1.45}
+.chat .msg small{display:block;margin-top:4px;color:var(--ink2);font-size:12px}
+.chat-in{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+.chat-in textarea{flex:1;background:var(--paper);border-radius:14px;padding:10px 12px;min-height:44px}
 .countdown{display:flex;gap:10px;align-items:center;margin-top:12px;padding:13px 16px;border-radius:16px;background:var(--s-pre-bg);color:var(--s-pre-ink);font-weight:700;font-size:14px}
 
 /* Calendario */

@@ -10,7 +10,8 @@ const markSeen = uid => { try { localStorage.setItem(KEY + uid, "1"); } catch { 
 
 const VIEW_DESC = {
   hoy: "Lo que pasa hoy y lo que necesita tu atención.",
-  reservas: "Solicitudes y reservas, ordenadas por estado.",
+  solicitudes: "Lo que llega por la web, WhatsApp e Instagram: conversación, cupo y cotización.",
+  reservas: "Las reservas pagadas, cada una con su código CM-.",
   calendario: "Qué noches están ocupadas, apartadas o bloqueadas.",
   huespedes: "Fichas con alergias, gustos, familia y cumpleaños.",
   tareas: "Lo pendiente de tu área: tómalas y márcalas.",
