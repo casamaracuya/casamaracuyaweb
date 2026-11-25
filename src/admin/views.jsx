@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MenuStudio } from "./docs.jsx";
 import { histLine } from "./cobros.jsx";
 import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks, usePages, Pager } from "./ui.jsx";
-import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
+import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, SOLICITUD, ARCHIVO, cupo, RESPONDER_H, SEGUIR_D, horasDesde, ultimaActividad, pideSeguimiento, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
 // Para buscar sin importar tildes ni mayúsculas.
@@ -26,8 +26,8 @@ export function Hoy() {
   const G = id => S.guests[id] || {};
   const st = (n, l, to) => <L className="stat press" to={to}><b>{n}</b><span>{l}</span></L>;
   let stats = null;
-  if (role === "direccion") stats = <>{st(<>{m.occ}<small>%</small></>, `ocupación de ${MESL[T0.getMonth()]}`, "reportes")}{st(money(m.cash), "cobrado este mes", "pagos")}{st(nuevas.length, nuevas.length === 1 ? "solicitud nueva" : "solicitudes nuevas", "reservas")}</>;
-  if (role === "recepcion") stats = <>{st(nuevas.length, "sin responder", "reservas")}{st(pres.length, "esperan el pago", "reservas")}{st(act.filter(r => r.state === "casa" && r.out === TODAY).length, "salen hoy", "reservas")}</>;
+  if (role === "direccion") stats = <>{st(<>{m.occ}<small>%</small></>, `ocupación de ${MESL[T0.getMonth()]}`, "reportes")}{st(money(m.cash), "cobrado este mes", "pagos")}{st(nuevas.length, nuevas.length === 1 ? "solicitud nueva" : "solicitudes nuevas", "solicitudes")}</>;
+  if (role === "recepcion") stats = <>{st(nuevas.length, "sin responder", "solicitudes")}{st(pres.length, "esperan el pago", "solicitudes")}{st(act.filter(r => r.state === "casa" && r.out === TODAY).length, "salen hoy", "reservas")}</>;
   if (role === "admin") { const yr = S.payments.filter(p => p.date.startsWith(String(T0.getFullYear()))).reduce((s, p) => s + p.amount, 0); stats = <>{st(money(m.cash), "cobrado este mes", "pagos")}{st(money(yr), `ingresos de ${T0.getFullYear()}`, "reportes")}{st(pres.length, "esperan el pago", "pagos")}</>; }
   if (role === "cocina") { const al = act.filter(r => HOLDS.includes(r.state) && r.out >= TODAY).flatMap(r => G(r.g).allergies || []); stats = <>{st(enCasa ? enCasa.people : 0, "personas en casa", "cocina")}{st(al.length, al.length === 1 ? "alergia a cuidar" : "alergias a cuidar", "cocina")}{st(S.shopping.filter(s => !s.done).length, "cosas por comprar", "cocina")}</>; }
   if (role === "limpieza") { const ready = S.rooms.filter(x => ["lista","revisada"].includes(x.state)).length; stats = <>{st(<>{ready}<small>/{S.rooms.length}</small></>, "espacios listos", "casa")}{st(S.rooms.length - ready, "por limpiar", "casa")}{st(pend, "tareas de hoy", "tareas")}</>; }
@@ -53,7 +53,10 @@ export function Hoy() {
 
   const al = []; const see = x => x.includes(role);
   const res = id => () => openSheet("res", { id });
-  if (see(["direccion","recepcion"])) nuevas.forEach(r => al.push({ i: "chat", c: "var(--s-nueva-bg)", k: "var(--s-nueva-ink)", t: `${G(r.g).name} pidió fechas`, s: `${frange(r.in, r.out)} · ${r.people} pers. · ${ago(r.created)}`, on: res(r.id) }));
+  // Solicitudes sin respuesta: la que más espera primero; en rojo si pasó de 12 horas (0019).
+  if (see(["direccion","recepcion","admin"])) nuevas.slice().sort((a, b) => a.created - b.created).forEach(r => { const h = horasDesde(r.created), late = h >= RESPONDER_H;
+    al.push({ i: late ? "alert" : "chat", c: late ? "rgba(190,84,56,.2)" : "var(--s-nueva-bg)", k: late ? "var(--ink)" : "var(--s-nueva-ink)", t: late ? `${G(r.g).name}: ${Math.floor(h)} h sin respuesta` : `${G(r.g).name} pidió fechas`, s: `${frange(r.in, r.out)} · ${r.people} pers. · llegó por ${r.channel}`, on: res(r.id) }); });
+  if (see(["direccion","recepcion","admin"])) S.reservas.filter(r => pideSeguimiento(S, r)).forEach(r => al.push({ i: "clock", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `Hacer seguimiento: ${G(r.g).name}`, s: `${Math.floor(horasDesde(ultimaActividad(S, r)) / 24)} días sin novedad · ${frange(r.in, r.out)}`, on: res(r.id) }));
   if (see(["direccion","admin"])) (S.approvals || []).filter(a => a.state === "pendiente").forEach(a => { const r = S.reservas.find(x => x.id === a.res);
     al.push({ i: "alert", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `Cobro por aprobar: ${r ? G(r.g).name : "reserva"}`, s: a.detail, on: () => openSheet("aprob", { id: a.id }) }); });
   if (see(["direccion","recepcion","admin"])) pres.forEach(r => al.push({ i: "clock", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `${G(r.g).name}: las fechas apartadas vencen en ${left(r.hold)}`, s: "Si no paga, las fechas se liberan solas", on: res(r.id) }));
@@ -89,29 +92,85 @@ export function Hoy() {
 }
 
 /* ---------- RESERVAS ---------- */
-const F = { activas: ["nueva","conversacion","pre","confirmada","casa"], nueva: ["nueva"], conversacion: ["conversacion"], pre: ["pre"], confirmada: ["confirmada"], casa: ["casa"], cerradas: ["finalizada","rechazada","vencida","cancelada"] };
-const FL = { activas: "Activas", nueva: "Nuevas", conversacion: "En conversación", pre: "Pre-reservadas", confirmada: "Confirmadas", casa: "En casa", cerradas: "Cerradas" };
+// Reservas: solo las pagadas, con su código CM- (0019). Lo que no está pagado vive en Solicitudes.
+const F = { proximas: ["confirmada","casa"], confirmada: ["confirmada"], casa: ["casa"], finalizada: ["finalizada"], cancelada: ["cancelada"] };
+const FL = { proximas: "Activas", confirmada: "Confirmadas", casa: "En casa", finalizada: "Salieron", cancelada: "Canceladas" };
+const hitRes = (S, q) => { const nq = norm(q.trim()), dq = q.replace(/\D/g, ""), qc = q.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return r => { if (!nq) return true; const g = S.guests[r.g] || {};
+    return norm(g.name).includes(nq) || norm(r.code).includes(nq) || (qc.length >= 3 && (r.loc || "").replace("-", "").includes(qc)) || norm(r.channel).includes(nq) || (dq.length >= 6 && (g.phone || "").replace(/\D/g, "").includes(dq)); }; };
 export function Reservas() {
-  const { S } = useMC();
-  const [f, setF] = useState("activas"); const [q, setQ] = useState("");
+  const { S, openSheet, canPay } = useMC();
+  const [f, setF] = useState("proximas"); const [q, setQ] = useState("");
   const cnt = k => S.reservas.filter(r => F[k].includes(r.state)).length;
-  const nq = norm(q.trim()), dq = q.replace(/\D/g, "");
-  const hit = r => { if (!nq) return true; const g = S.guests[r.g] || {};
-    const qc = q.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    return norm(g.name).includes(nq) || norm(r.code).includes(nq) || (qc.length >= 3 && (r.loc || "").replace("-", "").includes(qc)) || norm(r.channel).includes(nq) || (dq.length >= 6 && (g.phone || "").replace(/\D/g, "").includes(dq)); };
-  const list = S.reservas.filter(r => F[f].includes(r.state) && hit(r)).sort((a, b) => f === "cerradas" ? (a.in < b.in ? 1 : -1) : (FLOW.indexOf(a.state) - FLOW.indexOf(b.state) || (a.in < b.in ? -1 : 1)));
+  const hit = hitRes(S, q);
+  const old = ["finalizada","cancelada"].includes(f);
+  const list = S.reservas.filter(r => F[f].includes(r.state) && hit(r)).sort((a, b) => old ? (a.in < b.in ? 1 : -1) : (FLOW.indexOf(b.state) - FLOW.indexOf(a.state) || (a.in < b.in ? -1 : 1)));
   const pg = usePages(list, 10, `${f}|${q}`); const top = useRef();
   return <>
-    <Head title="Reservas" lead="Toca una reserva para verla y moverla al siguiente paso. Una reserva solo está confirmada cuando entra el pago completo." />
+    <Head title="Reservas" lead="Las reservas pagadas, cada una con su código. Lo que todavía se está conversando está en Solicitudes.">
+      {canPay && <div className="btns" style={{ marginTop: 12 }}><button className="btn press" onClick={() => openSheet("paid")}><Icon n="plus" w="b" />Nueva reserva</button></div>}
+    </Head>
     <Buscar q={q} setQ={setQ} label="Buscar reserva" ph="Buscar por nombre, código o teléfono" />
     <Chips value={f} onChange={setF} label="Filtrar por estado" options={Object.keys(F).map(k => [k, <>{FL[k]} <span className="n">{cnt(k)}</span></>])} />
     <div ref={top} key={`${f}-${pg.page}`} className="swap">
-      {!list.length ? <section className="sec"><div className="group res"><Empty icon={q.trim() ? "search" : "reservas"}>{q.trim() ? "No encontramos reservas con esa búsqueda." : "No hay reservas en este estado."}</Empty></div></section>
-        : f === "activas"
-          ? F.activas.map(s => { const rs = pg.items.filter(r => r.state === s); return rs.length ? <section className="sec" key={s}><div className="sec-h">{STATE[s]}</div><div className="group res">{rs.map(r => <ResRow key={r.id} r={r} />)}</div></section> : null; })
+      {!list.length ? <section className="sec"><div className="group res"><Empty icon={q.trim() ? "search" : "reservas"}>{q.trim() ? "No encontramos reservas con esa búsqueda." : "No hay reservas aquí."}</Empty></div></section>
+        : f === "proximas"
+          ? F.proximas.slice().reverse().map(s => { const rs = pg.items.filter(r => r.state === s); return rs.length ? <section className="sec" key={s}><div className="sec-h">{STATE[s]}</div><div className="group res">{rs.map(r => <ResRow key={r.id} r={r} />)}</div></section> : null; })
           : <section className="sec"><div className="group res">{pg.items.map(r => <ResRow key={r.id} r={r} />)}</div></section>}
     </div>
     <Pager pg={pg} anchor={top} />
+  </>;
+}
+
+/* ---------- SOLICITUDES (0019): lo que llega y se conversa, antes del pago ---------- */
+const CANAL_ICON = { WhatsApp: "chat", Instagram: "heart", Web: "search", Google: "search", "Recomendación": "huespedes" };
+// La misma persona (teléfono) con fechas que se cruzan: posible duplicado.
+export const dupesOf = (S, r) => { const t = (S.guests[r.g] || {}).telNorm; if (!t) return [];
+  return S.reservas.filter(x => x.id !== r.id && SOLICITUD.includes(x.state) && (S.guests[x.g] || {}).telNorm === t && x.in < addDays(r.out, 3) && addDays(r.in, -3) < x.out); };
+// Cuánto lleva esperando: verde hasta 6 h, amarillo hasta 12 h, rojo después (la meta es responder en 12 h).
+const espera = h => h < 1 ? "hace menos de 1 hora" : h < 48 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} días`;
+function SolRow({ r }) {
+  const { S } = useMC();
+  const c = SOLICITUD.includes(r.state) ? cupo(S, r.in, r.out, r.id, 1) : null; const d = dupesOf(S, r);
+  const h = horasDesde(r.created); const seg = pideSeguimiento(S, r);
+  return <ResRow r={r} extra={<span style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", alignItems: "center" }}>
+    <span className="canal"><Icon n={CANAL_ICON[r.channel] || "chat"} c="xs" />{r.channel}</span>
+    {r.state === "nueva" && <span className={`cupo ${h < 6 ? "si" : h < RESPONDER_H ? "no" : "tarde"}`}><Icon n="clock" c="xs" w="f" />Sin respuesta {espera(h)}</span>}
+    {seg && <span className="cupo tarde"><Icon n="clock" c="xs" w="f" />Hacer seguimiento · {espera(horasDesde(ultimaActividad(S, r)))} sin novedad</span>}
+    {c && (c.free ? <span className="cupo si"><Icon n="check" c="xs" w="b" />Hay cupo</span> : <span className="cupo no">Sin cupo{c.alt[0] ? ` · libre ${frange(c.alt[0].in, c.alt[0].out)}` : ""}</span>)}
+    {d.length > 0 && <span className="cupo no">Posible duplicado</span>}
+  </span>} />;
+}
+const SG = { responder: ["nueva"], seguir: ["conversacion"], conversacion: ["conversacion"], pre: ["pre"], archivo: ARCHIVO };
+const SGL = { responder: "Por responder", seguir: "Hacer seguimiento", conversacion: "En conversación", pre: "Apartadas", archivo: "Archivo" };
+export function Solicitudes() {
+  const { S, openSheet, canMove } = useMC();
+  const [f, setF] = useState("activas"); const [q, setQ] = useState("");
+  const hit = hitRes(S, q);
+  // Cada solicitud cae en un solo grupo: las conversaciones quietas pasan a «Hacer seguimiento».
+  const grupo = r => r.state === "nueva" ? "responder" : r.state === "conversacion" ? (pideSeguimiento(S, r) ? "seguir" : "conversacion") : r.state === "pre" ? "pre" : ARCHIVO.includes(r.state) ? "archivo" : null;
+  const ACT = ["responder", "seguir", "conversacion", "pre"];
+  const keys = f === "activas" ? ACT : [f];
+  const list = S.reservas.filter(r => keys.includes(grupo(r)) && hit(r))
+    // Por responder: la que más lleva esperando primero. Lo demás: por fecha de llegada.
+    .sort((a, b) => f === "archivo" ? (a.created < b.created ? 1 : -1) : grupo(a) === "responder" && grupo(b) === "responder" ? a.created - b.created : (a.in < b.in ? -1 : 1));
+  const cnt = k => S.reservas.filter(r => (k === "activas" ? ACT : [k]).includes(grupo(r))).length;
+  const tarde = S.reservas.filter(r => r.state === "nueva" && horasDesde(r.created) >= RESPONDER_H).length;
+  const pg = usePages(list, 12, `${f}|${q}`); const top = useRef();
+  return <>
+    <Head title="Solicitudes" lead={`Lo que llega por la web, Instagram y WhatsApp. La meta: que ninguna se quede sin respuesta. Responder en menos de ${RESPONDER_H} horas y hacer seguimiento si una conversación lleva ${SEGUIR_D} días quieta.`}>
+      <div className="stats"><div className="stat"><b>{cnt("responder")}</b><span>por responder</span></div><div className="stat"><b>{tarde}</b><span>llevan más de {RESPONDER_H} h</span></div><div className="stat"><b>{cnt("seguir")}</b><span>para seguimiento</span></div></div>
+    </Head>
+    <Buscar q={q} setQ={setQ} label="Buscar solicitud" ph="Buscar por nombre, teléfono o canal" />
+    <Chips value={f} onChange={setF} label="Filtrar" options={[["activas", <>Activas <span className="n">{cnt("activas")}</span></>], ...Object.keys(SG).map(k => [k, <>{SGL[k]} <span className="n">{cnt(k)}</span></>])]} />
+    <div ref={top} key={`${f}-${pg.page}`} className="swap">
+      {!list.length ? <section className="sec"><div className="group res"><Empty icon={q.trim() ? "search" : "check"}>{q.trim() ? "No encontramos solicitudes con esa búsqueda." : f === "responder" || f === "activas" ? "Todo respondido. Bien hecho." : "No hay solicitudes aquí."}</Empty></div></section>
+        : f === "activas"
+          ? ACT.map(k => { const rs = pg.items.filter(r => grupo(r) === k); return rs.length ? <section className="sec" key={k}><div className="sec-h">{SGL[k]}</div><div className="group res">{rs.map(r => <SolRow key={r.id} r={r} />)}</div></section> : null; })
+          : <section className="sec"><div className="group res">{pg.items.map(r => <SolRow key={r.id} r={r} />)}</div></section>}
+    </div>
+    <Pager pg={pg} anchor={top} />
+    {canMove && <div className="btns" style={{ marginTop: 18 }}><button className="btn plain small press" onClick={() => openSheet("newRes")}><Icon n="plus" w="b" />Anotar una solicitud a mano</button></div>}
   </>;
 }
 
@@ -452,4 +511,4 @@ export function Control() {
   </>;
 }
 
-export const VIEW_CMP = { control: Control, hoy: Hoy, reservas: Reservas, calendario: Calendario, huespedes: Huespedes, tareas: Tareas, cocina: Cocina, casa: Casa, pagos: Pagos, tarifas: Tarifas, reportes: Reportes, equipo: Equipo, mas: Mas };
+export const VIEW_CMP = { control: Control, solicitudes: Solicitudes, hoy: Hoy, reservas: Reservas, calendario: Calendario, huespedes: Huespedes, tareas: Tareas, cocina: Cocina, casa: Casa, pagos: Pagos, tarifas: Tarifas, reportes: Reportes, equipo: Equipo, mas: Mas };

@@ -136,6 +136,9 @@ const real = {
     // Código de reserva CM-XXXXXX (0017). Aparte, para que el panel siga andando si la migración aún no se corrió.
     const lo = await supabase.from("reservas").select("id,localizador,cotizacion_id");
     if (!lo.error) { const m = {}; lo.data.forEach(x => { m[x.id] = x; }); S.reservas.forEach(r => { r.loc = m[r.id]?.localizador || ""; r.quoteId = m[r.id]?.cotizacion_id || null; }); }
+    // La conversación de cada solicitud (0019). Aparte, por si la migración aún no se corrió.
+    const cv = await supabase.from("conversaciones").select("*").order("creada").limit(3000);
+    S.notes = cv.error ? [] : cv.data.map(n => ({ id: n.id, res: n.reserva_id, text: n.texto, by: n.autor, at: ms(n.creada) }));
     // Cobros en espera de aprobación (0017 parte 6).
     const ap = await supabase.from("aprobaciones").select("*").order("pedida_en", { ascending: false }).limit(300);
     S.approvals = ap.error ? [] : ap.data.map(a => ({ id: a.id, res: a.reserva_id, quoteId: a.cotizacion_id, pay: a.pago || {}, diffs: a.diferencias || [], detail: a.detalle, reason: a.motivo,
@@ -145,7 +148,7 @@ const real = {
   subscribe(onChange) {
     let t; const ping = () => { clearTimeout(t); t = setTimeout(onChange, 400); };
     const ch = supabase.channel("cambios");
-    ["reservas","tareas","habitaciones","exteriores","bloqueos","pagos","compras","menus","huespedes","acompanantes","auditorias"].forEach(table =>
+    ["reservas","tareas","habitaciones","exteriores","bloqueos","pagos","compras","menus","huespedes","acompanantes","auditorias","cotizaciones","aprobaciones","conversaciones"].forEach(table =>
       ch.on("postgres_changes", { event: "*", schema: "public", table }, ping));
     ch.subscribe();
     return () => supabase.removeChannel(ch);
@@ -170,6 +173,9 @@ const real = {
   // Historial del cliente (0017 parte 7). La base de datos solo se lo entrega a Dirección.
   async historial(_S, guestId) { return ok(await supabase.from("bitacora").select("*").eq("huesped_id", guestId).order("cuando", { ascending: false }).limit(400)); },
   async bitacoraReciente(_S, days = 7) { const d = new Date(Date.now() - days * 864e5).toISOString(); return ok(await supabase.from("bitacora").select("*").gte("cuando", d).order("cuando", { ascending: false }).limit(800)); },
+  // Nota de la conversación con el cliente (0019). Queda fija: no se edita ni se borra.
+  async anotar(_S, resId, texto) { ok(await supabase.from("conversaciones").insert({ reserva_id: resId, texto, autor: await myId() })); },
+  async cambiarIdioma(_S, id, idioma) { ok(await supabase.rpc("cambiar_idioma", { p_reserva: id, p_idioma: idioma })); },
   async verComprobante(_S, path) { const { data } = await supabase.storage.from("comprobantes").createSignedUrl(path, 600); return data?.signedUrl || null; },
   async fijarTotal(_S, id, total, concept) { ok(await supabase.rpc("fijar_total", { p_reserva: id, p_total: total, p_concepto: concept })); },
   // Correo con el comprobante (función enviar-comprobante en Supabase). Devuelve { ok, to } o { sinCorreo: true }.

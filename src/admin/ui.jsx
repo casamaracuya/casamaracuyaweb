@@ -8,7 +8,7 @@ export const useMC = () => useContext(Ctx);
 
 // Íconos Phosphor: w = r (normal), f (relleno), d (duotono), b (negrita = check)
 export function Icon({ n, c = "", w = "r" }) {
-  const set = PH[n] || PH[{ control: "alert" }[n]] || PH.check;
+  const set = PH[n] || PH[{ control: "alert", solicitudes: "chat" }[n]] || PH.check;
   return <svg className={`i ${c}`} viewBox="0 0 256 256" aria-hidden="true" dangerouslySetInnerHTML={{ __html: set[w === "b" ? "f" : w] || set.r }} />;
 }
 export const Pill = ({ s }) => <span className={`pill ${s}`}>{STATE[s]}</span>;

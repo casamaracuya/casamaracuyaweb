@@ -2,7 +2,7 @@
 // cobros en espera de aprobación e historial de cada cliente.
 import { useState, useEffect } from "react";
 import { useMC, Icon, Seg, Chips, Switch, Err, KV, copy } from "./ui.jsx";
-import { TODAY, PLAN, METODOS, METODO_MONEDA, CANALES, addDays, diff, day, fdate, frange, money, ago, nights } from "./util.js";
+import { TODAY, PLAN, METODOS, METODO_MONEDA, CANALES, SOLICITUD, cupo, addDays, diff, day, fdate, frange, money, ago, nights } from "./util.js";
 import { findGuest } from "../lib/api.js";
 
 // Código de reserva CM-XXXXXX: la llave del huésped para todo lo demás (0017).
@@ -163,6 +163,7 @@ export function histLine(e, S) {
     if (ch("estado")) return { t: `Cobro ${ch("estado")[1] === "aprobada" ? "aprobado" : ch("estado")[1] === "rechazada" ? "rechazado" : ch("estado")[1]}${tag}`, s: c.nota ? (Array.isArray(c.nota) ? c.nota[1] : c.nota) : "", raro: ch("estado")[1] === "rechazada" };
     return null;
   }
+  if (e.tabla === "conversaciones") return e.accion === "insert" ? { t: `Nota de la conversación${tag}`, s: c.texto } : { t: `Nota cambiada o borrada${tag}`, s: "", raro: true };
   if (e.tabla === "huespedes") {
     if (e.accion === "insert") return { t: "Cliente registrado", s: [c.telefono, c.email].filter(Boolean).join(" · ") };
     const k = Object.keys(c).map(x => ({ nombre: "nombre", telefono: "teléfono", email: "correo", documento: "documento" }[x] || x));
@@ -256,7 +257,7 @@ export function PaySheet({ id }) {
       <div className="row"><label className="k" htmlFor="payCon">Concepto</label><input id="payCon" className="field-in" value={concept} onChange={e => setConcept(e.target.value)} autoComplete="off" /></div>
     </div><p className="sec-f">{P.confirms ? "Con este pago se completa el 100 %: la reserva se confirma, recibe su código y el huésped recibe el comprobante por correo." : "La reserva se confirma cuando lo pagado llega al 100 % del total."}</p></section>
     <Err msg={err} />
-    <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{busy ? "Guardando…" : pend ? "Pedir aprobación del cobro" : P.confirms ? "Registrar y confirmar la reserva" : "Registrar el pago"}</button></div>
+    <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{busy ? "Guardando…" : pend ? "Pedir aprobación del cobro" : P.confirms ? "Registrar el pago y crear la reserva" : "Registrar el pago"}</button></div>
   </form>;
 }
 
@@ -268,6 +269,15 @@ export function PaidSheet({ date }) {
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
   const known = findGuest(S, f.phone); const kg = known && S.guests[known];
+  // Cruce con Solicitudes: si esta persona ya pidió fechas (mismo teléfono, correo o nombre), se usa esa solicitud.
+  const nm = x => (x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const mail = f.email.trim().toLowerCase();
+  const match = S.reservas.filter(r => SOLICITUD.includes(r.state) && r.in >= TODAY && (r.g === known
+    || (mail.length > 5 && (S.guests[r.g]?.email || "").toLowerCase() === mail)
+    || (nm(f.name).length > 5 && nm(S.guests[r.g]?.name) === nm(f.name))));
+  const useSol = async r => { const g = S.guests[r.g] || {};
+    if (mail && !g.email) await act(a => a.updateHuesped(r.g, { email: f.email.trim() }), null, { quiet: true });
+    openSheet("pay", { id: r.id }); };
   const n = f.in && f.out && f.out > f.in ? diff(f.in, f.out) : 0;
   const totIn = f.total === "" ? NaN : Number(String(f.total).replace(",", "."));
   const [afterAmt, setAfterAmt] = useState(0);
@@ -295,13 +305,17 @@ export function PaidSheet({ date }) {
     setBusy(false); openSheet("res", { id });
   };
   return <form className="form" onSubmit={submit}>
-    <p className="sec-f" style={{ padding: "4px 4px 0" }}>Para el cliente que ya acordó por WhatsApp y pagó el 100 %. Al guardar, la reserva queda confirmada con su código y el cliente recibe el correo.</p>
+    <p className="sec-f" style={{ padding: "4px 4px 0" }}>Cuando el cliente ya acordó y pagó el 100 %. Al guardar, la reserva queda confirmada con su código CM- y el cliente recibe el correo. Si todavía está preguntando, eso se maneja en Solicitudes.</p>
     <section className="sec"><div className="sec-h">Cliente</div><div className="group">
       <div className="row"><label className="k" htmlFor="rpName">Nombre</label><input id="rpName" className="field-in" placeholder="Nombre y apellido" value={f.name} onChange={e => set("name", e.target.value)} autoComplete="off" /></div>
       <div className="row"><label className="k" htmlFor="rpPhone">WhatsApp</label><input id="rpPhone" className="field-in" placeholder="+58 …" inputMode="tel" value={f.phone} onChange={e => set("phone", e.target.value)} autoComplete="off" /></div>
       <div className="row"><label className="k" htmlFor="rpMail">Correo</label><input id="rpMail" type="email" className="field-in" placeholder="Para su código y comprobante" value={f.email} onChange={e => set("email", e.target.value)} autoComplete="off" /></div>
-    </div>{kg && <div className="note"><Icon n="heart" c="s" w="f" /><span>Es <b>{kg.name}</b>{kg.visits ? `, que ya vino ${kg.visits === 1 ? "1 vez" : `${kg.visits} veces`}` : ", que ya está en Huéspedes"}. La reserva se guarda en su ficha.</span></div>}
-      <div style={{ marginTop: 10 }}><Seg value={f.lang} onChange={v => set("lang", v)} label="Idioma de los mensajes" options={[["es", "Español"], ["en", "English"]]} /></div></section>
+    </div>{kg && <div className="note"><Icon n="heart" c="s" w="f" /><span>Es <b>{kg.name}</b>{kg.visits ? `, que ya vino ${kg.visits === 1 ? "1 vez" : `${kg.visits} veces`}` : ", que ya está en Huéspedes"}. La reserva se guarda en su ficha.</span></div>}</section>
+    {match.length > 0 && <div className="quote ok" style={{ marginTop: 10 }}><div className="q-h"><Icon n="chat" c="s" w="f" /><b>Esta persona ya tiene {match.length === 1 ? "una solicitud" : `${match.length} solicitudes`}</b></div>
+      {match.map(r => <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span>{S.guests[r.g]?.name} · {frange(r.in, r.out)} · {r.people} pers. · {PLAN[r.plan].short} · llegó por {r.channel}</span>
+        <button type="button" className="btn small press" onClick={() => useSol(r)}>Usar esta solicitud</button></div>)}
+      <span className="q-f">Así no queda duplicada: se registra el pago en esa solicitud y pasa a Reservas con su código.</span></div>}
     <section className="sec"><div className="sec-h">Estadía</div><Seg value={f.plan} onChange={v => set("plan", v)} label="Plan" options={[["esencial", "Esencial"], ["plena", "Plena"]]} />
       <div className="group" style={{ marginTop: 10 }}>
         <div className="row"><label className="k" htmlFor="rpIn">Llegada</label><input type="date" id="rpIn" className="field-in" value={f.in} min={TODAY} onChange={e => set("in", e.target.value)} /></div>
@@ -317,3 +331,53 @@ export function PaidSheet({ date }) {
     <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{busy ? "Guardando…" : pend ? "Anotar y pedir aprobación del cobro" : "Confirmar la reserva pagada"}</button></div>
   </form>;
 }
+
+/* ---------- Solicitudes (0019): cupo, posibles duplicados y la conversación ---------- */
+// ¿Hay cupo? Si no, las fechas libres más cercanas con las mismas noches, listas para mandar por WhatsApp.
+export function CupoBox({ r, first, wa }) {
+  const { S, toast } = useMC();
+  const c = cupo(S, r.in, r.out, r.id, 4);
+  if (c.free) return <div className="cupo-box si"><b><Icon n="check" c="s" w="b" /> Hay cupo del {frange(r.in, r.out)}</b><span className="st">Nadie más tiene apartadas o pagadas esas noches.</span></div>;
+  const lista = c.alt.map(a => frange(a.in, a.out)).join(", ");
+  const msg = `Hola ${first}, para el ${frange(r.in, r.out)} ya no tenemos cupo 😔 Lo más cerca que tenemos libre, con las mismas noches: ${lista}. ¿Te sirve alguna?`;
+  return <div className="cupo-box no">
+    <b>Sin cupo del {frange(r.in, r.out)}</b>
+    {c.alt.length ? <><span className="st">Lo más cerca libre, con las mismas {nights(r)} noches:</span>
+      <div className="cupo-alt">{c.alt.map(a => <button key={a.in} type="button" onClick={() => copy(`${frange(a.in, a.out)}`, toast)} title="Copiar estas fechas">{frange(a.in, a.out)}</button>)}</div>
+      <div className="btns" style={{ marginTop: 4 }}><a className="btn small press" href={`${wa}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer"><Icon n="chat" w="f" />Ofrecer estas fechas por WhatsApp</a></div></>
+      : <span className="st">No hay fechas libres con esas noches en los próximos cuatro meses.</span>}
+  </div>;
+}
+
+// La misma persona con fechas parecidas: se archiva la repetida en un toque.
+export function Dupes({ r }) {
+  const { S, act } = useMC();
+  const t = (S.guests[r.g] || {}).telNorm; if (!t) return null;
+  const d = S.reservas.filter(x => x.id !== r.id && SOLICITUD.includes(x.state) && (S.guests[x.g] || {}).telNorm === t && x.in < addDays(r.out, 3) && addDays(r.in, -3) < x.out);
+  if (!d.length) return null;
+  const merge = x => act(async a => { await a.anotar(r.id, `Se unió la solicitud repetida ${x.code} (${frange(x.in, x.out)})`); await a.anotar(x.id, `Repetida: se unió a ${r.code}`); await a.cambiarEstado(x.id, "no_siguio"); }, `Unida: ${x.code} quedó archivada`);
+  return <div className="quote warn" style={{ marginTop: 10 }}><div className="q-h"><Icon n="alert" c="s" w="f" /><b>Posible duplicado</b></div>
+    <span className="q-f" style={{ color: "var(--ink)" }}>Este cliente tiene {d.length === 1 ? "otra solicitud" : `${d.length} solicitudes más`} con fechas parecidas.</span>
+    {d.map(x => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}><span>{x.code} · {frange(x.in, x.out)} · {x.people} pers.</span><button type="button" className="btn small plain press" onClick={() => merge(x)}>Unir aquí</button></div>)}
+  </div>;
+}
+
+// Lo que se habla con el cliente: notas fijas con autor y hora.
+export function Chat({ r }) {
+  const { S, act, me } = useMC();
+  const [t, setT] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
+  const notes = (S.notes || []).filter(n => n.res === r.id);
+  const who = id => (S.team.find(p => p.id === id) || {}).name || "Alguien del equipo";
+  const send = async e => { e.preventDefault(); const x = t.trim(); if (!x) return; setBusy(true); setErr("");
+    const er = await act(a => a.anotar(r.id, x), null, { quiet: true }); setBusy(false); if (er) setErr(er); else setT(""); };
+  return <section className="sec"><div className="sec-h">Conversación con el cliente</div>
+    {notes.length ? <div className="chat">{notes.map(n => <div key={n.id} className={`msg ${n.by === me?.id ? "mine" : ""}`}><p>{n.text}</p><small>{who(n.by)} · {new Date(n.at).toLocaleString("es-VE", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</small></div>)}</div>
+      : <p className="sec-f">Anota aquí lo que hablas con el cliente: lo que pidió, lo que le enviaste, lo que quedó pendiente.</p>}
+    <form className="chat-in" onSubmit={send}><label htmlFor={`nota-${r.id}`} className="sr">Nueva nota</label>
+      <textarea id={`nota-${r.id}`} rows={1} value={t} onChange={e => setT(e.target.value)} placeholder="Ej.: le mandé la tarifa y la presentación" maxLength={1000} />
+      <button className="btn small press" type="submit" disabled={busy || !t.trim()}>Anotar</button></form>
+    <Err msg={err} />
+    <p className="sec-f">Las notas quedan fijas: no se editan ni se borran.</p>
+  </section>;
+}
+

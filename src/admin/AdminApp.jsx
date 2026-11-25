@@ -108,7 +108,7 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
     catch (e) { if (!opt.quiet) toast(e.message); await reload(); return e.message; }
   }, [bound, reload, toast]);
 
-  const badge = v => v === "reservas" ? S.reservas.filter(r => r.state === "nueva").length : v === "tareas" ? S.tasks.filter(t => t.area === role && !t.done && t.due <= TODAY).length : 0;
+  const badge = v => v === "solicitudes" ? S.reservas.filter(r => r.state === "nueva").length : v === "tareas" ? S.tasks.filter(t => t.area === role && !t.done && t.due <= TODAY).length : 0;
   const canMove = can(role, "vender"), canReceive = can(role, "recibir"), canMoney = !!R.money;
   // Registrar pagos: quien ve dinero y Recepción, que cobra lo que acuerda por WhatsApp (0017).
   const canPay = canMoney || role === "recepcion";
@@ -124,11 +124,10 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
 
   return (
     <Ctx.Provider value={ctx}>
-      <div className={`app mc ${canMove ? "has-fab" : ""}`}>
+      <div className={`app mc ${canPay ? "has-fab" : ""}`}>
         <aside className="side" aria-label="Menú">
           <div className="side-brand"><img src="/logo/logo-claro.svg" alt="Maracuyá" width="110" height="44" /><span>Control</span></div>
-          {canMove && <button className="side-new press" onClick={() => openSheet("newRes")}><Icon n="plus" c="s" w="b" />Nueva reserva</button>}
-          {canPay && <button className="side-doc press" onClick={() => openSheet("paid")}><Icon n="pagos" c="s" />Reserva pagada</button>}
+          {canPay && <button className="side-new press" onClick={() => openSheet("paid")}><Icon n="plus" c="s" w="b" />Nueva reserva</button>}
           {canMove && <button className="side-doc press" onClick={() => openSheet("budget")}><Icon n="receipt" c="s" />Presupuesto</button>}
           {items.map(t => { const b = badge(t); return <Link key={t} to={`/admin/${t}`} aria-current={t === view ? "page" : undefined}><Icon n={t} w={t === view ? "f" : "r"} /><span>{VIEWS[t]}</span>{b > 0 && <span className="badge">{b}</span>}</Link>; })}
           <div className="side-foot">
@@ -140,7 +139,6 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
               <div className="nb-left">{R.more.includes(view) && <button className="back" onClick={() => nav("/admin/mas")}><Icon n="chevL" c="s" />Más</button>}</div>
               <div className="nb-title">{VIEWS[view]}</div>
               <div className="nb-right">
-                {canPay && <button className="icon-btn press nb-doc" onClick={() => openSheet("paid")} aria-label="Registrar una reserva pagada" title="Reserva pagada"><Icon n="pagos" c="s" /></button>}
                 {canMove && <button className="icon-btn press nb-doc" onClick={() => openSheet("budget")} aria-label="Hacer un presupuesto" title="Presupuesto"><Icon n="receipt" c="s" /></button>}
                 {plus && <button className="icon-btn press" onClick={() => openSheet(plus)} aria-label="Agregar"><Icon n="plus" c="s" /></button>}
                 <button className="avatar-btn press" onClick={() => openSheet("profile")} aria-label={`Perfil: ${R.name}`}><span className="avatar" style={{ background: `var(--r-${role})`, color: `var(--r-${role}-ink)` }}><Icon n={R.icon} c="s" w="d" /></span></button>
@@ -153,13 +151,13 @@ function Shell({ S, role, setRole, me, setMe, reload }) {
         <nav className="dock" aria-label="Secciones">
           {R.tabs.map(t => { const b = badge(t); const on = t === view || (t === "mas" && R.more.includes(view)); return <Link key={t} className="tab press" to={`/admin/${t}`} aria-current={on ? "page" : undefined}><Icon n={t} w={on ? "f" : "r"} /><span>{VIEWS[t]}</span>{b > 0 && <span className="badge">{b}</span>}</Link>; })}
         </nav>
-        {canMove && <button className="fab press" onClick={() => openSheet("newRes")}><Icon n="plus" c="s" w="b" />Nueva reserva</button>}
+        {canPay && <button className="fab press" onClick={() => openSheet("paid")}><Icon n="plus" c="s" w="b" />Nueva reserva</button>}
       </div>
       {tour && <Tour uid={me?.id || "anon"} role={role} name={me?.name} onClose={() => setTour(false)} />}
       <div className={`scrim ${sheetOpen ? "open" : ""}`} onClick={closeSheet} />
       <section className={`sheet ${sheetOpen ? "open" : ""}`} role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
         <div className="grabber" aria-hidden="true" />
-        <div className="sheet-bar"><div className="l"><button onClick={closeSheet}>Cerrar</button></div><h2 id="sheetTitle">{sheetDef ? sheetDef[0] : ""}</h2><div className="r" /></div>
+        <div className="sheet-bar"><div className="l"><button onClick={closeSheet}>Cerrar</button></div><h2 id="sheetTitle">{sheetDef ? (typeof sheetDef[0] === "function" ? sheetDef[0](sheet.props || {}, S) : sheetDef[0]) : ""}</h2><div className="r" /></div>
         <div className="sheet-body">{sheetDef && (() => { const C = sheetDef[1]; return <C key={sheet.k} {...sheet.props} />; })()}</div>
       </section>
       <div className={`toast ${toastMsg ? "show" : ""}`} role="status" aria-live="polite"><Icon n="check" w="b" /><span>{toastMsg}</span></div>

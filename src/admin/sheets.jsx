@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMC, Icon, Pill, ResRow, Seg, Chips, Switch, Err, KV, copy } from "./ui.jsx";
-import { LocCard, PayRow, PaySheet, PaidSheet, ApprovalSheet, HistorySheet } from "./cobros.jsx";
-import { TODAY, ROLES, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, NIVEL, can, FLOW, STATE, STATE_SHORT, PLAN, CANALES, MESL, addDays, day, fdate, frange, money, ago, left, nights, initials, parse, nextBirthday, birthdaysIn } from "./util.js";
+import { LocCard, PayRow, PaySheet, PaidSheet, ApprovalSheet, HistorySheet, CupoBox, Dupes, Chat } from "./cobros.jsx";
+import { TODAY, ROLES, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, NIVEL, can, FLOW, STATE, SOLICITUD, ARCHIVO, cupo, CERRAR_D, horasDesde, ultimaActividad, pideSeguimiento, STATE_SHORT, PLAN, CANALES, MESL, addDays, day, fdate, frange, money, ago, left, nights, initials, parse, nextBirthday, birthdaysIn } from "./util.js";
 import { findGuest } from "../lib/api.js";
 import { REVIEW_URL } from "../lib/contacto.js";
 import { OPCIONES } from "../site/ficha-data.js";
@@ -222,7 +222,7 @@ Piscina, muelle frente al mar, planta eléctrica, A/A, agua caliente, Wi‑Fi y 
 Te envío la presentación completa en PDF 📎
 ¿Para qué fechas y cuántas personas serían? Así te preparo la cotización 📅`],
   ["Saludo", "¡Hola {n}! Gracias por escribirle a Casa Maracuyá. Tenemos tus fechas ({f}). Te cuento la tarifa y lo que incluye el plan en un momento."],
-  ["Disponible", "¡Buenas noticias, {n}! Las fechas {f} están libres. Si quieres, te las apartamos 24 horas mientras haces el anticipo."],
+  ["Disponible", "¡Buenas noticias, {n}! Las fechas {f} están libres. Si quieres, te las apartamos 24 horas mientras haces el pago."],
   ["Sin cupo", "Hola {n}, qué pena: las fechas {f} ya están tomadas. ¿Te sirve otra fecha cercana?"]
 ];
 export function ResSheet({ id }) {
@@ -236,9 +236,16 @@ export function ResSheet({ id }) {
   const wa = g.phone && g.phone.replace(/\D/g, "").length > 6 ? `https://wa.me/${g.phone.replace(/\D/g, "")}` : "https://wa.me/";
   let actions = null;
   if (canMove || canReceive) {
-    if (canMove && r.state === "nueva") actions = <><button className="btn press" onClick={() => step("conversacion", "En conversación")}><Icon n="chat" w="f" />Ya le respondí por WhatsApp</button><button className="btn danger press" onClick={() => step("rechazada", "Marcada sin cupo")}>No hay cupo</button></>;
-    if (canMove && r.state === "conversacion") actions = <><button className="btn press" onClick={() => step("pre", "Fechas apartadas por 24 horas")}><Icon n="lock" w="f" />Apartar las fechas 24 horas</button><button className="btn danger press" onClick={() => step("rechazada", "Marcada sin cupo")}>No hay cupo</button></>;
-    if (canMove && r.state === "pre") actions = <>{canPay ? <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el pago</button> : <p className="sec-f" style={{ padding: "0 4px" }}>Quien cobra registra el pago y, al llegar al 100 %, la reserva se confirma sola.</p>}<button className="btn danger press" onClick={() => step("vencida", "Fechas liberadas")}>Liberar las fechas</button></>;
+    // Responder y marcar en un toque: abre WhatsApp con el mensaje listo y pasa a «En conversación».
+    if (canMove && r.state === "nueva") { const c = cupo(S, r.in, r.out, r.id, 4); const alt = c.alt.map(a => frange(a.in, a.out)).join(", ");
+      const msg = c.free ? `¡Hola ${first}! Gracias por escribirle a Casa Maracuyá ✨ Tenemos cupo del ${fr} para ${r.people} ${r.people === 1 ? "persona" : "personas"}. Te cuento la tarifa y lo que incluye el plan ${PLAN[r.plan].short}. Si quieres, te apartamos las fechas 24 horas mientras haces el pago.`
+        : `¡Hola ${first}! Gracias por escribirle a Casa Maracuyá ✨ Para el ${fr} ya no tenemos cupo 😔${alt ? ` Lo más cerca que tenemos libre, con las mismas noches: ${alt}. ¿Te sirve alguna?` : " ¿Tienes otras fechas en mente?"}`;
+      const reply = () => act(async a => { await a.anotar(r.id, c.free ? "Respondió por WhatsApp: hay cupo" : `Respondió por WhatsApp: sin cupo${alt ? `, ofreció ${alt}` : ""}`); await a.cambiarEstado(r.id, "conversacion"); }, "Respondida: pasó a En conversación");
+      actions = <><a className="btn press" href={`${wa}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer" onClick={reply}><Icon n="chat" w="f" />{c.free ? "Responder: hay cupo" : "Responder: sin cupo y fechas libres"}</a>
+        <button className="btn plain press" onClick={() => step("conversacion", "Pasó a En conversación")}>Ya le respondí por otro medio</button>
+        {!c.free && <button className="btn danger press" onClick={() => step("rechazada", "Archivada: sin cupo")}>Archivar: sin cupo</button>}</>; }
+    if (canMove && r.state === "conversacion") actions = <>{canPay && <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el pago y crear la reserva</button>}<button className={`btn ${canPay ? "plain" : ""} press`} onClick={() => step("pre", "Fechas apartadas por 24 horas")}><Icon n="lock" w="f" />Apartar las fechas 24 horas</button><button className="btn danger press" onClick={() => step("rechazada", "Archivada: sin cupo")}>No hay cupo</button><button className="btn danger press" onClick={() => step("no_siguio", "Archivada: no siguió")}>No siguió</button></>;
+    if (canMove && r.state === "pre") actions = <>{canPay ? <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el pago y crear la reserva</button> : <p className="sec-f" style={{ padding: "0 4px" }}>Quien cobra registra el pago y, al llegar al 100 %, la solicitud pasa a Reservas con su código.</p>}<button className="btn danger press" onClick={() => step("no_siguio", "Fechas liberadas: no siguió")}>Liberar las fechas</button></>;
     if (r.state === "confirmada") actions = <><button className="btn press" onClick={() => step("casa", `¡Bienvenidos! ${first} ya está en casa`)}><Icon n="door" w="f" />Ya llegaron</button>{canMove && <button className="btn danger press" onClick={() => sure ? step("cancelada", "Reserva cancelada. Fechas libres") : (setSure(true), setTimeout(() => setSure(false), 3500))}>{sure ? "Toca otra vez para cancelar" : "Cancelar la reserva"}</button>}</>;
     if (r.state === "casa") actions = <button className="btn press" onClick={() => step("finalizada", "Cuenta cerrada. Se crearon las tareas de salida")}><Icon n="out" />Cerrar la cuenta y despedir</button>;
     if (canMove && r.state === "finalizada") actions = <a className="btn plain press" href={`${wa}?text=${encodeURIComponent(`¡Gracias por quedarte en Casa Maracuyá, ${first}! Si te gustó, nos ayudas mucho dejando tu reseña en Google: ${REVIEW_URL}`)}`} target="_blank" rel="noreferrer"><Icon n="heart" w="f" />Enviar las gracias por WhatsApp</a>;
@@ -249,11 +256,19 @@ export function ResSheet({ id }) {
     {r.loc && <LocCard r={r} first={first} wa={wa} />}
     {fi >= 0
       ? <div className="track" aria-label={`Paso ${fi + 1} de ${FLOW.length}: ${STATE[r.state]}`}>{FLOW.map((s, i) => <div key={s} className={`stp ${i < fi ? "done" : i === fi ? "now" : ""}`}><i>{i < fi && <Icon n="check" c="xs" w="b" />}</i>{STATE_SHORT[s]}</div>)}</div>
-      : <div className="note"><Icon n="alert" c="s" w="f" /><span>Esta reserva terminó como <b>{STATE[r.state].toLowerCase()}</b>. Sus fechas quedaron libres.</span></div>}
+      : <div className="note"><Icon n="alert" c="s" w="f" /><span>{ARCHIVO.includes(r.state) ? "Esta solicitud quedó archivada como" : "Esta reserva terminó como"} <b>{STATE[r.state].toLowerCase()}</b>. Sus fechas quedaron libres.</span></div>}
     {r.state === "pre" && r.hold && <div className="countdown"><Icon n="clock" c="s" w="f" /><span>Fechas apartadas. Si no llega ningún pago, se liberan solas en <b>{left(r.hold)}</b>.</span></div>}
     <Err msg={err} />
     {actions && <div className="btns">{actions}</div>}
-    <section className="sec"><div className="sec-h">Estadía</div><div className="group kv"><KV k="Llegada" v={fdate(r.in)} /><KV k="Salida" v={fdate(r.out)} /><KV k="Noches" v={nights(r)} /><KV k="Plan" v={PLAN[r.plan].name} /><KV k="Personas" v={r.people} /><KV k="Mascota" v={r.pet ? (g.pet || "Sí") : "No"} /></div></section>
+    {pideSeguimiento(S, r) && <div className="quote warn" style={{ marginTop: 10 }}><div className="q-h"><Icon n="clock" c="s" w="f" /><b>Hacer seguimiento</b></div>
+      <span className="q-f" style={{ color: "var(--ink)" }}>Lleva {Math.floor(horasDesde(ultimaActividad(S, r)) / 24)} días sin nada nuevo. Escríbele para saber si sigue interesado y anota lo que te diga.{horasDesde(ultimaActividad(S, r)) >= CERRAR_D * 24 ? " Si ya no contesta, ciérrala como «No siguió»." : ""}</span>
+      <div className="btns" style={{ marginTop: 4 }}><a className="btn small press" href={`${wa}?text=${encodeURIComponent(`¡Hola ${first}! ¿Cómo vas? Te escribo de Casa Maracuyá por tus fechas del ${fr}. ¿Seguimos con la reserva? Cualquier duda, aquí estoy 🙌`)}`} target="_blank" rel="noreferrer" onClick={() => act(a => a.anotar(r.id, "Le escribió para hacer seguimiento"), null, { quiet: true })}><Icon n="chat" w="f" />Escribirle para seguimiento</a></div></div>}
+    {SOLICITUD.includes(r.state) && <CupoBox r={r} first={first} wa={wa} />}
+    {SOLICITUD.includes(r.state) && <Dupes r={r} />}
+    {(SOLICITUD.includes(r.state) || ARCHIVO.includes(r.state) || (S.notes || []).some(n => n.res === r.id)) && canPay && <Chat r={r} />}
+    <section className="sec"><div className="sec-h">Estadía</div><div className="group kv"><KV k="Llegada" v={fdate(r.in)} /><KV k="Salida" v={fdate(r.out)} /><KV k="Noches" v={nights(r)} /><KV k="Plan" v={PLAN[r.plan].name} /><KV k="Personas" v={r.people} /><KV k="Mascota" v={r.pet ? (g.pet || "Sí") : "No"} />
+      <div className="row"><span className="k">Mensajes al cliente</span><span className="val">{r.lang === "en" ? "En inglés" : "En español"}</span>
+        {canPay && <button type="button" className="btn small plain press" onClick={() => act(a => a.cambiarIdioma(r.id, r.lang === "en" ? "es" : "en"), r.lang === "en" ? "Los mensajes irán en español" : "Los mensajes irán en inglés")}>{r.lang === "en" ? "Pasar a español" : "Pasar a inglés"}</button>}</div></div></section>
     {canMove && ["nueva","conversacion","pre"].includes(r.state) && <section className="sec"><div className="group"><button className="row press" onClick={() => openSheet("budget", { res: r.id })}><span className="ico"><Icon n="receipt" c="s" /></span><span className="grow"><span className="t">Hacer presupuesto</span><span className="st">Con su nombre, fechas, personas y plan ya puestos</span></span><Icon n="chev" c="s chev" /></button></div></section>}
     <ReceiptSec r={r} g={g} />
     <FichaSec r={r} g={g} />
@@ -442,11 +457,11 @@ export function NewGuestSheet() {
   </form>;
 }
 
-/* ---------- Nueva reserva (a mano) ---------- */
+/* ---------- Nueva solicitud (a mano): alguien que escribió por WhatsApp, Instagram o llamó ---------- */
 export function NewResSheet({ date }) {
   const { S, act, openSheet } = useMC();
   const din = date || day(7);
-  const [f, setF] = useState({ name: "", phone: "", plan: "esencial", in: din, out: addDays(din, 2), people: 4, pet: false, channel: "Instagram", notes: "" });
+  const [f, setF] = useState({ name: "", phone: "", plan: "esencial", in: din, out: addDays(din, 2), people: 4, pet: false, channel: "WhatsApp", notes: "" });
   const [err, setErr] = useState("");
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
   const known = findGuest(S, f.phone); const kg = known && S.guests[known];
@@ -455,26 +470,27 @@ export function NewResSheet({ date }) {
     if (!f.name.trim() && !kg) return setErr("Escribe el nombre del huésped.");
     if (!f.in || !f.out) return setErr("Elige la fecha de llegada y la de salida.");
     if (f.out <= f.in) return setErr("La salida tiene que ser después de la llegada.");
-    let newId; const er = await act(async a => { newId = await a.crearReserva({ ...f, name: f.name.trim() || kg.name, guestId: known }); }, kg ? `Reserva anotada en la ficha de ${kg.name}` : "Reserva anotada");
+    let newId; const er = await act(async a => { newId = await a.crearReserva({ ...f, name: f.name.trim() || kg.name, guestId: known }); }, kg ? `Solicitud anotada en la ficha de ${kg.name}` : "Solicitud anotada");
     if (er) setErr(er); else if (newId) openSheet("res", { id: newId });
   };
   return <form className="form" onSubmit={submit}>
-    <p className="sec-f" style={{ padding: "4px 4px 0" }}>Para anotar a alguien que escribió directo por WhatsApp o Instagram.</p>
+    <p className="sec-f" style={{ padding: "4px 4px 0" }}>Para anotar a alguien que escribió por WhatsApp o Instagram. Queda en Solicitudes hasta que pague.</p>
     <section className="sec"><div className="group">
       <div className="row"><label className="k" htmlFor="nrName">Nombre</label><input id="nrName" className="field-in" placeholder="Nombre del huésped" value={f.name} onChange={e => set("name", e.target.value)} autoComplete="off" /></div>
       <div className="row"><label className="k" htmlFor="nrPhone">WhatsApp</label><input id="nrPhone" className="field-in" placeholder="+58 …" inputMode="tel" value={f.phone} onChange={e => set("phone", e.target.value)} autoComplete="off" /></div>
-    </div>{kg && <div className="note"><Icon n="heart" c="s" w="f" /><span>Es <b>{kg.name}</b>{kg.visits ? `, que ya vino ${kg.visits === 1 ? "1 vez" : `${kg.visits} veces`}` : ", que ya está en Huéspedes"}. La reserva se guarda en su ficha{(kg.allergies || []).length ? `. Alergias: ${kg.allergies.join(", ")}` : ""}.</span></div>}</section>
+    </div>{kg && <div className="note"><Icon n="heart" c="s" w="f" /><span>Es <b>{kg.name}</b>{kg.visits ? `, que ya vino ${kg.visits === 1 ? "1 vez" : `${kg.visits} veces`}` : ", que ya está en Huéspedes"}. La solicitud se guarda en su ficha{(kg.allergies || []).length ? `. Alergias: ${kg.allergies.join(", ")}` : ""}.</span></div>}</section>
     <section className="sec"><div className="sec-h">Plan</div><Seg value={f.plan} onChange={v => set("plan", v)} label="Plan" options={[["esencial", "Esencial"], ["plena", "Plena"]]} /></section>
     <section className="sec"><div className="group">
       <div className="row"><label className="k" htmlFor="nrIn">Llegada</label><input type="date" id="nrIn" className="field-in" value={f.in} min={TODAY} onChange={e => set("in", e.target.value)} /></div>
       <div className="row"><label className="k" htmlFor="nrOut">Salida</label><input type="date" id="nrOut" className="field-in" value={f.out} min={TODAY} onChange={e => set("out", e.target.value)} /></div>
       <div className="row"><span className="k" id="nrPeopleL">Personas</span><div className="stepper" role="group" aria-labelledby="nrPeopleL"><button type="button" onClick={() => set("people", Math.max(1, f.people - 1))} aria-label="Una persona menos">−</button><output>{f.people}</output><button type="button" onClick={() => set("people", Math.min(12, f.people + 1))} aria-label="Una persona más">+</button></div></div>
       <div className="row"><label className="k" htmlFor="nrPet">Viene con mascota</label><Switch id="nrPet" checked={f.pet} onChange={v => set("pet", v)} /></div>
-    </div></section>
+    </div>{f.out > f.in && (() => { const c = cupo(S, f.in, f.out); return c.free ? <span className="cupo si" style={{ marginTop: 8 }}><Icon n="check" c="xs" w="b" />Hay cupo en esas fechas</span>
+      : <span className="cupo no" style={{ marginTop: 8 }}>Sin cupo{c.alt.length ? ` · libre: ${c.alt.map(a => frange(a.in, a.out)).join(" · ")}` : ""}</span>; })()}</section>
     <section className="sec"><div className="sec-h">Cómo nos encontró</div><Chips value={f.channel} onChange={v => set("channel", v)} label="Canal" options={CANALES.map(c => [c, c])} /></section>
     <section className="sec"><div className="group"><div className="row"><label htmlFor="nrNotes" className="sr">Notas</label><textarea id="nrNotes" className="field-full" rows={2} placeholder="¿Celebran algo? ¿Vienen a hacer kite? ¿Alguna alergia?" value={f.notes} onChange={e => set("notes", e.target.value)} /></div></div></section>
     <Err msg={err} />
-    <div className="btns"><button className="btn press" type="submit">Guardar en conversación</button></div>
+    <div className="btns"><button className="btn press" type="submit">Guardar la solicitud</button></div>
   </form>;
 }
 
@@ -647,7 +663,7 @@ export function ProfileSheet() {
 
 export const SHEETS = {
   budget: ["Presupuesto", BudgetSheet],
-  res: ["Reserva", ResSheet], pay: ["Registrar pago", PaySheet], aprob: ["Cobro por aprobar", ApprovalSheet], hist: ["Historial", HistorySheet], guest: ["Huésped", GuestSheet], newRes: ["Nueva reserva", NewResSheet], paid: ["Reserva pagada", PaidSheet],
+  res: [(p, S) => { const r = S.reservas.find(x => x.id === p.id); return r && [...SOLICITUD, ...ARCHIVO].includes(r.state) ? "Solicitud" : "Reserva"; }, ResSheet], pay: ["Registrar pago", PaySheet], aprob: ["Cobro por aprobar", ApprovalSheet], hist: ["Historial", HistorySheet], guest: ["Huésped", GuestSheet], newRes: ["Nueva solicitud", NewResSheet], paid: ["Nueva reserva", PaidSheet],
   newTask: ["Nueva tarea", NewTaskSheet], block: ["Bloquear fechas", BlockSheet], task: ["Tarea", TaskSheet], newGuest: ["Nuevo huésped", NewGuestSheet],
   role: ["Rol", RoleSheet], person: ["Persona", PersonSheet], profile: ["Perfil", ProfileSheet], ficha: ["Ficha de registro", FichaSheet], total: ["Total y concepto", TotalSheet]
 };

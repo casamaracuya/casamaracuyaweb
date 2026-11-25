@@ -24,18 +24,18 @@ export const nights = r => diff(r.in, r.out);
 // jefe: a quién reporta. money: ve dinero. phone: ve teléfonos y documentos de los huéspedes.
 export const ROLES = {
   direccion: { name: "Dirección", sub: "CEO & Founder · reservas y estrategia", icon: "crown", money: true, phone: true, jefe: null,
-    tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["control","tareas","casa","cocina","pagos","tarifas","reportes","equipo"],
+    tabs: ["hoy","solicitudes","reservas","calendario","mas"], more: ["control","huespedes","tareas","casa","cocina","pagos","tarifas","reportes","equipo"],
     ve: "Todo: reservas, ingresos, fichas de los huéspedes, el trabajo de cada área y el semáforo de calidad de cada estadía.",
     hace: ["Supervisa todo: el historial de cada cliente y la pantalla Control","Ficha de registro de cada grupo: el titular la firma en papel y se pasa al panel","Tarifas, promociones y quién entra al panel","Revisa los informes de Calidad y los balances de Administración"],
     recibe: "Las solicitudes nuevas, cada semáforo en rojo y el informe de Calidad al final de cada estadía." },
   admin: { name: "Administración y Finanzas", sub: "Faby · contabilidad, nómina y caja chica", icon: "money", money: true, phone: true, jefe: "direccion",
-    tabs: ["hoy","reservas","pagos","calendario","mas"], more: ["huespedes","tareas","casa","cocina","tarifas","reportes","equipo"],
+    tabs: ["hoy","solicitudes","reservas","pagos","mas"], more: ["calendario","huespedes","tareas","casa","cocina","tarifas","reportes","equipo"],
     ve: "Todo el panel: reservas, pagos con su comprobante, ingresos, reportes y el trabajo de cada área.",
     hace: ["Aprueba o rechaza los cobros que no coinciden con su cotización","Revisa y cuadra los pagos de cada reserva","Revisa los ingresos de cada mes y temporada","Contabilidad, nómina, caja chica e inventarios (en su sistema contable)"],
     recibe: "Cada cobro que espera su aprobación y el aviso cuando una reserva apartada está por vencer sin pago." },
   // Se reactiva (0017): la persona del WhatsApp, de confianza. Habla con el cliente, cotiza, cobra y recibe.
   recepcion: { name: "Recepción y reservas", sub: "WhatsApp, cotizaciones, cobros, llegadas y salidas", icon: "chat", phone: true, jefe: "direccion",
-    tabs: ["hoy","reservas","calendario","huespedes","mas"], more: ["tareas","casa","cocina"],
+    tabs: ["hoy","solicitudes","reservas","calendario","mas"], more: ["huespedes","tareas","casa","cocina"],
     ve: "Solicitudes, cotizaciones, reservas, calendario, fichas de los huéspedes y los pagos de sus reservas.",
     hace: ["Responde por WhatsApp y arma la cotización con su código","Registra el pago con su comprobante; la reserva se confirma sola al 100 %","Si el cobro no coincide con la cotización, pide la aprobación de Administración","Recibe y despide al grupo con el código de reserva"],
     recibe: "Cada solicitud nueva y el aviso cuando Administración aprueba o rechaza una diferencia de cobro." },
@@ -91,15 +91,41 @@ export const AMBITOS = {
   limpieza: { name: "Housekeeping y limpieza", who: "Zai, Odely y Yanely", check: "Habitaciones y baños impecables, camas armadas en equipo, cuidado de las antigüedades y presencia invisible." }
 };
 export const NIVEL = { verde: "Excelente", amarillo: "Detalle a corregir", rojo: "Fallo en estándar" };
-export const VIEWS = { hoy:"Hoy", reservas:"Reservas", calendario:"Calendario", huespedes:"Huéspedes", tareas:"Tareas", cocina:"Cocina", casa:"La casa", pagos:"Ingresos", tarifas:"Tarifas", reportes:"Reportes", equipo:"Equipo", control:"Control", mas:"Más" };
+export const VIEWS = { hoy:"Hoy", solicitudes:"Solicitudes", reservas:"Reservas", calendario:"Calendario", huespedes:"Huéspedes", tareas:"Tareas", cocina:"Cocina", casa:"La casa", pagos:"Ingresos", tarifas:"Tarifas", reportes:"Reportes", equipo:"Equipo", control:"Control", mas:"Más" };
 // Áreas de las tareas, en el orden del organigrama.
 export const AREAS = { direccion:"Dirección", admin:"Administración", operaciones:"Operaciones", calidad:"Calidad", mantenimiento:"Áreas verdes", cocina:"Cocina", servicio:"Servicio", limpieza:"Housekeeping", recepcion:"Recepción" };
 export const AREAS_NUEVAS = Object.keys(AREAS);
 export const AREA_C = { direccion:"var(--alga)", admin:"var(--nocturna)", operaciones:"var(--melon)", calidad:"var(--arena)", mantenimiento:"var(--verde-tabla)", cocina:"var(--sol)", servicio:"var(--laguna)", limpieza:"var(--aguacate)", recepcion:"var(--merey)" };
 export const FLOW = ["nueva","conversacion","pre","confirmada","casa","finalizada"];
-export const STATE = { nueva:"Nueva", conversacion:"En conversación", pre:"Pre-reservada", confirmada:"Confirmada", casa:"En casa", finalizada:"Finalizada", rechazada:"Rechazada", vencida:"Vencida", cancelada:"Cancelada" };
+export const STATE = { nueva:"Nueva", conversacion:"En conversación", pre:"Pre-reservada", confirmada:"Confirmada", casa:"En casa", finalizada:"Finalizada", rechazada:"Sin cupo", no_siguio:"No siguió", vencida:"Vencida", cancelada:"Cancelada" };
 export const STATE_SHORT = { nueva:"Nueva", conversacion:"Conversa", pre:"Apartada", confirmada:"Confirmada", casa:"En casa", finalizada:"Salió" };
 export const HOLDS = ["pre","confirmada","casa"];
+// Solicitudes (0019): todavía no pagadas. Reservas: pagadas, con código CM-.
+export const SOLICITUD = ["nueva","conversacion","pre"];
+export const ARCHIVO = ["rechazada","no_siguio","vencida"];
+export const PAGADAS = ["confirmada","casa","finalizada","cancelada"];
+
+// Respuesta y seguimiento de solicitudes (0019): la meta es responder en 12 horas y
+// hacer seguimiento si una conversación lleva 2 días sin nada nuevo.
+export const RESPONDER_H = 12, SEGUIR_D = 2, CERRAR_D = 5;
+export const horasDesde = t => t ? (Date.now() - t) / 36e5 : 0;
+// Lo último que pasó con la solicitud: su nota más reciente o, si no hay, cuándo llegó.
+export const ultimaActividad = (S, r) => Math.max(r.created || 0, ...(S.notes || []).filter(n => n.res === r.id).map(n => n.at || 0));
+export const pideSeguimiento = (S, r) => r.state === "conversacion" && horasDesde(ultimaActividad(S, r)) >= SEGUIR_D * 24;
+
+// Cupo: ¿están libres esas noches? Si no, las ventanas libres más cercanas con las mismas noches.
+// Ocupan las apartadas, confirmadas y en casa, y los bloqueos de la casa.
+export function cupo(S, din, dout, exclude = null, want = 3) {
+  const n = diff(din, dout); if (!(n > 0)) return { free: true, alt: [] };
+  const busy = [...S.reservas.filter(r => HOLDS.includes(r.state) && r.id !== exclude).map(r => [r.in, r.out]), ...(S.blocks || []).map(b => [b.from, b.to])];
+  const freeAt = a => { const b = addDays(a, n); return a >= TODAY && !busy.some(([x, y]) => x < b && a < y); };
+  if (freeAt(din)) return { free: true, alt: [] };
+  const alt = [];
+  for (let k = 1; k <= 120 && alt.length < want; k++) for (const d of [k, -k]) {
+    const a = addDays(din, d); if (alt.length < want && freeAt(a) && !alt.some(x => x.in === a)) alt.push({ in: a, out: addDays(a, n), d });
+  }
+  return { free: false, alt: alt.sort((x, y) => x.in < y.in ? -1 : 1) };
+}
 export const PLAN = { esencial:{ name:"Experiencia Esencial", short:"Esencial", meals:["Desayunos gourmet","Café de la tía"] }, plena:{ name:"Experiencia Plena", short:"Plena", meals:["Desayunos","Almuerzos","Cenas","Postres","Snacks y cava"] } };
 export const ROOM_ST = ["sucia","limpiando","lista","revisada"];
 export const ROOM_LB = { sucia:"Sucia", limpiando:"En limpieza", lista:"Lista", revisada:"Revisada" };
