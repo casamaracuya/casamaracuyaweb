@@ -436,7 +436,6 @@ export function Reportes() {
     const pastM = inc.map((v, i) => [v, i]).filter(([, i]) => `${Y}-${String(i + 1).padStart(2, "0")}` < TODAY.slice(0, 7));
     if (pastM.length > 2) { const [v, i] = pastM.sort((a, b) => a[0] - b[0])[0]; tips.push(<><b>{MESL[i][0].toUpperCase() + MESL[i].slice(1)}</b> fue el mes con menos ingresos ({money(v)}). Vale la pena preparar algo para ese mes el próximo año.</>); }
   }
-  const ch = {}; S.reservas.filter(r => r.created && new Date(r.created).getFullYear() === y).forEach(r => { ch[r.channel] = (ch[r.channel] || 0) + 1; });
   const monthData = inc.map((v, i) => ({ k: i, label: MES[i][0].toUpperCase(), full: `${MESL[i]} ${y}`, v, note: cnt[i] ? `${cnt[i]} ${cnt[i] === 1 ? "pago" : "pagos"}` : "sin pagos", dim: y === T0.getFullYear() && i > T0.getMonth() }));
   return <>
     <Head title="Reportes" lead="Ingresos y ocupación del año, para decidir cuándo sacar promociones.">
@@ -461,7 +460,73 @@ export function Reportes() {
       <Rows fmt={v => `${v}%`} data={dowP.map(d => ({ ...d, hi: d.v === Math.max(...dowP.map(x => x.v)) && d.v > 0 }))} />
       <p className="sec-f">Porcentaje de noches ocupadas según el día en que empieza la noche{y === T0.getFullYear() ? ", hasta hoy" : ""}.</p></section>}
 
-    {Object.keys(ch).length > 0 && <section className="sec"><div className="sec-h">De dónde llegan</div><Rows fmt={v => `${v}`} data={Object.entries(ch).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ k, label: k, v: n }))} /><p className="sec-f">Solicitudes de {y} según cómo nos encontraron.</p></section>}
+    <TableroSolicitudes y={y} />
+  </>;
+}
+
+/* ---------- Tablero de solicitudes (en Reportes) ----------
+   De dónde llegan las solicitudes del año, cuántas terminan en reserva y qué tan rápido se
+   responden. Una solicitud es toda reserva creada ese año (todas empiezan como solicitud, salvo
+   las que se anotan ya pagadas con «Nueva reserva», que cuentan como solicitudes que se pagaron). */
+const ESTADOS_FIN = [
+  { k: "pagada", label: "Se pagaron", st: SOLD },
+  { k: "curso", label: "Todavía en conversación", st: SOLICITUD },
+  { k: "no_siguio", label: "No siguieron", st: ["no_siguio"] },
+  { k: "sin_cupo", label: "Sin cupo", st: ["rechazada"] },
+  { k: "vencida", label: "Se venció el apartado o la fecha", st: ["vencida"] },
+  { k: "cancelada", label: "Canceladas", st: ["cancelada"] }
+];
+const finDe = r => ESTADOS_FIN.find(e => e.st.includes(r.state))?.k || "curso";
+const RESP = [
+  { k: "1h", label: "Menos de 1 hora", max: 1 },
+  { k: "12h", label: "De 1 a 12 horas", max: 12 },
+  { k: "24h", label: "De 12 a 24 horas", max: 24 },
+  { k: "mas", label: "Más de 24 horas", max: Infinity }
+];
+function TableroSolicitudes({ y }) {
+  const { S } = useMC();
+  const sol = S.reservas.filter(r => r.created && new Date(r.created).getFullYear() === y);
+  if (!sol.length) return <section className="sec"><div className="sec-h">Solicitudes</div><div className="group"><Empty icon="solicitudes">Todavía no hay solicitudes en {y}.</Empty></div></section>;
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const pagada = r => finDe(r) === "pagada";
+  const cerradas = sol.filter(r => finDe(r) !== "curso");
+  const conv = pct(cerradas.filter(pagada).length, cerradas.length);
+  // Primera respuesta: la primera nota de la conversación (0019) menos la hora en que llegó.
+  const primera = {}; (S.notes || []).forEach(n => { if (!primera[n.res] || n.at < primera[n.res]) primera[n.res] = n.at; });
+  const horas = sol.filter(r => primera[r.id]).map(r => (primera[r.id] - r.created) / 36e5).filter(h => h >= 0);
+  const med = horas.length ? horas.slice().sort((a, b) => a - b)[Math.floor(horas.length / 2)] : null;
+  const fmtH = h => h == null ? "—" : h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} d`;
+  // Por mes
+  const porMes = Array(12).fill(0), pagMes = Array(12).fill(0);
+  sol.forEach(r => { const m = new Date(r.created).getMonth(); porMes[m]++; if (pagada(r)) pagMes[m]++; });
+  const mesData = porMes.map((v, i) => ({ k: i, label: MES[i][0].toUpperCase(), full: `${MESL[i]} ${y}`, v, note: v ? `${pagMes[i]} se ${pagMes[i] === 1 ? "pagó" : "pagaron"} (${pct(pagMes[i], v)}%)` : "ninguna", dim: y === T0.getFullYear() && i > T0.getMonth() }));
+  // Por canal
+  const canal = {}; sol.forEach(r => { const c = r.channel || "Sin canal"; canal[c] = canal[c] || { n: 0, p: 0, cerr: 0 }; canal[c].n++; if (finDe(r) !== "curso") canal[c].cerr++; if (pagada(r)) canal[c].p++; });
+  const canalData = Object.entries(canal).sort((a, b) => b[1].n - a[1].n).map(([k, c]) => ({ k, label: k, v: c.n, note: c.cerr ? `${pct(c.p, c.cerr)}% terminan en reserva` : "todas en curso" }));
+  const mejor = canalData.filter(c => canal[c.k].cerr >= 3).sort((a, b) => pct(canal[b.k].p, canal[b.k].cerr) - pct(canal[a.k].p, canal[a.k].cerr))[0];
+  // Cómo terminan
+  const finData = ESTADOS_FIN.map(e => ({ k: e.k, label: e.label, v: sol.filter(r => finDe(r) === e.k).length })).filter(d => d.v > 0).map(d => ({ ...d, note: `${pct(d.v, sol.length)}%`, hi: d.k === "pagada" }));
+  const respData = RESP.map((b, i) => ({ k: b.k, label: b.label, v: horas.filter(h => h < b.max && (i === 0 || h >= RESP[i - 1].max)).length })).map(d => ({ ...d, note: `${pct(d.v, horas.length)}%` }));
+  return <>
+    <section className="sec"><div className="sec-h">Solicitudes</div>
+      <div className="card kpis">
+        <div className="kpi"><b>{sol.length}</b><span>solicitudes en {y}</span></div>
+        <div className="kpi"><b>{cerradas.length ? <>{conv}<small>%</small></> : "—"}</b><span>terminan en reserva</span></div>
+        <div className="kpi"><b>{fmtH(med)}</b><span>tarda la primera respuesta (mitad de los casos)</span></div>
+      </div>
+      <p className="sec-f">El porcentaje cuenta solo las que ya se cerraron (pagaron, no siguieron, sin cupo, vencidas o canceladas).{mejor ? ` El canal que más termina en reserva es ${mejor.label}.` : ""}</p></section>
+
+    <section className="sec"><div className="sec-h">Solicitudes por mes</div><div className="card chart-card"><Columns data={mesData} fmt={v => `${v}`} label={`Solicitudes por mes en ${y}`} />
+      <NumbersTable head={["Mes", "Solicitudes", "Se pagaron", "%"]} rows={porMes.map((v, i) => [MESL[i], v, pagMes[i], v ? `${pct(pagMes[i], v)}%` : "—"])} /></div>
+      <p className="sec-f">Por el día en que llegó cada solicitud.</p></section>
+
+    <section className="sec"><div className="sec-h">De dónde llegan</div><Rows fmt={v => `${v}`} data={canalData} />
+      <p className="sec-f">Cuántas llegaron por cada canal y, de las que ya se cerraron, cuántas se pagaron.</p></section>
+
+    <section className="sec"><div className="sec-h">Cómo terminan</div><Rows fmt={v => `${v}`} data={finData} /></section>
+
+    {horas.length > 0 && <section className="sec"><div className="sec-h">Qué tan rápido respondemos</div><Rows fmt={v => `${v}`} data={respData} />
+      <p className="sec-f">Desde que llega la solicitud hasta la primera nota de la conversación. La meta es responder en menos de {RESPONDER_H} horas. Cuenta desde que se usan las notas en Solicitudes.</p></section>}
   </>;
 }
 
