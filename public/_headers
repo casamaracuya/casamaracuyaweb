@@ -24,3 +24,11 @@
 /comprobante
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
+
+/mi-reserva
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/en/my-booking
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store

@@ -1,4 +1,6 @@
 User-agent: *
 Disallow: /admin
 Disallow: /comprobante
+Disallow: /mi-reserva
+Disallow: /en/my-booking
 Sitemap: https://casa-maracuya.com/sitemap.xml

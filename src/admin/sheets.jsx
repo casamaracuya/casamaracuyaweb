@@ -29,6 +29,60 @@ export function teamMsg(S, r) {
   return lines.join("\n");
 }
 
+/* ---------- Mi reserva: el apartado del cliente (0020) ----------
+   Recepción le envía el acceso (enlace con el código CM-) por WhatsApp; el cliente entra con su
+   apellido, llena la ficha y la firma. Aquí se ve si ya se envió, cuántas veces y cómo va la ficha. */
+const SITE = "https://casa-maracuya.com";
+export const enlacePortal = r => `${SITE}${r.lang === "en" ? "/en/my-booking" : "/mi-reserva"}?c=${r.loc}`;
+export const mensajeAcceso = (r, g) => {
+  const n = String(g.name || "").trim().split(/\s+/)[0] || "";
+  return r.lang === "en"
+    ? `Hi ${n}! Your booking at Casa Maracuyá is confirmed. Your booking code is *${r.loc}*.\n\nHere you can fill in the registration form before you arrive (it takes about 5 minutes) and find everything about your stay:\n${enlacePortal(r)}\n\nYou sign in with your code and your last name. See you soon!`
+    : `¡Hola, ${n}! Tu reserva en Casa Maracuyá está confirmada. Tu código de reserva es *${r.loc}*.\n\nAquí puedes llenar la ficha de registro antes de llegar (te toma unos 5 minutos) y ver todo lo de tu estadía:\n${enlacePortal(r)}\n\nEntras con tu código y tu apellido. ¡Te esperamos!`;
+};
+const waAcceso = (r, g) => `https://api.whatsapp.com/send?${String(g.phone || "").replace(/\D/g, "").length >= 7 ? `phone=${String(g.phone).replace(/\D/g, "")}&` : ""}text=${encodeURIComponent(mensajeAcceso(r, g))}`;
+const canAcceso = role => ["direccion","admin","recepcion"].includes(role);
+function PortalSec({ r, g }) {
+  const { S, role, act, toast } = useMC();
+  if (!r.loc || !["confirmada","casa","finalizada"].includes(r.state)) return null;
+  const f = r.ficha || {}, a = r.access || { times: 0 };
+  const by = a.by && S.team.find(p => p.id === a.by);
+  const partes = (f.parts || []).length;
+  const estado = f.origin === "cliente" && f.signed ? { ok: true, t: `El cliente llenó y firmó la ficha ${ago(f.signed)}` }
+    : f.origin === "cliente" && partes ? { t: `El cliente va por la ficha: ${partes} de 5 partes, sin firmar` }
+    : f.signed ? { ok: true, t: "La ficha ya está firmada (en papel)" }
+    : { t: a.times ? "El cliente todavía no ha empezado la ficha" : "Todavía no se le ha enviado el acceso" };
+  const registrar = () => act(x => x.registrarAcceso(r.id), "Quedó anotado que le enviaste el acceso", { quiet: false });
+  return <section className="sec"><div className="sec-h">Mi reserva · apartado del cliente</div>
+    <div className="note" style={estado.ok ? { background: "var(--good-bg)", color: "var(--good)" } : undefined}><Icon n={estado.ok ? "check" : "alert"} c="s" w={estado.ok ? "b" : "f"} /><span>{estado.t}.{!a.times && !estado.ok ? " Envíale el enlace para que llene la ficha antes de llegar." : ""}</span></div>
+    <div className="group">
+      <KV k="Código para entrar" v={r.loc} />
+      <KV k="Acceso enviado" v={a.times ? `${ago(a.at)}${by ? ` · ${by.name.split(" ")[0]}` : ""}${a.times > 1 ? ` · ${a.times} veces` : ""}` : "Todavía no"} />
+      {canAcceso(role) && <>
+        <a className="row press" href={waAcceso(r, g)} target="_blank" rel="noopener noreferrer" onClick={registrar}>
+          <span className="ico" style={{ background: "var(--accent-bg)", color: "var(--accent-ink)" }}><Icon n="chat" c="s" /></span>
+          <span className="grow"><span className="t">{a.times ? "Reenviar el acceso por WhatsApp" : "Enviar acceso por WhatsApp"}</span><span className="st">{g.phone ? `A ${g.phone}` : "Eliges el contacto en WhatsApp"} · el enlace y el código</span></span><Icon n="chev" c="s chev" /></a>
+        <button className="row press" onClick={() => copy(enlacePortal(r), toast)}><span className="ico"><Icon n="copy" c="s" /></span><span className="grow"><span className="t">Copiar el enlace</span><span className="st">{enlacePortal(r).replace("https://", "")}</span></span></button>
+      </>}
+    </div>
+  </section>;
+}
+
+// La firma que hizo el cliente en «Mi reserva», cuando el equipo la pide (no se descarga sola).
+function FirmaCliente({ r }) {
+  const { act } = useMC();
+  const [d, setD] = useState(null); const [open, setOpen] = useState(false);
+  const ver = async () => { setOpen(true); if (!d) await act(async x => { setD(await x.verFirma(r.id) || {}); }, null, { quiet: true }); };
+  if (!open) return <button className="row press" onClick={ver}><span className="ico"><Icon n="check" c="s" /></span><span className="grow"><span className="t">Ver la firma del cliente</span><span className="st">La que hizo con el dedo en Mi reserva</span></span><Icon n="chev" c="s chev" /></button>;
+  if (!d) return <div className="row"><span className="st">Cargando la firma…</span></div>;
+  if (!d.imagen) return <div className="row"><span className="st">No hay firma digital guardada.</span></div>;
+  return <div className="row" style={{ display: "grid", gap: 8 }}>
+    <img src={d.imagen} alt={`Firma de ${d.nombre}`} style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: 12, border: "1px solid var(--line)" }} />
+    <span className="st" style={{ whiteSpace: "normal" }}>{d.nombre} · C.I. {d.documento} · {new Date(d.firmada).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" })} · normas {d.normas}</span>
+    <span className="st" style={{ whiteSpace: "normal", fontFamily: "monospace", fontSize: 11 }}>Huella {String(d.huella).slice(0, 16)}…</span>
+  </div>;
+}
+
 /* ---------- Ficha de registro ----------
    El huésped la llena y la firma en papel (public/ficha-registro-casa-maracuya.pdf) y el equipo
    la pasa aquí. Los datos van a la reserva (quiénes pernoctan, vehículos…) y a la ficha del huésped. */
@@ -44,8 +98,8 @@ function FichaSec({ r, g }) {
     {!f.filled
       ? <div className="note"><Icon n="alert" c="s" w="f" /><span>Todavía no se ha pasado la ficha. Imprímela, que el titular la llene y firme, y pásala aquí.</span></div>
       : f.signed
-        ? <div className="note" style={{ background: "var(--good-bg)", color: "var(--good)" }}><Icon n="check" c="s" w="b" /><span>Firmada en papel por <b>{f.firma}</b>. Aceptó las normas de la casa.{by ? ` Pasada por ${by.name.split(" ")[0]} ${ago(f.at)}.` : ""}</span></div>
-        : <div className="note"><Icon n="alert" c="s" w="f" /><span>Pasada al panel, pero falta la firma del titular en papel.</span></div>}
+        ? <div className="note" style={{ background: "var(--good-bg)", color: "var(--good)" }}><Icon n="check" c="s" w="b" /><span>{f.origin === "cliente" && !by ? <>Llenada y firmada por <b>{f.firma}</b> en Mi reserva. Aceptó las normas de la casa.</> : <>Firmada por <b>{f.firma}</b>. Aceptó las normas de la casa.{by ? ` Pasada por ${by.name.split(" ")[0]} ${ago(f.at)}.` : ""}</>}</span></div>
+        : <div className="note"><Icon n="alert" c="s" w="f" /><span>{f.origin === "cliente" ? "El cliente la está llenando en Mi reserva; todavía no la firma." : "Pasada al panel, pero falta la firma del titular en papel."}</span></div>}
     {f.filled && <div className="group kv">
       <KV k="Llegada estimada" v={f.arrival || "Sin indicar"} />
       <KV k="Huéspedes" v={`${f.adults || 0} adultos · ${f.kids || 0} niños`} />
@@ -55,6 +109,8 @@ function FichaSec({ r, g }) {
       {f.needs && <KV k="Requerimientos" v={f.needs} />}
       {f.reason && <KV k="Motivo" v={f.reason} />}
       {r.pet && <KV k="Mascota" v={[f.petName, f.petBreed].filter(Boolean).join(", ") || "Sí"} />}
+      {r.emergency && <KV k="Emergencia" v={[r.emergency.name, r.emergency.rel, r.emergency.phone].filter(Boolean).join(" · ")} />}
+      {f.origin === "cliente" && f.signed && R.phone && <FirmaCliente r={r} />}
     </div>}
     {f.filled && f.people.length > 0 && <><div className="sec-h" style={{ marginTop: 14 }}>Registrados para dormir ({f.people.length})</div><div className="group">
       {f.people.map((o, i) => <div key={i} className="row"><span className="ico" style={{ fontWeight: 700 }}>{i + 1}</span><span className="grow"><span className="t">{o.nombre}{i === 0 && <span style={{ color: "var(--ink3)", fontWeight: 600 }}> · titular</span>}</span>
@@ -89,7 +145,8 @@ export function FichaSheet({ id }) {
     const veh = [...(fi.vehicles || [])]; while (veh.length < 2) veh.push("");
     return { nombre: g.name || "", documento: g.doc || "", telefono: g.phone || "", email: g.email || "", ciudad: g.city || "",
       hora: fi.arrival || "", adultos: fi.adults ?? r.people, ninos: fi.kids ?? 0, veh, occ,
-      al, alO, be, beO, rq, rqO, mo, moO, mascota: !!r.pet, mN: fi.petName || "", mR: fi.petBreed || "", firmada: !!fi.signed };
+      al, alO, be, beO, rq, rqO, mo, moO, mascota: !!r.pet, mN: fi.petName || "", mR: fi.petBreed || "", firmada: !!fi.signed,
+      emN: r.emergency?.name || "", emP: r.emergency?.rel || "", emT: r.emergency?.phone || "" };
   });
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   if (!r || !f) return <p className="sec-f">Esta reserva ya no existe.</p>;
@@ -108,7 +165,8 @@ export function FichaSheet({ id }) {
       hora_llegada: f.hora, adultos: ad, ninos: ni, vehiculos: f.veh.map(v => v.trim()).filter(Boolean),
       ocupantes: [{ nombre: f.nombre.trim(), documento: f.documento.trim(), edad: "" }, ...f.occ],
       alergias: joinOpts(f.al, f.alO), bebidas: joinOpts(f.be, f.beO).join(", "), requerimientos: joinOpts(f.rq, f.rqO).join(", "), motivo: joinOpts(f.mo, f.moO).join(", "),
-      mascota: f.mascota, mascota_nombre: f.mascota ? f.mN.trim() : "", mascota_raza: f.mascota ? f.mR.trim() : "", firmada: f.firmada
+      mascota: f.mascota, mascota_nombre: f.mascota ? f.mN.trim() : "", mascota_raza: f.mascota ? f.mR.trim() : "", firmada: f.firmada,
+      emergencia_nombre: f.emN.trim(), emergencia_parentesco: f.emP.trim(), emergencia_telefono: f.emT.trim()
     }), "Ficha guardada");
     setBusy(false); if (er) setErr(er); else openSheet("res", { id: r.id });
   };
@@ -121,7 +179,9 @@ export function FichaSheet({ id }) {
     <section className="sec"><div className="sec-h">1 · Titular de la reserva</div><div className="group">
       {row("fcN", "Nombre y apellido", "nombre")}{row("fcD", "C.I. / Pasaporte", "documento")}{row("fcT", "WhatsApp", "telefono", { inputMode: "tel" })}
       {row("fcE", "Correo", "email", { type: "email" })}{row("fcC", "Ciudad de origen", "ciudad")}
-    </div></section>
+    </div><div className="sec-h" style={{ marginTop: 12 }}>Contacto de emergencia</div><div className="group">
+      {row("fcEN", "Nombre y apellido", "emN")}{row("fcEP", "Parentesco", "emP")}{row("fcET", "Teléfono", "emT", { inputMode: "tel" })}
+    </div><p className="sec-f">Alguien que no viaje con el grupo.</p></section>
 
     <section className="sec"><div className="sec-h">2 · Estancia y transporte</div><div className="group">
       {row("fcH", "Hora est. de llegada", "hora", { type: "time" })}
@@ -271,6 +331,7 @@ export function ResSheet({ id }) {
         {canPay && <button type="button" className="btn small plain press" onClick={() => act(a => a.cambiarIdioma(r.id, r.lang === "en" ? "es" : "en"), r.lang === "en" ? "Los mensajes irán en español" : "Los mensajes irán en inglés")}>{r.lang === "en" ? "Pasar a español" : "Pasar a inglés"}</button>}</div></div></section>
     {canMove && ["nueva","conversacion","pre"].includes(r.state) && <section className="sec"><div className="group"><button className="row press" onClick={() => openSheet("budget", { res: r.id })}><span className="ico"><Icon n="receipt" c="s" /></span><span className="grow"><span className="t">Hacer presupuesto</span><span className="st">Con su nombre, fechas, personas y plan ya puestos</span></span><Icon n="chev" c="s chev" /></button></div></section>}
     <ReceiptSec r={r} g={g} />
+    <PortalSec r={r} g={g} />
     <FichaSec r={r} g={g} />
     <AuditSec r={r} />
     {(canMove || canReceive) && ["confirmada","casa"].includes(r.state) && <section className="sec"><div className="sec-h">Avisar al equipo</div><div className="group">
