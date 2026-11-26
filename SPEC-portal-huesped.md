@@ -107,6 +107,10 @@ cliente encuentra todo lo de su estadía.
     Recepción al registrar el pago. En la parte 2 se muestra fijo, con un enlace a WhatsApp si cambió;
     en la parte 3 van exactamente las personas de la reserva, más hasta 2 bebés menores de 3 años
     (no pagan). Adultos y niños se cuentan solos con las edades.
+13. **Los bebés también los anota Recepción** (Daniel, 25 nov; migración 0022): la reserva guarda
+    cuántos bebés menores de 3 años vienen (0 a 2, no pagan). Se anotan en «Nueva reserva» o en la
+    reserva. En el portal no hay botón para agregar bebés; salen sus casillas, y la lista tiene que
+    cuadrar con personas + bebés. El enlace de la parte 2 dice «¿Tienes dudas? Escríbenos».
 
 ## Respuestas de Daniel (24 nov)
 

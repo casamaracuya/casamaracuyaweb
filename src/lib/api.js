@@ -142,6 +142,9 @@ const real = {
     if (!po.error) { const m = {}; po.data.forEach(x => { m[x.id] = x; });
       S.reservas.forEach(r => { const x = m[r.id]; if (!x) return; r.ficha.origin = x.ficha_origen || ""; r.ficha.parts = x.ficha_partes || [];
         r.access = { at: ms(x.acceso_enviado), times: x.acceso_veces || 0, by: x.acceso_por }; }); }
+    // Bebés que no pagan (0022). Aparte, por si aún no se corrió.
+    const bb = await supabase.from("reservas").select("id,bebes");
+    if (!bb.error) { const m = {}; bb.data.forEach(x => { m[x.id] = x.bebes || 0; }); S.reservas.forEach(r => { r.babies = m[r.id] || 0; }); }
     // La conversación de cada solicitud (0019). Aparte, por si la migración aún no se corrió.
     const cv = await supabase.from("conversaciones").select("*").order("creada").limit(3000);
     S.notes = cv.error ? [] : cv.data.map(n => ({ id: n.id, res: n.reserva_id, text: n.texto, by: n.autor, at: ms(n.creada) }));
@@ -178,6 +181,8 @@ const real = {
   async resolverAprobacion(_S, id, aprobar, nota = "") { return ok(await supabase.rpc("resolver_aprobacion", { p_id: id, p_aprobar: aprobar, p_nota: nota })); },
   // Historial del cliente (0017 parte 7). La base de datos solo se lo entrega a Dirección.
   // Portal «Mi reserva» (0020): anota que se envió el acceso al cliente; la firma que hizo el cliente.
+  // Bebés menores de 3 años que no pagan (0022), de 0 a 2.
+  async fijarBebes(_S, id, n) { return ok(await supabase.rpc("fijar_bebes", { p_reserva: id, p_bebes: n })); },
   async registrarAcceso(_S, id) { return ok(await supabase.rpc("registrar_acceso", { p_reserva: id })); },
   async verFirma(_S, id) { return ok(await supabase.rpc("ver_firma", { p_reserva: id })); },
   async historial(_S, guestId) { return ok(await supabase.from("bitacora").select("*").eq("huesped_id", guestId).order("cuando", { ascending: false }).limit(400)); },

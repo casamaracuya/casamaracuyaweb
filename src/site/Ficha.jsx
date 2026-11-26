@@ -19,9 +19,9 @@ const TX = {
     otroVehiculo: "Agregar otro vehículo", sinVehiculo: "Si no vienen en carro, déjalo en blanco.",
     menor: "Es menor de edad", edad: "Edad", tu: "Tú (titular)", persona: "Persona",
     tuGrupo: "Tu reserva es para", personas: "personas", persona1: "persona", grupoNota: "Es lo que anotamos al confirmar tu reserva.",
-    cambio: "¿Cambió el número de personas? Escríbenos", cambioMsg: "Hola, soy {n}, de la reserva {c}. Quiero avisar un cambio en el número de personas.",
+    cambio: "¿Tienes dudas? Escríbenos", cambioMsg: "Hola, soy {n}, de la reserva {c}. Tengo una duda sobre mi reserva.",
     quienes: "Escribe a cada persona de tu reserva. Si es menor de edad, marca la casilla y pon su edad.",
-    bebe: "Agregar un bebé menor de 3 años", bebeNota: "Hasta 2 bebés menores de 3 años no pagan y no cuentan en la reserva.", bebeT: "Bebé (menor de 3 años)", quitar: "Quitar",
+    bebeT: "Bebé (menor de 3 años)", y: "y", bebe1: "bebé", bebes: "bebés", bebeNota: "Los bebés menores de 3 años los anotamos al confirmar tu reserva.",
     otras: "Otras", choose: "Elige", si: "Sí", no: "No",
     acepto: "Leí y acepto las normas de la casa", firmaAqui: "Firma aquí con el dedo", borrar: "Borrar", firmar: "Firmar y terminar", firmando: "Firmando…",
     sinFirma: "Falta tu firma en el recuadro.", sinAcepto: "Marca que aceptas las normas.",
@@ -39,9 +39,9 @@ const TX = {
     otroVehiculo: "Add another vehicle", sinVehiculo: "If you're not coming by car, leave it blank.",
     menor: "Under 18", edad: "Age", tu: "You (main guest)", persona: "Guest",
     tuGrupo: "Your booking is for", personas: "guests", persona1: "guest", grupoNota: "This is what we noted when your booking was confirmed.",
-    cambio: "Has the number of guests changed? Message us", cambioMsg: "Hi, I'm {n}, booking {c}. I'd like to let you know about a change in the number of guests.",
+    cambio: "Any questions? Message us", cambioMsg: "Hi, I'm {n}, booking {c}. I have a question about my booking.",
     quienes: "Add each guest on your booking. If they're under 18, tick the box and add their age.",
-    bebe: "Add a baby under 3", bebeNota: "Up to 2 babies under 3 stay free and don't count towards the booking.", bebeT: "Baby (under 3)", quitar: "Remove",
+    bebeT: "Baby (under 3)", y: "and", bebe1: "baby", bebes: "babies", bebeNota: "We noted babies under 3 when your booking was confirmed.",
     otras: "Other", choose: "Choose", si: "Yes", no: "No",
     acepto: "I have read and accept the house rules", firmaAqui: "Sign here with your finger", borrar: "Clear", firmar: "Sign and finish", firmando: "Signing…",
     sinFirma: "Please sign in the box.", sinAcepto: "Please tick that you accept the rules.",
@@ -149,14 +149,14 @@ function P1({ t, F, f, guardar, ...rest }) {
 }
 
 // 2 · Llegada y vehículos. El número de personas es el de la reserva (lo anotó Recepción
-// al registrar el pago): se muestra, no se cambia aquí. Si cambió, WhatsApp a Recepción (0021).
+// al registrar el pago): se muestra, no se cambia aquí. Para dudas, WhatsApp a Recepción (0021).
 const waCambio = (t, f, r) => `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(t.cambioMsg.replace("{n}", String(f.nombre || "").trim()).replace("{c}", r.codigo))}`;
 function P2({ t, F, f, r, guardar, ...rest }) {
   const [hora, setHora] = useState(f.hora_llegada || "");
   const [veh, setVeh] = useState(f.vehiculos?.length ? f.vehiculos : [""]);
   return <Form onSubmit={() => guardar({ hora_llegada: hora, vehiculos: veh })}>
     <div className="wide mr-group">
-      <p><span className="mr-label">{t.tuGrupo}</span><b>{r.personas} {r.personas === 1 ? t.persona1 : t.personas}</b></p>
+      <p><span className="mr-label">{t.tuGrupo}</span><b>{r.personas} {r.personas === 1 ? t.persona1 : t.personas}{r.bebes > 0 && <> {t.y} {r.bebes} {r.bebes === 1 ? t.bebe1 : t.bebes}</>}</b></p>
       <p className="hint">{t.grupoNota}</p>
       <a className="mr-link" href={waCambio(t, f, r)} target="_blank" rel="noopener noreferrer">{t.cambio} →</a>
     </div>
@@ -173,17 +173,18 @@ function P2({ t, F, f, r, guardar, ...rest }) {
   </Form>;
 }
 
-// 3 · Quiénes se quedan (titular primero): una casilla por persona de la reserva, más hasta
-// 2 bebés menores de 3 años, que no pagan. Adultos y niños se cuentan solos con las edades (0021).
+// 3 · Quiénes se quedan (titular primero): una casilla por persona de la reserva y una por cada
+// bebé menor de 3 años que anotó Recepción (0022). Adultos y niños se cuentan solos con las edades.
 function P3({ t, F, f, r, guardar, ...rest }) {
   const total = Math.max(1, r.personas || 1);
   const prev = f.ocupantes || [];
   const esBebe = o => o.edad !== null && o.edad !== undefined && o.edad !== "" && Number(o.edad) < 3;
-  const prevBebes = prev.filter(esBebe).slice(0, 2), prevResto = prev.filter(o => !esBebe(o));
+  const nBebes = Math.min(2, Math.max(0, r.bebes || 0));
+  const prevBebes = prev.filter(esBebe).slice(0, nBebes), prevResto = prev.filter(o => !prevBebes.includes(o));
   const fila = (o, i) => ({ nombre: o.nombre || (i === 0 ? f.nombre : "") || "", documento: o.documento || (i === 0 ? f.documento : "") || "",
     menor: o.edad != null && o.edad !== "", edad: o.edad ?? "" });
   const [filas, setFilas] = useState(() => Array.from({ length: total }, (_, i) => fila(prevResto[i] || {}, i)));
-  const [bebes, setBebes] = useState(() => prevBebes.map(o => ({ nombre: o.nombre || "", edad: String(o.edad ?? "") })));
+  const [bebes, setBebes] = useState(() => Array.from({ length: nBebes }, (_, i) => ({ nombre: prevBebes[i]?.nombre || "", edad: String(prevBebes[i]?.edad ?? "0") })));
   const s = (i, k, val) => setFilas(filas.map((x, j) => j === i ? { ...x, [k]: val } : x));
   const sb = (i, k, val) => setBebes(bebes.map((x, j) => j === i ? { ...x, [k]: val } : x));
   return <Form onSubmit={() => guardar({ ocupantes: [...filas.map(x => ({ nombre: x.nombre, documento: x.documento, edad: x.menor ? x.edad : "" })),
@@ -203,9 +204,8 @@ function P3({ t, F, f, r, guardar, ...rest }) {
       <Campo id={`b-e${i}`} label={t.edad}>
         <select id={`b-e${i}`} value={x.edad} onChange={e => sb(i, "edad", e.target.value)}><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
       </Campo>
-      <div className="wide"><button type="button" className="mr-link" onClick={() => setBebes(bebes.filter((_, j) => j !== i))}>{t.quitar}</button></div>
     </fieldset>)}
-    {bebes.length < 2 && <div className="wide"><button type="button" className="mr-link" onClick={() => setBebes([...bebes, { nombre: "", edad: "0" }])}>+ {t.bebe}</button><p className="hint" style={{ marginTop: 6 }}>{t.bebeNota}</p></div>}
+    {bebes.length > 0 && <p className="hint wide">{t.bebeNota}</p>}
     <Pie t={t} {...rest} />
   </Form>;
 }
