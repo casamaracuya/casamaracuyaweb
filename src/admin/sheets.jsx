@@ -329,7 +329,11 @@ export function ResSheet({ id }) {
     {SOLICITUD.includes(r.state) && <CupoBox r={r} first={first} wa={wa} />}
     {SOLICITUD.includes(r.state) && <Dupes r={r} />}
     {(SOLICITUD.includes(r.state) || ARCHIVO.includes(r.state) || (S.notes || []).some(n => n.res === r.id)) && canPay && <Chat r={r} />}
-    <section className="sec"><div className="sec-h">Estadía</div><div className="group kv"><KV k="Llegada" v={fdate(r.in)} /><KV k="Salida" v={fdate(r.out)} /><KV k="Noches" v={nights(r)} /><KV k="Plan" v={PLAN[r.plan].name} /><KV k="Personas" v={r.people} /><KV k="Mascota" v={r.pet ? (g.pet || "Sí") : "No"} />
+    <section className="sec"><div className="sec-h">Estadía</div><div className="group kv"><KV k="Llegada" v={fdate(r.in)} /><KV k="Salida" v={fdate(r.out)} /><KV k="Noches" v={nights(r)} /><KV k="Plan" v={PLAN[r.plan].name} /><KV k="Personas" v={r.people} />
+      <div className="row"><span className="k">Bebés <small style={{ display: "block", fontWeight: 500, color: "var(--ink3)" }}>menores de 3, no pagan</small></span>
+        {canPay ? <div className="stepper" role="group" aria-label="Bebés menores de 3 años"><button type="button" disabled={!r.babies} onClick={() => act(a => a.fijarBebes(r.id, r.babies - 1), "Bebés actualizados")} aria-label="Un bebé menos">−</button><output>{r.babies || 0}</output><button type="button" disabled={r.babies >= 2} onClick={() => act(a => a.fijarBebes(r.id, (r.babies || 0) + 1), "Bebés actualizados")} aria-label="Un bebé más">+</button></div>
+          : <span className="val">{r.babies || 0}</span>}</div>
+      <KV k="Mascota" v={r.pet ? (g.pet || "Sí") : "No"} />
       <div className="row"><span className="k">Mensajes al cliente</span><span className="val">{r.lang === "en" ? "En inglés" : "En español"}</span>
         {canPay && <button type="button" className="btn small plain press" onClick={() => act(a => a.cambiarIdioma(r.id, r.lang === "en" ? "es" : "en"), r.lang === "en" ? "Los mensajes irán en español" : "Los mensajes irán en inglés")}>{r.lang === "en" ? "Pasar a español" : "Pasar a inglés"}</button>}</div></div></section>
     {canMove && ["nueva","conversacion","pre"].includes(r.state) && <section className="sec"><div className="group"><button className="row press" onClick={() => openSheet("budget", { res: r.id })}><span className="ico"><Icon n="receipt" c="s" /></span><span className="grow"><span className="t">Hacer presupuesto</span><span className="st">Con su nombre, fechas, personas y plan ya puestos</span></span><Icon n="chev" c="s chev" /></button></div></section>}

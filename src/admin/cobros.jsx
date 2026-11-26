@@ -265,7 +265,7 @@ export function PaySheet({ id }) {
 export function PaidSheet({ date }) {
   const { S, act, openSheet, toast } = useMC();
   const din = date || day(7);
-  const [f, setF] = useState({ name: "", phone: "", email: "", lang: "es", plan: "esencial", in: din, out: addDays(din, 2), people: 4, pet: false, channel: "WhatsApp", notes: "", total: "" });
+  const [f, setF] = useState({ name: "", phone: "", email: "", lang: "es", plan: "esencial", in: din, out: addDays(din, 2), people: 4, babies: 0, pet: false, channel: "WhatsApp", notes: "", total: "" });
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
   const known = findGuest(S, f.phone); const kg = known && S.guests[known];
@@ -300,6 +300,8 @@ export function PaidSheet({ date }) {
       res = await a.crearReservaPagada(id, { nombre: f.name.trim() || kg.name, telefono: f.phone, email: f.email.trim(), idioma: f.lang, plan: f.plan, personas: f.people, mascota: f.pet,
         llegada: f.in, salida: f.out, canal: f.channel, notas: f.notes, ...P.payload(path), total: Q.locked ? null : tot, cotizacion: Q.code, motivo: Q.reason.trim(), concepto: `${n} ${n === 1 ? "noche" : "noches"} · ${PLAN[f.plan].name} · ${f.people} personas` }); }, null);
     if (er) { setBusy(false); return setErr(er); }
+    // Los bebés que no pagan (0022). Si la base aún no tiene la 0022, no se anotan pero la reserva queda igual.
+    if (f.babies > 0) await act(a => a.fijarBebes(id, f.babies), null, { quiet: true });
     if (res?.pendiente) toast("Reserva anotada. El pago queda en espera de que Administración lo apruebe");
     else await afterConfirm(act, toast, id, res);
     setBusy(false); openSheet("res", { id });
@@ -321,6 +323,7 @@ export function PaidSheet({ date }) {
         <div className="row"><label className="k" htmlFor="rpIn">Llegada</label><input type="date" id="rpIn" className="field-in" value={f.in} min={TODAY} onChange={e => set("in", e.target.value)} /></div>
         <div className="row"><label className="k" htmlFor="rpOut">Salida</label><input type="date" id="rpOut" className="field-in" value={f.out} min={TODAY} onChange={e => set("out", e.target.value)} /></div>
         <div className="row"><span className="k" id="rpPeopleL">Personas</span><div className="stepper" role="group" aria-labelledby="rpPeopleL"><button type="button" onClick={() => set("people", Math.max(1, f.people - 1))} aria-label="Una persona menos">−</button><output>{f.people}</output><button type="button" onClick={() => set("people", Math.min(12, f.people + 1))} aria-label="Una persona más">+</button></div></div>
+        <div className="row"><span className="k" id="rpBabiesL">Bebés <small style={{ display: "block", fontWeight: 500, color: "var(--ink3)" }}>menores de 3 años, no pagan</small></span><div className="stepper" role="group" aria-labelledby="rpBabiesL"><button type="button" onClick={() => set("babies", Math.max(0, f.babies - 1))} aria-label="Un bebé menos">−</button><output>{f.babies}</output><button type="button" onClick={() => set("babies", Math.min(2, f.babies + 1))} aria-label="Un bebé más">+</button></div></div>
         <div className="row"><label className="k" htmlFor="rpPet">Viene con mascota</label><Switch id="rpPet" checked={f.pet} onChange={v => set("pet", v)} /></div>
         <div className="row"><label className="k" htmlFor="rpTot">Total de la estadía</label><span style={{ color: "var(--ink3)" }}>$</span><input id="rpTot" className="field-in" inputMode="decimal" value={Q.locked ? String(tot) : f.total} disabled={Q.locked} onChange={e => set("total", e.target.value)} style={{ maxWidth: 140, color: "var(--ink)" }} /></div>
       </div></section>
