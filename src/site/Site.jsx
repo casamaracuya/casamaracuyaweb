@@ -124,7 +124,7 @@ export default function Site({ lang = "es" }) {
     // Un robot llena el campo trampa o envía en menos de 3 segundos: no se guarda nada,
     // pero se le muestra lo mismo que a una persona para no darle pistas.
     const bot = !!trap.current?.value || Date.now() - shownAt.current < 3000;
-    if (!bot) try { code = await crearSolicitud({ name: f.name.trim(), phone: f.phone, plan: f.plan, people: payN, pet: f.pet === "si", in: f.checkin, out: f.checkout, notes: [`${n} adultos y niños desde 3 años` + (babies ? `, ${babies} menores de 3 años (${payB ? `${payB} ${payB === 1 ? "paga" : "pagan"}` : "no pagan"})` : ""),
+    if (!bot) try { code = await crearSolicitud({ name: f.name.trim(), phone: f.phone, plan: f.plan, people: payN, babies: freeB, pet: f.pet === "si", in: f.checkin, out: f.checkout, notes: [`${n} adultos y niños desde 3 años` + (babies ? `, ${babies} ${babies === 1 ? "menor" : "menores"} de 3 años (${payB ? `${payB} ${payB === 1 ? "paga" : "pagan"}` : babies === 1 ? "no paga" : "no pagan"})` : ""),
               f.celebra && `Celebran: ${T.es["cel." + f.celebra]}`, f.how && `Nos conoció por: ${T.es["how." + f.how]}`, f.notes.trim()].filter(Boolean).join(". "), channel: new URLSearchParams(location.search).get("utm_source") || "Web", lang }); saved = !!code; } catch { /* sigue por WhatsApp */ }
     setSending(false);
     const text = buildMessage(code);

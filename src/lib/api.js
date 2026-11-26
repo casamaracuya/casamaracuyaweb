@@ -269,10 +269,17 @@ export const api = real;
 /* ===================== Web pública ===================== */
 export async function crearSolicitud(d) {
   if (!supabase) return null;
-  return ok(await supabase.rpc("crear_solicitud", {
+  const base = {
     p_nombre: d.name, p_telefono: d.phone || "", p_plan: d.plan, p_personas: d.people, p_mascota: d.pet,
     p_llegada: d.in, p_salida: d.out, p_notas: d.notes || "", p_canal: d.channel || "Web", p_idioma: d.lang || "es"
-  }));
+  };
+  // Los bebés que no pagan (0023). Si la base todavía no tiene la 0023 (unos minutos después de
+  // publicar, antes de aprobar), se manda sin ellos para que la solicitud nunca se pierda.
+  if (d.babies > 0) {
+    const r = await supabase.rpc("crear_solicitud", { ...base, p_bebes: d.babies });
+    if (!r.error || r.error.code !== "PGRST202") return ok(r);
+  }
+  return ok(await supabase.rpc("crear_solicitud", base));
 }
 export async function nochesOcupadas(from, to) {
   if (!supabase) return [];
