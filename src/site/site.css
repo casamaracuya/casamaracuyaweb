@@ -871,3 +871,7 @@ footer .legal .dot{color:var(--accent);margin:0 .35em}
 .mr-done{display:grid;justify-items:center;text-align:center;gap:6px;padding-block:36px}
 .mr-done .mr-step-n{background:var(--green);color:var(--blanco);width:56px;height:56px;font-size:1.4rem}
 .mr-done h3{font:500 2rem/1.1 var(--f-display);margin:.3em 0 0}
+.mr-group{display:grid;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.mr-group p{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.mr-group b{font:800 1.3rem/1.1 var(--f-body);color:var(--ink)}
+.mr-group .mr-link{justify-self:start}

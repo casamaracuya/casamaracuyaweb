@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import SignaturePad from "signature_pad";
 import { FICHA, OPCIONES, NORMAS_VERSION } from "./ficha-data.js";
+import { WHATSAPP } from "../lib/contacto.js";
 
 // La ficha de registro en «Mi reserva» (SPEC-portal-huesped.md). Es la misma ficha de
 // papel (ficha-data.js), en partes cortas. Cada parte se guarda al tocar «Guardar y
@@ -17,6 +18,10 @@ const TX = {
     horaPh: "Elige una hora", horas: ["3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM", "Después de las 8:00 PM", "Todavía no sé"],
     otroVehiculo: "Agregar otro vehículo", sinVehiculo: "Si no vienen en carro, déjalo en blanco.",
     menor: "Es menor de edad", edad: "Edad", tu: "Tú (titular)", persona: "Persona",
+    tuGrupo: "Tu reserva es para", personas: "personas", persona1: "persona", grupoNota: "Es lo que anotamos al confirmar tu reserva.",
+    cambio: "¿Cambió el número de personas? Escríbenos", cambioMsg: "Hola, soy {n}, de la reserva {c}. Quiero avisar un cambio en el número de personas.",
+    quienes: "Escribe a cada persona de tu reserva. Si es menor de edad, marca la casilla y pon su edad.",
+    bebe: "Agregar un bebé menor de 3 años", bebeNota: "Hasta 2 bebés menores de 3 años no pagan y no cuentan en la reserva.", bebeT: "Bebé (menor de 3 años)", quitar: "Quitar",
     otras: "Otras", choose: "Elige", si: "Sí", no: "No",
     acepto: "Leí y acepto las normas de la casa", firmaAqui: "Firma aquí con el dedo", borrar: "Borrar", firmar: "Firmar y terminar", firmando: "Firmando…",
     sinFirma: "Falta tu firma en el recuadro.", sinAcepto: "Marca que aceptas las normas.",
@@ -33,6 +38,10 @@ const TX = {
     horaPh: "Pick a time", horas: ["3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM", "After 8:00 PM", "Not sure yet"],
     otroVehiculo: "Add another vehicle", sinVehiculo: "If you're not coming by car, leave it blank.",
     menor: "Under 18", edad: "Age", tu: "You (main guest)", persona: "Guest",
+    tuGrupo: "Your booking is for", personas: "guests", persona1: "guest", grupoNota: "This is what we noted when your booking was confirmed.",
+    cambio: "Has the number of guests changed? Message us", cambioMsg: "Hi, I'm {n}, booking {c}. I'd like to let you know about a change in the number of guests.",
+    quienes: "Add each guest on your booking. If they're under 18, tick the box and add their age.",
+    bebe: "Add a baby under 3", bebeNota: "Up to 2 babies under 3 stay free and don't count towards the booking.", bebeT: "Baby (under 3)", quitar: "Remove",
     otras: "Other", choose: "Choose", si: "Yes", no: "No",
     acepto: "I have read and accept the house rules", firmaAqui: "Sign here with your finger", borrar: "Clear", firmar: "Sign and finish", firmando: "Signing…",
     sinFirma: "Please sign in the box.", sinAcepto: "Please tick that you accept the rules.",
@@ -69,7 +78,7 @@ export default function Ficha({ lang, d, guardarParte, volver }) {
     } catch { setError(t.error); }
     setEnviando(false);
   };
-  const props = { t, F, lang, f, guardar, enviando, error, atras: parte > 1 ? () => { setError(""); setParte(parte - 1); } : null };
+  const props = { t, F, lang, f, r: d.reserva, guardar, enviando, error, atras: parte > 1 ? () => { setError(""); setParte(parte - 1); } : null };
 
   return (
     <section className="mr-ficha" ref={top}>
@@ -139,29 +148,24 @@ function P1({ t, F, f, guardar, ...rest }) {
   </Form>;
 }
 
-// 2 · Llegada, personas y vehículos
-function P2({ t, F, f, guardar, ...rest }) {
+// 2 · Llegada y vehículos. El número de personas es el de la reserva (lo anotó Recepción
+// al registrar el pago): se muestra, no se cambia aquí. Si cambió, WhatsApp a Recepción (0021).
+const waCambio = (t, f, r) => `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(t.cambioMsg.replace("{n}", String(f.nombre || "").trim()).replace("{c}", r.codigo))}`;
+function P2({ t, F, f, r, guardar, ...rest }) {
   const [hora, setHora] = useState(f.hora_llegada || "");
-  const [ad, setAd] = useState(String(f.adultos ?? ""));
-  const [ni, setNi] = useState(String(f.ninos ?? 0));
   const [veh, setVeh] = useState(f.vehiculos?.length ? f.vehiculos : [""]);
-  const nAd = Number(ad) || 0;
-  return <Form onSubmit={() => guardar({ hora_llegada: hora, adultos: nAd, ninos: Number(ni) || 0, vehiculos: veh })}>
+  return <Form onSubmit={() => guardar({ hora_llegada: hora, vehiculos: veh })}>
+    <div className="wide mr-group">
+      <p><span className="mr-label">{t.tuGrupo}</span><b>{r.personas} {r.personas === 1 ? t.persona1 : t.personas}</b></p>
+      <p className="hint">{t.grupoNota}</p>
+      <a className="mr-link" href={waCambio(t, f, r)} target="_blank" rel="noopener noreferrer">{t.cambio} →</a>
+    </div>
     <Campo id="f-hora" label={F.hora} ancho>
       <select id="f-hora" value={hora} onChange={e => setHora(e.target.value)}>
         <option value="">{t.horaPh}</option>{t.horas.map(x => <option key={x}>{x}</option>)}
         {hora && !t.horas.includes(hora) && <option>{hora}</option>}
       </select>
     </Campo>
-    <Campo id="f-ad" label={F.adultos}>
-      <select id="f-ad" value={ad} onChange={e => { setAd(e.target.value); if ((Number(e.target.value) || 0) + Number(ni) > 12) setNi(String(12 - Number(e.target.value))); }}>
-        <option value="">{t.choose}</option>{Array.from({ length: 12 }, (_, i) => <option key={i + 1}>{i + 1}</option>)}
-      </select>
-    </Campo>
-    <Campo id="f-ni" label={F.ninos}>
-      <select id="f-ni" value={ni} onChange={e => setNi(e.target.value)}>{Array.from({ length: 13 - Math.max(nAd, 1) }, (_, i) => <option key={i}>{i}</option>)}</select>
-    </Campo>
-    <p className="hint wide">{F.max}</p>
     <div className="wide mr-sub"><h3>{F.vehiculos}</h3><p>{t.sinVehiculo}</p></div>
     {veh.map((x, i) => <Campo key={i} id={`f-veh${i}`} label={`${i + 1}.`}><input id={`f-veh${i}`} placeholder={F.vehiculoPh} value={x} maxLength={80} onChange={e => setVeh(veh.map((y, j) => j === i ? e.target.value : y))} /></Campo>)}
     {veh.length < 4 && <div className="wide"><button type="button" className="mr-link" onClick={() => setVeh([...veh, ""])}>+ {t.otroVehiculo}</button></div>}
@@ -169,19 +173,22 @@ function P2({ t, F, f, guardar, ...rest }) {
   </Form>;
 }
 
-// 3 · Quiénes se quedan (titular primero). Cuadra con adultos + niños de la parte 2.
-function P3({ t, F, f, guardar, ...rest }) {
-  const total = Math.max(1, (f.adultos || 0) + (f.ninos || 0));
+// 3 · Quiénes se quedan (titular primero): una casilla por persona de la reserva, más hasta
+// 2 bebés menores de 3 años, que no pagan. Adultos y niños se cuentan solos con las edades (0021).
+function P3({ t, F, f, r, guardar, ...rest }) {
+  const total = Math.max(1, r.personas || 1);
   const prev = f.ocupantes || [];
-  const [filas, setFilas] = useState(() => Array.from({ length: total }, (_, i) => {
-    const o = prev[i] || {};
-    const nombre = o.nombre || (i === 0 ? f.nombre : "");
-    const documento = o.documento || (i === 0 ? f.documento : "");
-    return { nombre: nombre || "", documento: documento || "", menor: o.edad != null && o.edad !== "", edad: o.edad ?? "" };
-  }));
+  const esBebe = o => o.edad !== null && o.edad !== undefined && o.edad !== "" && Number(o.edad) < 3;
+  const prevBebes = prev.filter(esBebe).slice(0, 2), prevResto = prev.filter(o => !esBebe(o));
+  const fila = (o, i) => ({ nombre: o.nombre || (i === 0 ? f.nombre : "") || "", documento: o.documento || (i === 0 ? f.documento : "") || "",
+    menor: o.edad != null && o.edad !== "", edad: o.edad ?? "" });
+  const [filas, setFilas] = useState(() => Array.from({ length: total }, (_, i) => fila(prevResto[i] || {}, i)));
+  const [bebes, setBebes] = useState(() => prevBebes.map(o => ({ nombre: o.nombre || "", edad: String(o.edad ?? "") })));
   const s = (i, k, val) => setFilas(filas.map((x, j) => j === i ? { ...x, [k]: val } : x));
-  return <Form onSubmit={() => guardar({ ocupantes: filas.map(x => ({ nombre: x.nombre, documento: x.documento, edad: x.menor ? x.edad : "" })) })}>
-    <p className="hint wide">{F.s3note}</p>
+  const sb = (i, k, val) => setBebes(bebes.map((x, j) => j === i ? { ...x, [k]: val } : x));
+  return <Form onSubmit={() => guardar({ ocupantes: [...filas.map(x => ({ nombre: x.nombre, documento: x.documento, edad: x.menor ? x.edad : "" })),
+    ...bebes.map(x => ({ nombre: x.nombre, documento: "", edad: x.edad === "" ? "0" : x.edad }))] })}>
+    <p className="hint wide">{t.quienes}</p>
     {filas.map((x, i) => <fieldset key={i} className="mr-person wide">
       <legend>{i === 0 ? t.tu : `${t.persona} ${i + 1}`}</legend>
       <Campo id={`o-n${i}`} label={F.acNombre}><input id={`o-n${i}`} value={x.nombre} maxLength={120} onChange={e => s(i, "nombre", e.target.value)} /></Campo>
@@ -190,6 +197,15 @@ function P3({ t, F, f, guardar, ...rest }) {
       {i > 0 && <label className="mr-check"><input type="checkbox" checked={x.menor} onChange={e => s(i, "menor", e.target.checked)} /> {t.menor}</label>}
       {x.menor && <Campo id={`o-e${i}`} label={t.edad}><input id={`o-e${i}`} inputMode="numeric" value={x.edad} maxLength={2} onChange={e => s(i, "edad", e.target.value.replace(/\D/g, ""))} /></Campo>}
     </fieldset>)}
+    {bebes.map((x, i) => <fieldset key={`b${i}`} className="mr-person wide">
+      <legend>{t.bebeT}</legend>
+      <Campo id={`b-n${i}`} label={F.acNombre}><input id={`b-n${i}`} value={x.nombre} maxLength={120} onChange={e => sb(i, "nombre", e.target.value)} /></Campo>
+      <Campo id={`b-e${i}`} label={t.edad}>
+        <select id={`b-e${i}`} value={x.edad} onChange={e => sb(i, "edad", e.target.value)}><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
+      </Campo>
+      <div className="wide"><button type="button" className="mr-link" onClick={() => setBebes(bebes.filter((_, j) => j !== i))}>{t.quitar}</button></div>
+    </fieldset>)}
+    {bebes.length < 2 && <div className="wide"><button type="button" className="mr-link" onClick={() => setBebes([...bebes, { nombre: "", edad: "0" }])}>+ {t.bebe}</button><p className="hint" style={{ marginTop: 6 }}>{t.bebeNota}</p></div>}
     <Pie t={t} {...rest} />
   </Form>;
 }

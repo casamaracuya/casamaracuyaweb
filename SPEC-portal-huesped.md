@@ -103,6 +103,11 @@ cliente encuentra todo lo de su estadía.
 - **Nunca:** mostrar datos de otra reserva; precios en la web pública; las palabras «hotel» o
   «posada» en textos al cliente.
 
+12. **El número de personas no se cambia en el portal** (Daniel, 25 nov; migración 0021). Lo anotó
+    Recepción al registrar el pago. En la parte 2 se muestra fijo, con un enlace a WhatsApp si cambió;
+    en la parte 3 van exactamente las personas de la reserva, más hasta 2 bebés menores de 3 años
+    (no pagan). Adultos y niños se cuentan solos con las edades.
+
 ## Respuestas de Daniel (24 nov)
 
 - Firma con el dedo en la pantalla, con el mejor sistema → decisión 10.
