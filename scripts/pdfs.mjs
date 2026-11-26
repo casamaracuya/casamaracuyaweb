@@ -196,6 +196,7 @@ function fichaPage(lang) {
     <tr><th>${d.nombre}</th><td colspan="3"></td></tr>
     <tr><th>${d.documento}</th><td></td><th>${d.telefono}</th><td></td></tr>
     <tr><th>${d.email}</th><td></td><th>${d.ciudad}</th><td></td></tr>
+    <tr><th>${d.emergencia}</th><td colspan="3"><span class="hint">(${d.emergenciaHint})</span></td></tr>
   </table></section>
 
   <section class="sec"><h2><span>2</span>${d.s2}</h2><table>

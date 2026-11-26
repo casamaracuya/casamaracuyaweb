@@ -48,15 +48,17 @@ Se entrega en **2 PR** para que Edwar corra la base de datos una sola vez por pa
 
 ## PR 2 · Correo y recordatorios
 
-- [ ] **T6. Correo de acceso** (M)
+- [x] **T6. Correo de acceso** (M)
   - Función `enviar-acceso` (Resend, como `enviar-comprobante`), ES/EN; textos aprobados por Daniel.
   - Verifica: envío de prueba a un correo de Daniel.
-- [ ] **T7. Recordatorios que no se olvidan** (S)
+- [x] **T7. Recordatorios que no se olvidan** (S)
   - «Falta enviar el acceso», «no ha llenado la ficha» (desde 3 días antes), «llenó la ficha»: en
     «Hoy», en el número del menú y en la reserva.
   - Verifica: navegador con reservas de prueba en cada caso.
-- [ ] **T8. Ficha en papel y del panel al día** (S)
-  - Contacto de emergencia en el PDF y en la ficha del panel; la firma digital sale en la ficha impresa.
+- [x] **T8. Ficha en papel y del panel al día** (S)
+  - Contacto de emergencia en el PDF y en la ficha del panel. (La firma digital ya se ve en la reserva; el panel
+    no tiene ficha impresa, así que «firma en la ficha impresa» queda para cuando se haga esa impresión.)
+  - Los PDF se regeneraron en este entorno con las mismas letras (Manrope y Cormorant de @fontsource).
 
 ### Revisión 3 → PR 2
 - [ ] Compila; pruebas; preview; PR a Edwar.

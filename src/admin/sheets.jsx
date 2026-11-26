@@ -53,6 +53,8 @@ function PortalSec({ r, g }) {
     : f.signed ? { ok: true, t: "La ficha ya está firmada (en papel)" }
     : { t: a.times ? "El cliente todavía no ha empezado la ficha" : "Todavía no se le ha enviado el acceso" };
   const registrar = () => act(x => x.registrarAcceso(r.id), "Quedó anotado que le enviaste el acceso", { quiet: false });
+  const correo = () => act(async x => { const res = await x.enviarAcceso(r.id);
+    toast(res?.sinCorreo ? "No tiene correo anotado. Agrégalo en su ficha o envíalo por WhatsApp" : res?.aviso || `Acceso enviado a ${res.to}`); }, null);
   return <section className="sec"><div className="sec-h">Mi reserva · apartado del cliente</div>
     <div className="note" style={estado.ok ? { background: "var(--good-bg)", color: "var(--good)" } : undefined}><Icon n={estado.ok ? "check" : "alert"} c="s" w={estado.ok ? "b" : "f"} /><span>{estado.t}.{!a.times && !estado.ok ? " Envíale el enlace para que llene la ficha antes de llegar." : ""}</span></div>
     <div className="group">
@@ -62,6 +64,7 @@ function PortalSec({ r, g }) {
         <a className="row press" href={waAcceso(r, g)} target="_blank" rel="noopener noreferrer" onClick={registrar}>
           <span className="ico" style={{ background: "var(--accent-bg)", color: "var(--accent-ink)" }}><Icon n="chat" c="s" /></span>
           <span className="grow"><span className="t">{a.times ? "Reenviar el acceso por WhatsApp" : "Enviar acceso por WhatsApp"}</span><span className="st">{g.phone ? `A ${g.phone}` : "Eliges el contacto en WhatsApp"} · el enlace y el código</span></span><Icon n="chev" c="s chev" /></a>
+        <button className="row press" onClick={correo}><span className="ico"><Icon n="copy" c="s" /></span><span className="grow"><span className="t">{a.times ? "Reenviar el acceso por correo" : "Enviar acceso por correo"}</span><span className="st">{g.email ? `A ${g.email}` : "No tiene correo anotado en su ficha"}</span></span></button>
         <button className="row press" onClick={() => copy(enlacePortal(r), toast)}><span className="ico"><Icon n="copy" c="s" /></span><span className="grow"><span className="t">Copiar el enlace</span><span className="st">{enlacePortal(r).replace("https://", "")}</span></span></button>
       </>}
     </div>

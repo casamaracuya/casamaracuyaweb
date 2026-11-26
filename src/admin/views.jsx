@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MenuStudio } from "./docs.jsx";
 import { histLine } from "./cobros.jsx";
 import { useMC, Icon, Pill, Empty, Head, ResRow, TaskRow, Seg, Chips, Switch, myTasks, usePages, Pager } from "./ui.jsx";
-import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, SOLICITUD, ARCHIVO, pasada, cupo, RESPONDER_H, SEGUIR_D, horasDesde, ultimaActividad, pideSeguimiento, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
+import { T0, TODAY, MES, MESL, DIAL, ROLES, VIEWS, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, can, FLOW, STATE, HOLDS, SOLICITUD, ARCHIVO, pasada, portalPendiente, cupo, RESPONDER_H, SEGUIR_D, horasDesde, ultimaActividad, pideSeguimiento, PLAN, ROOM_ST, ROOM_LB, SEASONS, SEASON_DESC, RATE_KIND, HIGH, highRanges, BASE_GUESTS, MIN_ALTA, SOLD, season, nightsList, nextBirthday, birthdaysIn, fdate,
   parse, isoOf, addDays, diff, frange, rel, money, ago, left, nights, monthStats, initials } from "./util.js";
 
 // Para buscar sin importar tildes ni mayúsculas.
@@ -57,6 +57,14 @@ export function Hoy() {
   if (see(["direccion","recepcion","admin"])) nuevas.slice().sort((a, b) => a.created - b.created).forEach(r => { const h = horasDesde(r.created), late = h >= RESPONDER_H;
     al.push({ i: late ? "alert" : "chat", c: late ? "rgba(190,84,56,.2)" : "var(--s-nueva-bg)", k: late ? "var(--ink)" : "var(--s-nueva-ink)", t: late ? `${G(r.g).name}: ${Math.floor(h)} h sin respuesta` : `${G(r.g).name} pidió fechas`, s: `${frange(r.in, r.out)} · ${r.people} pers. · llegó por ${r.channel}`, on: res(r.id) }); });
   if (see(["direccion","recepcion","admin"])) S.reservas.filter(r => pideSeguimiento(S, r)).forEach(r => al.push({ i: "clock", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `Hacer seguimiento: ${G(r.g).name}`, s: `${Math.floor(horasDesde(ultimaActividad(S, r)) / 24)} días sin novedad · ${frange(r.in, r.out)}`, on: res(r.id) }));
+  // Portal «Mi reserva» (0020): el acceso que falta enviar, la ficha que no han llenado y la que acaban de firmar.
+  if (see(["direccion","recepcion","admin"])) S.reservas.filter(r => portalPendiente(r)).sort((a, b) => a.in < b.in ? -1 : 1).forEach(r => {
+    const enviar = portalPendiente(r) === "enviar", d = diff(TODAY, r.in), cuando = d === 0 ? "llega hoy" : d === 1 ? "llega mañana" : `llega en ${d} días`;
+    al.push({ i: enviar ? "chat" : "alert", c: enviar ? "var(--s-nueva-bg)" : "var(--s-pre-bg)", k: enviar ? "var(--s-nueva-ink)" : "var(--s-pre-ink)",
+      t: enviar ? `Falta enviar el acceso a ${G(r.g).name}` : `${G(r.g).name} no ha llenado la ficha`,
+      s: enviar ? `${frange(r.in, r.out)} · para que llene la ficha en Mi reserva` : `${cuando} · ${(r.ficha.parts || []).length ? `va por ${(r.ficha.parts || []).length} de 5 partes` : "no la ha empezado"} · reenvíale el acceso`, on: res(r.id) }); });
+  if (see(["direccion","recepcion","admin"])) S.reservas.filter(r => r.ficha?.origin === "cliente" && r.ficha.signed && Date.now() - r.ficha.signed < 48 * 36e5 && r.in >= TODAY).forEach(r =>
+    al.push({ i: "check", c: "var(--good-bg)", k: "var(--good)", t: `${G(r.g).name} llenó y firmó la ficha`, s: `${frange(r.in, r.out)} · ya está en su reserva`, on: res(r.id) }));
   if (see(["direccion","admin"])) (S.approvals || []).filter(a => a.state === "pendiente").forEach(a => { const r = S.reservas.find(x => x.id === a.res);
     al.push({ i: "alert", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `Cobro por aprobar: ${r ? G(r.g).name : "reserva"}`, s: a.detail, on: () => openSheet("aprob", { id: a.id }) }); });
   if (see(["direccion","recepcion","admin"])) pres.forEach(r => al.push({ i: "clock", c: "var(--s-pre-bg)", k: "var(--s-pre-ink)", t: `${G(r.g).name}: las fechas apartadas vencen en ${left(r.hold)}`, s: "Si no paga, las fechas se liberan solas", on: res(r.id) }));
@@ -115,11 +123,20 @@ export function Reservas() {
     <div ref={top} key={`${f}-${pg.page}`} className="swap">
       {!list.length ? <section className="sec"><div className="group res"><Empty icon={q.trim() ? "search" : "reservas"}>{q.trim() ? "No encontramos reservas con esa búsqueda." : "No hay reservas aquí."}</Empty></div></section>
         : f === "proximas"
-          ? F.proximas.slice().reverse().map(s => { const rs = pg.items.filter(r => r.state === s); return rs.length ? <section className="sec" key={s}><div className="sec-h">{STATE[s]}</div><div className="group res">{rs.map(r => <ResRow key={r.id} r={r} />)}</div></section> : null; })
-          : <section className="sec"><div className="group res">{pg.items.map(r => <ResRow key={r.id} r={r} />)}</div></section>}
+          ? F.proximas.slice().reverse().map(s => { const rs = pg.items.filter(r => r.state === s); return rs.length ? <section className="sec" key={s}><div className="sec-h">{STATE[s]}</div><div className="group res">{rs.map(r => <ResRow key={r.id} r={r} extra={<PortalChip r={r} />} />)}</div></section> : null; })
+          : <section className="sec"><div className="group res">{pg.items.map(r => <ResRow key={r.id} r={r} extra={<PortalChip r={r} />} />)}</div></section>}
     </div>
     <Pager pg={pg} anchor={top} />
   </>;
+}
+
+// En la lista de Reservas: lo que falta del portal «Mi reserva» (0020).
+function PortalChip({ r }) {
+  const p = portalPendiente(r);
+  if (p === "enviar") return <span className="cupo no"><Icon n="chat" c="xs" />Falta enviar el acceso</span>;
+  if (p === "ficha") return <span className="cupo tarde"><Icon n="alert" c="xs" w="f" />Sin ficha</span>;
+  if (r.ficha?.origin === "cliente" && r.ficha.signed && ["confirmada","casa"].includes(r.state)) return <span className="cupo si"><Icon n="check" c="xs" w="b" />Ficha firmada</span>;
+  return null;
 }
 
 /* ---------- SOLICITUDES (0019): lo que llega y se conversa, antes del pago ---------- */
