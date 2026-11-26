@@ -80,6 +80,24 @@ select pg_temp.probar('…y queda archivada', 'direccion', $q$select count(*) fr
 select pg_temp.probar('Recepción corre el archivo automático', 'recepcion', 'select count(*) from (select liberar_vencidas()) x', 'hay');
 select pg_temp.probar('…y la solicitud con fecha pasada queda vencida', 'direccion', $q$select count(*) from reservas where id = (select b from ids) and estado = 'vencida'$q$, 'hay');
 
+-- ---------- 0023: la solicitud de la web guarda los bebés ----------
+-- Crea la solicitud y, en un paso aparte, lee cuántos bebés quedaron (-1 si no quedó).
+create function pg_temp.bebes_de(p_tel text, p_personas int, p_dias int, p_bebes int default null) returns int language plpgsql as $f$
+declare c text; n int;
+begin
+  if p_bebes is null then
+    c := crear_solicitud('Visitante Bebés', p_tel, 'esencial', p_personas, false, current_date + p_dias, current_date + p_dias + 2, 'Prueba');
+  else
+    c := crear_solicitud('Visitante Bebés', p_tel, 'esencial', p_personas, false, current_date + p_dias, current_date + p_dias + 2, 'Prueba', 'Web', 'es', p_bebes);
+  end if;
+  select bebes into n from reservas where codigo = c;
+  return coalesce(n, -1);
+end $f$;
+grant execute on function pg_temp.bebes_de(text, int, int, int) to authenticated, anon;
+select pg_temp.probar('La web guarda los bebés que no pagan', 'recepcion', $q$select case when pg_temp.bebes_de('+58 400 777 0023', 4, 400, 2) = 2 then 1 else 0 end$q$, 'hay');
+select pg_temp.probar('…nunca más de 2 (del tercero en adelante pagan y van en personas)', 'recepcion', $q$select case when pg_temp.bebes_de('+58 400 777 0024', 4, 410, 5) = 2 then 1 else 0 end$q$, 'hay');
+select pg_temp.probar('Sin decir bebés, quedan en 0', 'recepcion', $q$select case when pg_temp.bebes_de('+58 400 777 0025', 2, 420) = 0 then 1 else 0 end$q$, 'hay');
+
 -- ---------- Resultado (y todo se deshace) ----------
 do $$
 declare informe text; fallas int; total int;

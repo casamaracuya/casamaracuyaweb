@@ -217,6 +217,17 @@ select pg_temp.probar('…y queda como pasada por Recepción', 'base', $q$select
 select pg_temp.probar('Si la llenó el cliente y Recepción corrige, sigue diciendo «cliente»', 'recepcion', $q$select count(*) from (select guardar_ficha((select a from ids), '{"nombre":"María José Pérez Rojas","adultos":3,"ninos":1,"firmada":true}')) s$q$, 'hay');
 select pg_temp.probar('…origen cliente y el contacto de emergencia no se borra', 'base', $q$select count(*) from reservas where id = (select a from ids) and ficha_origen = 'cliente' and emergencia_nombre = 'Luis Pérez'$q$, 'hay');
 
+-- ---------- 0023: 12 personas + 2 bebés caben en la ficha ----------
+update reservas set personas = 12, bebes = 2 where id = (select b from ids);
+create temp table lista14 as select jsonb_build_object('ocupantes',
+  jsonb_build_array(jsonb_build_object('nombre', 'Cher', 'documento', 'V-77000000'))
+  || (select jsonb_agg(jsonb_build_object('nombre', 'Persona ' || n, 'documento', 'V-770000' || lpad(n::text, 2, '0'))) from generate_series(2, 12) n)
+  || jsonb_build_array(jsonb_build_object('nombre', 'Bebé Uno', 'documento', '', 'edad', 1), jsonb_build_object('nombre', 'Bebé Dos', 'documento', '', 'edad', 0))) v;
+grant select on lista14 to anon, authenticated;
+select pg_temp.probar('Una reserva de 12 personas + 2 bebés guarda su lista de 14 en el portal', 'anon', $q$select case when (portal_guardar_ficha((select b from locs), 'Cher', 3, (select v from lista14))->>'ok')::boolean then 1 else 0 end$q$, 'hay');
+select pg_temp.probar('…y Recepción también la puede pasar en el panel', 'recepcion', $q$select count(*) from (select guardar_ficha((select b from ids), jsonb_build_object('nombre', 'Cher', 'adultos', 12, 'ninos', 2) || (select v from lista14))) s$q$, 'hay');
+select pg_temp.probar('…pero 15 no', 'recepcion', $q$select count(*) from (select guardar_ficha((select b from ids), jsonb_build_object('nombre', 'Cher', 'adultos', 13, 'ninos', 2) || (select v from lista14))) s$q$, 'error');
+
 -- ---------- Revisión de seguridad: las piezas internas no se llaman desde afuera ----------
 select pg_temp.probar('Anónimo no llama portal_datos directo', 'anon', $q$select count(*) from (select portal_datos((select a from ids)) j) s where j is not null$q$, 'error');
 select pg_temp.probar('Anónimo no llama portal_reserva directo', 'anon', $q$select count(*) from (select portal_reserva((select a from locs), 'Pérez')) s$q$, 'error');

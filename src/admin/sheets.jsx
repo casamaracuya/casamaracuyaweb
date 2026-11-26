@@ -106,7 +106,7 @@ function FichaSec({ r, g }) {
     {f.filled && <div className="group kv">
       <KV k="Llegada estimada" v={f.arrival || "Sin indicar"} />
       <KV k="Huéspedes" v={`${f.adults || 0} adultos · ${f.kids || 0} niños`} />
-      {total !== r.people && <div className="row"><span className="st" style={{ color: "var(--danger)", whiteSpace: "normal" }}>La reserva dice {r.people} personas y la ficha {total}. Confírmalo con el huésped.</span></div>}
+      {total !== r.people + (r.babies || 0) && <div className="row"><span className="st" style={{ color: "var(--danger)", whiteSpace: "normal" }}>La reserva dice {r.people} personas{r.babies ? ` y ${r.babies} ${r.babies === 1 ? "bebé" : "bebés"}` : ""} y la ficha {total}. Confírmalo con el huésped.</span></div>}
       <KV k="Vehículos" v={f.vehicles.length ? f.vehicles.join(" · ") : "Ninguno"} />
       {f.drinks && <KV k="Bebidas" v={f.drinks} />}
       {f.needs && <KV k="Requerimientos" v={f.needs} />}
@@ -144,10 +144,11 @@ export function FichaSheet({ id }) {
     const fi = r.ficha || {};
     const [al, alO] = splitOpts("alergias", g.allergies || []), [be, beO] = splitOpts("bebidas", fi.drinks), [rq, rqO] = splitOpts("requerimientos", fi.needs), [mo, moO] = splitOpts("motivo", fi.reason);
     const occ = (fi.people || []).slice(1).map(o => ({ nombre: o.nombre || "", documento: o.documento || "", edad: o.edad == null ? "" : String(o.edad) }));
-    while (occ.length < Math.min(11, r.people - 1)) occ.push({ nombre: "", documento: "", edad: "" });
+    // Una casilla por persona de la reserva y por cada bebé que no paga (0022), sin contar al titular.
+    while (occ.length < Math.min(13, r.people + (r.babies || 0) - 1)) occ.push({ nombre: "", documento: "", edad: "" });
     const veh = [...(fi.vehicles || [])]; while (veh.length < 2) veh.push("");
     return { nombre: g.name || "", documento: g.doc || "", telefono: g.phone || "", email: g.email || "", ciudad: g.city || "",
-      hora: fi.arrival || "", adultos: fi.adults ?? r.people, ninos: fi.kids ?? 0, veh, occ,
+      hora: fi.arrival || "", adultos: fi.adults ?? r.people, ninos: fi.kids ?? (r.babies || 0), veh, occ,
       al, alO, be, beO, rq, rqO, mo, moO, mascota: !!r.pet, mN: fi.petName || "", mR: fi.petBreed || "", firmada: !!fi.signed,
       emN: r.emergency?.name || "", emP: r.emergency?.rel || "", emT: r.emergency?.phone || "" };
   });
@@ -161,7 +162,7 @@ export function FichaSheet({ id }) {
     e.preventDefault(); setErr("");
     if (f.nombre.trim().length < 2) return setErr("Falta el nombre del titular.");
     if (ad < 1) return setErr("Tiene que venir al menos un adulto.");
-    if (ad + ni > 12) return setErr("La casa recibe hasta 12 personas en total.");
+    if (ad + ni > 12 + (r.babies || 0)) return setErr("La casa recibe hasta 12 personas en total (más los bebés que no pagan).");
     setBusy(true);
     const er = await act(a => a.guardarFicha(r.id, {
       nombre: f.nombre.trim(), documento: f.documento.trim(), telefono: f.telefono.trim(), email: f.email.trim(), ciudad: f.ciudad.trim(),
@@ -200,7 +201,7 @@ export function FichaSheet({ id }) {
         <div className="row"><label className="k" htmlFor={`fcOD${i}`}>C.I. / Documento</label><input id={`fcOD${i}`} className="field-in" value={o.documento} onChange={e => setOcc(i, "documento", e.target.value)} autoComplete="off" /></div>
         <div className="row"><label className="k" htmlFor={`fcOE${i}`}>Edad (si es menor)</label><input id={`fcOE${i}`} className="field-in" type="number" inputMode="numeric" min="0" max="17" value={o.edad} onChange={e => setOcc(i, "edad", e.target.value)} /></div>
       </div>)}
-      {f.occ.length < 11 && <div className="group"><button type="button" className="row press" onClick={() => set("occ", [...f.occ, { nombre: "", documento: "", edad: "" }])}><span className="ico"><Icon n="plus" c="s" /></span><span className="grow"><span className="t" style={{ color: "var(--accent-ink)" }}>Agregar a otra persona</span></span></button></div>}
+      {f.occ.length < 11 + (r.babies || 0) && <div className="group"><button type="button" className="row press" onClick={() => set("occ", [...f.occ, { nombre: "", documento: "", edad: "" }])}><span className="ico"><Icon n="plus" c="s" /></span><span className="grow"><span className="t" style={{ color: "var(--accent-ink)" }}>Agregar a otra persona</span></span></button></div>}
       <p className="sec-f">Solo pueden pernoctar las personas registradas. Las filas sin nombre no se guardan.</p></section>
 
     <section className="sec"><div className="sec-h">4 · Gastronomía y alergias</div>
@@ -309,7 +310,7 @@ export function ResSheet({ id }) {
         {!c.free && <button className="btn danger press" onClick={() => step("rechazada", "Archivada: sin cupo")}>Archivar: sin cupo</button>}</>; }
     if (canMove && r.state === "conversacion") actions = <>{canPay && <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el pago y crear la reserva</button>}<button className={`btn ${canPay ? "plain" : ""} press`} onClick={() => step("pre", "Fechas apartadas por 24 horas")}><Icon n="lock" w="f" />Apartar las fechas 24 horas</button><button className="btn danger press" onClick={() => step("rechazada", "Archivada: sin cupo")}>No hay cupo</button><button className="btn danger press" onClick={() => step("no_siguio", "Archivada: no siguió")}>No siguió</button></>;
     if (canMove && r.state === "pre") actions = <>{canPay ? <button className="btn press" onClick={() => openSheet("pay", { id: r.id })}><Icon n="pagos" w="f" />Registrar el pago y crear la reserva</button> : <p className="sec-f" style={{ padding: "0 4px" }}>Quien cobra registra el pago y, al llegar al 100 %, la solicitud pasa a Reservas con su código.</p>}<button className="btn danger press" onClick={() => step("no_siguio", "Fechas liberadas: no siguió")}>Liberar las fechas</button></>;
-    if (r.state === "confirmada") actions = <><button className="btn press" onClick={() => step("casa", `¡Bienvenidos! ${first} ya está en casa`)}><Icon n="door" w="f" />Ya llegaron</button>{canMove && <button className="btn danger press" onClick={() => sure ? step("cancelada", "Reserva cancelada. Fechas libres") : (setSure(true), setTimeout(() => setSure(false), 3500))}>{sure ? "Toca otra vez para cancelar" : "Cancelar la reserva"}</button>}</>;
+    if (r.state === "confirmada") actions = <><button className="btn press" onClick={() => step("casa", r.ficha?.signed ? `¡Bienvenidos! ${first} ya está en casa` : `${first} ya está en casa. Falta la ficha firmada: pídele que la llene en Mi reserva o pásala en papel`)}><Icon n="door" w="f" />Ya llegaron</button>{canMove && <button className="btn danger press" onClick={() => sure ? step("cancelada", "Reserva cancelada. Fechas libres") : (setSure(true), setTimeout(() => setSure(false), 3500))}>{sure ? "Toca otra vez para cancelar" : "Cancelar la reserva"}</button>}</>;
     if (r.state === "casa") actions = <button className="btn press" onClick={() => step("finalizada", "Cuenta cerrada. Se crearon las tareas de salida")}><Icon n="out" />Cerrar la cuenta y despedir</button>;
     if (canMove && r.state === "finalizada") actions = <a className="btn plain press" href={`${wa}?text=${encodeURIComponent(`¡Gracias por quedarte en Casa Maracuyá, ${first}! Si te gustó, nos ayudas mucho dejando tu reseña en Google: ${REVIEW_URL}`)}`} target="_blank" rel="noreferrer"><Icon n="heart" w="f" />Enviar las gracias por WhatsApp</a>;
   }
