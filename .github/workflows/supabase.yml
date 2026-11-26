@@ -1,0 +1,67 @@
+# Casa Maracuyá · aplica en Supabase lo que trae cada cambio de la base de datos.
+#
+# Cuando a main llega un cambio en supabase/ (una migración o una función de correo),
+# GitHub le pide a Edwar que lo apruebe (entorno «produccion»). Al aprobar:
+#   1. corre las migraciones que falten, en orden, y las pruebas  (scripts/supabase-aplicar.sh)
+#   2. publica las funciones de correo (supabase/functions)
+# Si algo falla, se detiene y avisa; una migración que falla no queda a medias.
+# También se puede correr a mano: Actions › «Supabase: aplicar cambios» › Run workflow.
+#
+# Configuración (una sola vez, ver docs/GUIA-aprobar-cambios.md):
+#   Settings › Environments › produccion: Edwar como «Required reviewer» y estos secretos:
+#     SUPABASE_DB_URL         conexión «Session pooler» (con la contraseña de la base)
+#     SUPABASE_ACCESS_TOKEN   token personal de Supabase (Account › Access Tokens)
+#     SUPABASE_PROJECT_REF    el identificador del proyecto (el de la dirección xxxx.supabase.co)
+name: "Supabase: aplicar cambios"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "supabase/tests/**"
+      - "scripts/supabase-aplicar.sh"
+      - ".github/workflows/supabase.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Nunca dos a la vez: si llegan dos cambios seguidos, el segundo espera al primero.
+concurrency:
+  group: supabase-produccion
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    name: Aplicar en Supabase
+    runs-on: ubuntu-latest
+    environment: produccion   # aquí se detiene hasta que Edwar aprueba
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Instalar psql
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Migraciones y pruebas
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/supabase-aplicar.sh
+
+      - uses: supabase/setup-cli@8b97e5256cca58135d1c0547c908d2172be77882 # v1.7.2
+        with:
+          version: 2.122.1
+
+      - name: Publicar las funciones de correo
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          for d in supabase/functions/*/; do
+            f=$(basename "$d")
+            case "$f" in _*) continue ;; esac
+            echo "→ Publicando $f"
+            supabase functions deploy "$f" --project-ref "$SUPABASE_PROJECT_REF" --use-api
+          done
