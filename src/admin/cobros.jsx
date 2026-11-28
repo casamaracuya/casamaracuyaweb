@@ -2,7 +2,7 @@
 // cobros en espera de aprobación e historial de cada cliente.
 import { useState, useEffect } from "react";
 import { useMC, Icon, Seg, Chips, Switch, Err, KV, copy } from "./ui.jsx";
-import { TODAY, PLAN, METODOS, METODO_MONEDA, CANALES, SOLICITUD, cupo, addDays, diff, day, fdate, frange, money, ago, nights } from "./util.js";
+import { TODAY, PLAN, METODOS, METODO_MONEDA, CANALES, SOLICITUD, cupo, addDays, diff, day, fdate, frange, money, ago, nights, anchoMonto } from "./util.js";
 import { findGuest } from "../lib/api.js";
 
 // Código de reserva CM-XXXXXX: la llave del huésped para todo lo demás (0017).
@@ -54,21 +54,23 @@ function useQuote(ctx, totIn, after) {
     if (qTotal == null) diffs.push(`La cotización no incluye el plan ${PLAN[ctx.plan]?.short || ctx.plan}`);
     else { if (tot > 0 && tot !== qTotal) diffs.push(`El total cotizado es ${money(qTotal)}`); if (after > qTotal) diffs.push(`Con este pago se cobraría ${money(after)}, más que los ${money(qTotal)} cotizados`); }
   }
+  // El aviso sale cuando ya hay algo que comparar (código, total o monto), no con el formulario vacío.
+  const show = diffs.length > 0 && (!!code.trim() || totIn > 0 || after > 0);
   const view = <section className="sec"><div className="sec-h">Cotización</div>
-    <div className="group"><div className="row"><label className="k" htmlFor="payCot">Código</label><input id="payCot" className="field-in" value={code} onChange={e => { setCode(e.target.value); setOk(false); }} placeholder="COT-48K2" autoComplete="off" autoCapitalize="characters" style={{ textTransform: "uppercase" }} /></div></div>
+    <div className="group"><div className="row"><label className="k" htmlFor="payCot">Código</label><input id="payCot" className="field-in" value={code} onChange={e => { setCode(e.target.value); setOk(false); }} placeholder="Ej.: COT-48K2" autoComplete="off" autoCapitalize="characters" style={{ textTransform: "uppercase" }} /></div></div>
     {q && qTotal != null && <div className={`quote ${ok ? "ok" : ""}`}>
       <div className="q-h"><b>{q.code}</b><span>{q.name} · {q.in ? frange(q.in, q.out) : `${q.nights} noches`}{q.people ? ` · ${q.people} personas` : ""} · vence {fdate(q.until)}</span></div>
       <div className="q-t"><span>Se cobra · {PLAN[ctx.plan]?.short}</span><b>{money(qTotal)}</b></div>
       {ok ? <span className="q-ok"><Icon n="check" c="s" w="b" />Confirmado: el total es el de la cotización</span>
         : <button type="button" className="btn small press" onClick={() => setOk(true)}><Icon n="check" w="b" />Confirmar lo que se cobra</button>}
     </div>}
-    {diffs.length > 0 && <div className="quote warn"><div className="q-h"><Icon n="alert" c="s" w="f" /><b>El cobro no coincide</b></div>
+    {show && <div className="quote warn"><div className="q-h"><Icon n="alert" c="s" w="f" /><b>El cobro no coincide</b></div>
       <ul>{diffs.map(d => <li key={d}>{d}</li>)}</ul>
       <label htmlFor="payWhy" className="q-l">Motivo para Administración</label>
       <textarea id="payWhy" className="field-full" rows={2} value={reason} onChange={e => setReason(e.target.value)} placeholder="Ej.: precio especial acordado por teléfono" />
       <p className="q-f">El pago queda en espera hasta que Administración lo apruebe.</p></div>}
   </section>;
-  return { view, tot, diffs, reason, code: q ? q.code : normCot(code), locked: ok && qTotal != null };
+  return { view, tot, diffs, show, reason, code: q ? q.code : normCot(code), locked: ok && qTotal != null };
 }
 
 function usePay(tot, before, opens) {
@@ -108,8 +110,8 @@ function usePay(tot, before, opens) {
     <section className="sec"><div className="sec-h">Cómo pagó</div><Chips value={method} onChange={setMethod} label="Método de pago" options={METODOS.map(m => [m, m])} />
       {method === "Transferencia" && <div style={{ marginTop: 10 }}><Seg value={cur} onChange={setCur} label="Moneda" options={[["Bs", "En bolívares"], ["USD", "En dólares"]]} /></div>}</section>
     <section className="sec"><div className="group">
-      <div className="row"><label className="k" htmlFor="payAmt">{bs ? "Monto en Bs." : "Monto recibido"}</label><span style={{ color: "var(--ink3)" }}>{bs ? "Bs." : "$"}</span><input id="payAmt" className="field-in" inputMode="decimal" value={amt} onChange={e => setAmt(e.target.value)} style={{ maxWidth: 140, color: "var(--ink)" }} /></div>
-      {bs && <div className="row"><label className="k" htmlFor="payRate">Tasa del día</label><span style={{ color: "var(--ink3)" }}>Bs./$</span><input id="payRate" className="field-in" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} style={{ maxWidth: 140, color: "var(--ink)" }} /></div>}
+      <div className="row"><label className="k" htmlFor="payAmt">{bs ? "Monto en Bs." : "Monto recibido"}</label><span className="pre">{bs ? "Bs." : "$"}</span><input id="payAmt" style={anchoMonto(amt)} className="field-in money" inputMode="decimal" placeholder="0" value={amt} onChange={e => setAmt(e.target.value)} /></div>
+      {bs && <div className="row"><label className="k" htmlFor="payRate">Tasa del día</label><span className="pre">Bs./$</span><input id="payRate" style={anchoMonto(rate)} className="field-in money" inputMode="decimal" placeholder="0" value={rate} onChange={e => setRate(e.target.value)} /></div>}
       {bs && <div className="row"><span className="k">Equivale a</span><span className="val">{usd > 0 ? money(usd) : "—"}</span></div>}
       {!cash && <div className="row"><label className="k" htmlFor="payRef">Referencia</label><input id="payRef" className="field-in" value={ref} onChange={e => setRef(e.target.value)} autoComplete="off" placeholder={method === "Binance (USDT)" ? "ID de la orden" : "Número de referencia"} /></div>}
       {cash && <div className="row"><label className="k" htmlFor="payCash">Quién tiene el dinero</label><input id="payCash" className="field-in" value={cashWith} onChange={e => setCashWith(e.target.value)} autoComplete="off" /></div>}
@@ -253,11 +255,11 @@ export function PaySheet({ id }) {
     <div className="res-hero" style={{ paddingBottom: 6 }}><div><h3>{g.name}</h3><div className="st">{frange(r.in, r.out)} · {nights(r)} noches · {r.people} personas</div></div></div>
     {Q.view}{P.summary}{P.fields}
     <section className="sec"><div className="sec-h">Para el comprobante del huésped</div><div className="group">
-      <div className="row"><label className="k" htmlFor="payTot">Total de la estadía</label><span style={{ color: "var(--ink3)" }}>$</span><input id="payTot" className="field-in" inputMode="decimal" value={Q.locked ? String(tot) : total} disabled={Q.locked} onChange={e => setTotal(e.target.value)} style={{ maxWidth: 140, color: "var(--ink)" }} /></div>
+      <div className="row"><label className="k" htmlFor="payTot">Total de la estadía</label><span className="pre">$</span><input id="payTot" style={anchoMonto(Q.locked ? String(tot) : total)} className="field-in money" inputMode="decimal" placeholder="0" value={Q.locked ? String(tot) : total} disabled={Q.locked} onChange={e => setTotal(e.target.value)} /></div>
       <div className="row"><label className="k" htmlFor="payCon">Concepto</label><input id="payCon" className="field-in" value={concept} onChange={e => setConcept(e.target.value)} autoComplete="off" /></div>
     </div><p className="sec-f">{P.confirms ? "Con este pago se completa el 100 %: la reserva se confirma, recibe su código y el huésped recibe el comprobante por correo." : "La reserva se confirma cuando lo pagado llega al 100 % del total."}</p></section>
     <Err msg={err} />
-    <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{busy ? "Guardando…" : pend ? "Pedir aprobación del cobro" : P.confirms ? "Registrar el pago y crear la reserva" : "Registrar el pago"}</button></div>
+    <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{busy ? "Guardando…" : pend && Q.show ? "Pedir aprobación del cobro" : P.confirms ? "Registrar el pago y crear la reserva" : "Registrar el pago"}</button></div>
   </form>;
 }
 
@@ -325,13 +327,13 @@ export function PaidSheet({ date }) {
         <div className="row"><span className="k" id="rpPeopleL">Personas</span><div className="stepper" role="group" aria-labelledby="rpPeopleL"><button type="button" onClick={() => set("people", Math.max(1, f.people - 1))} aria-label="Una persona menos">−</button><output>{f.people}</output><button type="button" onClick={() => set("people", Math.min(12, f.people + 1))} aria-label="Una persona más">+</button></div></div>
         <div className="row"><span className="k" id="rpBabiesL">Bebés <small style={{ display: "block", fontWeight: 500, color: "var(--ink3)" }}>menores de 3 años, no pagan</small></span><div className="stepper" role="group" aria-labelledby="rpBabiesL"><button type="button" onClick={() => set("babies", Math.max(0, f.babies - 1))} aria-label="Un bebé menos">−</button><output>{f.babies}</output><button type="button" onClick={() => set("babies", Math.min(2, f.babies + 1))} aria-label="Un bebé más">+</button></div></div>
         <div className="row"><label className="k" htmlFor="rpPet">Viene con mascota</label><Switch id="rpPet" checked={f.pet} onChange={v => set("pet", v)} /></div>
-        <div className="row"><label className="k" htmlFor="rpTot">Total de la estadía</label><span style={{ color: "var(--ink3)" }}>$</span><input id="rpTot" className="field-in" inputMode="decimal" value={Q.locked ? String(tot) : f.total} disabled={Q.locked} onChange={e => set("total", e.target.value)} style={{ maxWidth: 140, color: "var(--ink)" }} /></div>
+        <div className="row"><label className="k" htmlFor="rpTot">Total de la estadía</label><span className="pre">$</span><input id="rpTot" style={anchoMonto(Q.locked ? String(tot) : f.total)} className="field-in money" inputMode="decimal" placeholder="0" value={Q.locked ? String(tot) : f.total} disabled={Q.locked} onChange={e => set("total", e.target.value)} /></div>
       </div></section>
     <section className="sec"><div className="sec-h">Por dónde llegó</div><Chips value={f.channel} onChange={v => set("channel", v)} label="Canal" options={CANALES.map(c => [c, c])} /></section>
     {Q.view}{P.summary}{P.fields}
     <section className="sec"><div className="group"><div className="row"><label htmlFor="rpNotes" className="sr">Notas</label><textarea id="rpNotes" className="field-full" rows={2} placeholder="¿Celebran algo? ¿Alguna alergia? ¿Hora de llegada?" value={f.notes} onChange={e => set("notes", e.target.value)} /></div></div></section>
     <Err msg={err} />
-    <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{busy ? "Guardando…" : pend ? "Anotar y pedir aprobación del cobro" : "Confirmar la reserva pagada"}</button></div>
+    <div className="btns"><button className="btn press" type="submit" disabled={busy}><Icon n="check" w="b" />{busy ? "Guardando…" : pend && Q.show ? "Anotar y pedir aprobación del cobro" : "Confirmar la reserva pagada"}</button></div>
   </form>;
 }
 

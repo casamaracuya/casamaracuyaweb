@@ -238,7 +238,15 @@ button.row:active,a.row:active{background:var(--fill)}
 
 /* Formularios */
 .form .row{min-height:56px}
-.form label.k{flex:1;font-weight:600}
+.form .k{flex:1;font-weight:600}
+/* Con un campo de texto, la etiqueta ocupa solo lo suyo y el campo usa el resto (así no se corta lo que se escribe). */
+.form .row:has(.field-in) .k{flex:none}
+/* Montos: el signo va pegado al número, a la derecha de la fila. */
+.form .pre{margin-left:auto;margin-right:-10px;color:var(--ink3);font-weight:600}
+.field-in.money{flex:none;text-align:left;color:var(--ink);min-width:3ch;max-width:170px}
+#payCot::placeholder{text-transform:none}
+/* En los formularios las opciones bajan de línea en vez de esconderse a la derecha. */
+.form .chips{flex-wrap:wrap;overflow:visible}
 .field-in{border:0;background:none;text-align:right;min-width:0;flex:1;padding:10px 0;font-size:16px;font-weight:600;color:var(--ink2)}
 .field-in:focus{outline:none;color:var(--ink)}
 .field-full{width:100%;border:0;background:none;padding:12px 0;font-size:16px;resize:vertical;min-height:44px}
