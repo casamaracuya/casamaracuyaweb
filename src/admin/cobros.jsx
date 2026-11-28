@@ -127,7 +127,7 @@ function usePay(tot, before, opens) {
 // Después de confirmar: el comprobante sale solo por correo y se avisa el código.
 async function afterConfirm(act, toast, id, res) {
   await act(async a => { const c = await a.enviarComprobante(id);
-    toast(`Confirmada · ${res.localizador || ""}. ${c?.sinCorreo ? "No tiene correo anotado: envíale el código por WhatsApp" : `Comprobante enviado a ${c.to}`}`); }, null);
+    toast(`Confirmada · ${res.localizador || ""}. ${c?.sinCorreo ? "No tiene correo anotado: envíale el código por WhatsApp" : `Comprobante y acceso a Mi reserva enviados a ${c.to}`}`); }, null);
 }
 
 /* ---------- Historial del cliente (solo Dirección): la bitácora que nadie puede borrar ---------- */
