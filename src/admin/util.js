@@ -14,6 +14,8 @@ export const DIAL = ["domingo","lunes","martes","miércoles","jueves","viernes",
 export const fdate = s => { const d = parse(s); return `${DIA[d.getDay()]} ${d.getDate()} ${MES[d.getMonth()]}`; };
 export const frange = (a, b) => { const A = parse(a), B = parse(b); return A.getMonth() === B.getMonth() ? `${A.getDate()}–${B.getDate()} ${MES[B.getMonth()]}` : `${A.getDate()} ${MES[A.getMonth()]} – ${B.getDate()} ${MES[B.getMonth()]}`; };
 export const rel = s => { const n = diff(TODAY, s); if (n === 0) return "hoy"; if (n === 1) return "mañana"; if (n === -1) return "ayer"; if (n > 1 && n < 7) return `en ${n} días`; if (n < 0) return `hace ${-n} días`; return fdate(s); };
+// Ancho de un campo de monto según lo escrito: así el signo $ queda pegado al número.
+export const anchoMonto = v => ({ width: `${Math.max(String(v ?? "").length, 1) + 1}ch` });
 export const money = n => "$" + Math.round(n || 0).toLocaleString("es-VE");
 export const ago = t => { const m = Math.round((Date.now() - t) / 6e4); if (m < 1) return "ahora"; if (m < 60) return `hace ${m} min`; const h = Math.round(m / 60); if (h < 24) return `hace ${h} h`; return `hace ${Math.round(h / 24)} d`; };
 export const left = t => { const m = Math.max(0, Math.round((t - Date.now()) / 6e4)); const h = Math.floor(m / 60); return h ? `${h} h ${pad(m % 60)} min` : `${m} min`; };

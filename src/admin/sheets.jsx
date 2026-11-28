@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMC, Icon, Pill, ResRow, Seg, Chips, Switch, Err, KV, copy } from "./ui.jsx";
 import { LocCard, PayRow, PaySheet, PaidSheet, ApprovalSheet, HistorySheet, CupoBox, Dupes, Chat } from "./cobros.jsx";
-import { TODAY, ROLES, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, NIVEL, can, FLOW, STATE, SOLICITUD, ARCHIVO, cupo, CERRAR_D, horasDesde, ultimaActividad, pideSeguimiento, STATE_SHORT, PLAN, CANALES, MESL, addDays, day, fdate, frange, money, ago, left, nights, initials, parse, nextBirthday, birthdaysIn } from "./util.js";
+import { TODAY, ROLES, AREAS, AREAS_NUEVAS, AREA_C, AMBITOS, NIVEL, can, FLOW, STATE, SOLICITUD, ARCHIVO, cupo, CERRAR_D, horasDesde, ultimaActividad, pideSeguimiento, STATE_SHORT, PLAN, CANALES, MESL, addDays, day, fdate, frange, money, ago, left, nights, initials, parse, nextBirthday, birthdaysIn, anchoMonto } from "./util.js";
 import { findGuest } from "../lib/api.js";
 import { REVIEW_URL } from "../lib/contacto.js";
 import { OPCIONES } from "../site/ficha-data.js";
@@ -396,7 +396,7 @@ export function TotalSheet({ id }) {
     const er = await act(a => a.fijarTotal(r.id, t, concept.trim()), "Comprobante actualizado"); if (er) setErr(er); else openSheet("res", { id: r.id }); };
   return <form className="form" onSubmit={submit}>
     <section className="sec"><div className="group">
-      <div className="row"><label className="k" htmlFor="ttTot">Total de la estadía</label><span style={{ color: "var(--ink3)" }}>$</span><input id="ttTot" className="field-in" inputMode="decimal" value={total} onChange={e => setTotal(e.target.value)} style={{ maxWidth: 120, color: "var(--ink)" }} /></div>
+      <div className="row"><label className="k" htmlFor="ttTot">Total de la estadía</label><span className="pre">$</span><input id="ttTot" style={anchoMonto(total)} className="field-in money" inputMode="decimal" placeholder="0" value={total} onChange={e => setTotal(e.target.value)} /></div>
       <div className="row"><label className="k" htmlFor="ttCon">Concepto</label><input id="ttCon" className="field-in" value={concept} onChange={e => setConcept(e.target.value)} autoComplete="off" /></div>
     </div><p className="sec-f">El comprobante del huésped se actualiza al momento. Si ya se lo enviaste, reenvíaselo.</p></section>
     <Err msg={err} /><div className="btns"><button className="btn press" type="submit">Guardar</button></div>
