@@ -373,7 +373,7 @@ function ReceiptSec({ r, g }) {
     ? `Hello ${first}! Your stay at Casa Maracuyá is confirmed (${r.code}). Here is your booking and payment receipt: ${receiptUrl(r)}`
     : `¡Hola ${first}! Tu reserva en Casa Maracuyá está confirmada (${r.code}). Aquí tienes tu comprobante de reserva y pago: ${receiptUrl(r)}`;
   const mail = () => act(async a => { const res = await a.enviarComprobante(r.id);
-    toast(res?.sinCorreo ? "No tiene correo anotado. Agrégalo en su ficha o envíalo por WhatsApp" : `Comprobante enviado a ${res.to}`); }, null);
+    toast(res?.sinCorreo ? "No tiene correo anotado. Agrégalo en su ficha o envíalo por WhatsApp" : `Comprobante y acceso a Mi reserva enviados a ${res.to}`); }, null);
   return <section className="sec"><div className="sec-h">Comprobante</div>
     <div className="group kv"><KV k="Total" v={money(r.total)} /><KV k="Pagado" v={money(r.paid)} /><KV k="Saldo" v={money(saldo)} />
       {r.concept && <KV k="Concepto" v={r.concept} />}</div>

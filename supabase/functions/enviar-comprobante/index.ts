@@ -32,6 +32,8 @@ const T = {
     ver: "Ver y guardar el comprobante (PDF)", normas: "Normas de la casa",
     fiscal: "Este comprobante no sustituye una factura fiscal. Si necesitas factura, respóndenos este correo.",
     poli: "La tarifa no es reembolsable. Puedes cambiar la fecha avisando con al menos 15 días de anticipación, sujeto a disponibilidad.",
+    mr: "Mi reserva · tu apartado", mrIntro: "Antes de llegar, llena la ficha de registro y firma las normas desde el celular. Te toma unos 5 minutos y te ahorra el papeleo en la casa.",
+    mrCodigo: "Tu código", mrBoton: "Entrar a mi reserva", mrComo: "Entras con tu código y tu apellido.", mrCopia: "Si el botón no abre, copia este enlace:",
     motto: "Viento, mar y cero prisa.",
     plans: { esencial: "Experiencia Esencial", plena: "Experiencia Plena" } as Record<string, string>,
     locale: "es-VE"
@@ -46,6 +48,8 @@ const T = {
     ver: "View and save the receipt (PDF)", normas: "House rules",
     fiscal: "This receipt is not a tax invoice. If you need one, just reply to this email.",
     poli: "Rates are non-refundable. Dates can be changed with at least 15 days' notice, subject to availability.",
+    mr: "My booking · your guest page", mrIntro: "Before you arrive, please fill in the registration form and sign the house rules from your phone. It takes about 5 minutes and saves you the paperwork at the house.",
+    mrCodigo: "Your code", mrBoton: "Open my booking", mrComo: "You sign in with your code and your last name.", mrCopia: "If the button doesn't open, copy this link:",
     motto: "Wind, sea and no rush.",
     plans: { esencial: "Essential Experience", plena: "Full Experience" } as Record<string, string>,
     locale: "en-US"
@@ -66,6 +70,18 @@ function emailHtml(d: Record<string, any>, lang: "es" | "en") {
   const row = (k: string, v: string, strong = false) => `<tr><td style="padding:8px 0;border-bottom:1px solid #D4C7BE;font:600 11px/1.4 ${sans};letter-spacing:.12em;text-transform:uppercase;color:#5f604f">${k}</td><td align="right" style="padding:8px 0;border-bottom:1px solid #D4C7BE;font:${strong ? 700 : 500} 15px/1.4 ${sans};color:#2E2E24">${v}</td></tr>`;
   const pagos = (d.pagos || []).map((p: any) => `<tr><td style="padding:6px 0;font:500 14px/1.4 ${sans};color:#3D3D2A">${esc(date(p.fecha))} · ${esc(p.metodo)}</td><td align="right" style="padding:6px 0;font:600 14px/1.4 ${sans};color:#2E2E24">${money(p.monto)}</td></tr>`).join("");
   const url = `${SITE}/comprobante?c=${d.token}`;
+  // El acceso a «Mi reserva» va en el mismo correo: es lo primero que recibe el cliente al pagar.
+  const portal = d.localizador ? `${SITE}${lang === "en" ? "/en/my-booking" : "/mi-reserva"}?c=${encodeURIComponent(d.localizador)}` : "";
+  const mr = portal ? `<tr><td style="padding:22px 32px 0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#2E352A;border-radius:16px"><tr><td style="padding:22px 22px 20px;text-align:center">
+      <div style="font:500 italic 22px/1.1 ${serif};color:#E8DCCD">${esc(t.mr)}</div>
+      <p style="margin:10px 0 0;font:500 14px/1.6 ${sans};color:#E8DCCD">${esc(t.mrIntro)}</p>
+      <div style="margin-top:14px;font:700 11px/1 ${sans};letter-spacing:.16em;text-transform:uppercase;color:#C4A56C">${esc(t.mrCodigo)}</div>
+      <div style="font:800 26px/1.2 ${sans};letter-spacing:.08em;color:#FFFFFF;margin-top:6px">${esc(d.localizador)}</div>
+      <a href="${esc(portal)}" style="display:inline-block;margin-top:16px;padding:15px 28px;border-radius:999px;background:#C4A56C;color:#2E2E24;font:700 12px/1 ${sans};letter-spacing:.14em;text-transform:uppercase;text-decoration:none">${esc(t.mrBoton)}</a>
+      <p style="margin:12px 0 0;font:500 13px/1.5 ${sans};color:#B8B89C">${esc(t.mrComo)}<br><span style="font-size:12px">${esc(t.mrCopia)} <a href="${esc(portal)}" style="color:#E8DCCD">${esc(portal)}</a></span></p>
+    </td></tr></table>
+  </td></tr>` : "";
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(t.title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet"></head>
 <body style="margin:0;padding:0;background:#E8DCCD">
@@ -79,6 +95,7 @@ function emailHtml(d: Record<string, any>, lang: "es" | "en") {
     <p style="margin:0;font:500 26px/1.15 ${serif};color:#2E2E24">${esc(t.hi(String(d.nombre).split(" ")[0]))}</p>
     <p style="margin:10px 0 0;font:500 15px/1.6 ${sans};color:#3D3D2A">${esc(t.intro)}</p>
   </td></tr>
+  ${mr}
   <tr><td style="padding:20px 32px 0">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FFF4;border:1px solid #D4C7BE;border-radius:16px"><tr><td style="padding:20px 22px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -134,7 +151,7 @@ Deno.serve(async req => {
     const { data: pagos } = await db.from("pagos").select("fecha, metodo, monto, tipo").eq("reserva_id", r.id).order("fecha");
     const lang = r.idioma === "en" ? "en" : "es";
     const d = { codigo: r.codigo, emitido: pagos?.[0]?.fecha || String(r.creado).slice(0, 10), llegada: r.llegada, salida: r.salida, personas: r.personas, plan: r.plan,
-      nombre: r.huespedes?.nombre || "", concepto: r.concepto, total: r.total, pagado: r.pagado, pagos: pagos || [], token: r.comprobante_token };
+      nombre: r.huespedes?.nombre || "", concepto: r.concepto, total: r.total, pagado: r.pagado, pagos: pagos || [], token: r.comprobante_token, localizador: r.localizador };
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -142,6 +159,9 @@ Deno.serve(async req => {
     });
     if (!res.ok) return json({ error: `El servicio de correo respondió: ${(await res.text()).slice(0, 200)}` }, 502);
     await db.from("reservas").update({ comprobante_enviado: new Date().toISOString(), comprobante_correo: to }).eq("id", r.id);
+    // El correo ya llevó el acceso a «Mi reserva»: se anota con la sesión de quien lo envió,
+    // así el panel no pide enviarlo otra vez. Si no se puede anotar, el correo igual salió.
+    if (r.localizador) await user.rpc("registrar_acceso", { p_reserva: r.id });
     return json({ ok: true, to });
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 500);
